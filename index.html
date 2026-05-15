@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Learning Experiences</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #ffffff;
+      --card-bg: #ffffff;
+      --text-main: #1a202c;
+      --text-muted: #718096;
+      --accent-orange: #ff9022;
+      --accent-yellow: #ffda22;
+      --accent-green: #00aa00;
+      --header-bg: #171e35;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      padding: 4rem 2rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .container {
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    .page-title {
+      font-family: 'Lexend', sans-serif;
+      font-size: 2.75rem;
+      margin-bottom: 0.5rem;
+      text-align: center;
+      color: var(--accent-green);
+    }
+
+    .page-subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      margin-bottom: 4rem;
+      font-size: 1.1rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 2.5rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 20px rgba(0, 0, 0, 0.05);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-color 0.3s ease;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 20px rgba(0, 0, 0, 0.08), 0 20px 30px rgba(0, 0, 0, 0.1);
+      border-color: var(--accent-orange);
+    }
+
+    .card-header {
+      height: 190px;
+      background: var(--header-bg);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .card-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at center, rgba(255, 144, 34, 0.15) 0%, transparent 60%);
+      opacity: 0.8;
+      transition: opacity 0.5s ease;
+    }
+
+    .card:hover .card-header::before {
+      opacity: 1;
+    }
+
+    .card-body {
+      padding: 1.75rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-title {
+      font-family: 'Lexend', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      color: var(--text-main);
+    }
+
+    .card-desc {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+      margin-bottom: 0;
+      flex: 1;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1 class="page-title">Interactive Labs</h1>
+    <p class="page-subtitle">Select an experience to begin exploring 3D fundamentals.</p>
+
+    <div class="grid">
+      <!-- Card 1 -->
+      <a href="fundamentals1.html" class="card">
+        <div class="card-header">
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Fundamentals 1</h2>
+          <p class="card-desc">An introduction to points, vectors, and planes. Scroll through the interactive timeline
+            to watch 2D geometry extrude into 3D volume.</p>
+        </div>
+      </a>
+
+      <!-- Card 2 -->
+      <a href="fundamentals2.html" class="card">
+        <div class="card-header">
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Fundamentals 2</h2>
+          <p class="card-desc">points -> line -> shape -> solid. Not a huge fan of this one but and used a lot of it to
+            build 3 but some elements i abandoned and might port over in next iteration</p>
+        </div>
+      </a>
+
+      <!-- Card 3 -->
+      <a href="fundamentals3.html" class="card">
+        <div class="card-header">
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Fundamentals 3</h2>
+          <p class="card-desc">My personal favorite. Lots of interaction.</p>
+        </div>
+      </a>
+    </div>
+  </div>
+
+</body>
+
+</html>

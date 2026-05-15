@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Fundamentals of 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400&family=Lexend:wght@400;600;700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#080808}
+#ss{height:2400vh}
+canvas{position:fixed;top:0;left:0;width:100vw;height:100vh;display:block;z-index:0}
+.lbl{position:fixed;z-index:10;font-family:'IBM Plex Mono',monospace;font-size:11px;
+  color:#555;pointer-events:none;white-space:nowrap;opacity:0;transition:opacity .4s ease}
+#hint{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);z-index:10;
+  color:#2a2a2a;font-size:10px;font-family:'IBM Plex Mono',monospace;letter-spacing:.14em;
+  text-transform:uppercase;animation:pulse 2.8s ease-in-out infinite;transition:opacity .8s}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:.9}}
+#intro-popup {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%); z-index: 20;
+  background: rgba(18, 14, 36, 0.85);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  padding: 3rem; border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #fff; text-align: center;
+  max-width: 500px; width: 90%;
+  font-family: 'Montserrat', sans-serif;
+  transition: opacity 0.6s ease, transform 0.6s ease, filter 0.6s ease;
+}
+#intro-popup h1 {
+  font-family: 'Lexend', sans-serif; font-size: 2.2rem;
+  margin-bottom: 1rem; color: #00aa00;
+}
+#intro-popup p {
+  color: #a0aec0; line-height: 1.6; margin-bottom: 2rem;
+}
+.intro-hint {
+  font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px;
+  color: #ff9022; font-weight: 600;
+  animation: pulse-intro 2s infinite ease-in-out;
+}
+@keyframes pulse-intro {
+  0%, 100% { opacity: 0.5; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(3px); }
+}
+</style>
+</head>
+<body>
+<div id="ss"></div>
+
+<div id="intro-popup">
+  <h1>Fundamentals 1</h1>
+  <p>An introduction to points, vectors, and planes. Scroll through the interactive timeline to watch 2D geometry extrude into 3D volume.</p>
+  <div class="intro-hint">Scroll down to explore</div>
+</div>
+<span class="lbl" id="la">A</span>
+<span class="lbl" id="lb">B</span>
+<span class="lbl" id="lc">C</span>
+<span class="lbl" id="ld">D</span>
+<span class="lbl" id="le">E</span>
+<span class="lbl" id="lf">F</span>
+<span class="lbl" id="lg">G</span>
+<span class="lbl" id="lh">H</span>
+<span class="lbl" id="lx" style="color:#E8564A">X</span>
+<span class="lbl" id="ly" style="color:#6AAD3D">Y</span>
+<span class="lbl" id="lz" style="color:#4D87C8">Z</span>
+<span class="lbl" id="cx" style="color:#E8564A"></span>
+<span class="lbl" id="cy" style="color:#6AAD3D"></span>
+<span class="lbl" id="cz" style="color:#4D87C8"></span>
+<span class="lbl" id="lplane">plane</span>
+<span class="lbl" id="clen" style="color:#FFF; background:rgba(0,0,0,0.5); padding:2px 4px; border-radius:3px;"></span>
+<div id="hint">scroll to explore</div>
+
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+
+const R=new THREE.WebGLRenderer({antialias:true});
+R.setPixelRatio(Math.min(devicePixelRatio,2));
+R.setSize(innerWidth,innerHeight);
+R.setClearColor(0x080808,1);
+document.body.appendChild(R.domElement);
+const scene=new THREE.Scene();
+const cam=new THREE.PerspectiveCamera(46,innerWidth/innerHeight,.01,300);
+
+const CW=0xffffff,CX=0xE8564A,CY=0x6AAD3D,CZ=0x4D87C8;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const rng=(p,a,b)=>clamp((p-a)/(b-a),0,1);
+const lerp=(a,b,t)=>a+(b-a)*t;
+const eio=t=>t<.5?4*t*t*t:(t-1)*(2*t-2)*(2*t-2)+1;
+const eoq=t=>t*(2-t);
+
+/* ── camera keyframes ──
+   C_INTRO : zoomed in on origin
+   C2D     : flat front view — looks straight at XY plane
+   C3D     : Blender-style 3/4 isometric                */
+const C_INTRO={pos:new THREE.Vector3(.06,.04,1.8), look:new THREE.Vector3(0,0,0)};
+const C2D    ={pos:new THREE.Vector3(1.2,.9,13),   look:new THREE.Vector3(1.2,.9,0)};
+const C3D    ={pos:new THREE.Vector3(9,7,9),        look:new THREE.Vector3(.5,.5,.5)};
+const ORB_R=11,ORB_Y=7,ORB_BASE=Math.PI*.25;
+
+const camP=C_INTRO.pos.clone(),camL=C_INTRO.look.clone();
+const hPos=new THREE.Vector3(),hLook=new THREE.Vector3();
+const oPos=new THREE.Vector3(),oLook=new THREE.Vector3();
+const fPos=new THREE.Vector3(),fLook=new THREE.Vector3();
+let orbitW=0;
+
+/* ══ Scene Object Classes ══════════════════════════════════════════ */
+
+class Point {
+  constructor(color=CW,r=.04){
+    this.mat=new THREE.MeshBasicMaterial({color,transparent:true,opacity:0,depthWrite:false});
+    this.mesh=new THREE.Mesh(new THREE.SphereGeometry(r,16,16),this.mat);
+    this.mesh.visible=false;
+    scene.add(this.mesh);
+  }
+  get position(){return this.mesh.position;}
+  get scale(){return this.mesh.scale;}
+  setOpacity(v){this.mat.opacity=clamp(v,0,1);this.mesh.visible=this.mat.opacity>0.001;return this;}
+}
+
+class SolidLine {
+  constructor(color=CW,opacity=.7){
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
+    this.mat=new THREE.LineBasicMaterial({color,transparent:true,opacity,depthWrite:false});
+    this.mesh=new THREE.Line(geo,this.mat);
+    this.mesh.visible=opacity>0.001;
+    scene.add(this.mesh);
+  }
+  setPoints(x1,y1,z1,x2,y2,z2){
+    const a=this.mesh.geometry.attributes.position.array;
+    a[0]=x1;a[1]=y1;a[2]=z1;a[3]=x2;a[4]=y2;a[5]=z2;
+    this.mesh.geometry.attributes.position.needsUpdate=true;
+    this.mesh.geometry.computeBoundingSphere();return this;
+  }
+  setOpacity(v){this.mat.opacity=clamp(v,0,1);this.mesh.visible=this.mat.opacity>0.001;return this;}
+}
+
+class DashLine {
+  constructor(color=CW,opacity=.35){
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
+    this.mat=new THREE.LineDashedMaterial({color,transparent:true,opacity,dashSize:.12,gapSize:.07,depthWrite:false});
+    this.mesh=new THREE.LineSegments(geo,this.mat);
+    this.mesh.visible=opacity>0.001;
+    scene.add(this.mesh);
+  }
+  setPoints(x1,y1,z1,x2,y2,z2){
+    const a=this.mesh.geometry.attributes.position.array;
+    a[0]=x1;a[1]=y1;a[2]=z1;a[3]=x2;a[4]=y2;a[5]=z2;
+    this.mesh.geometry.attributes.position.needsUpdate=true;
+    this.mesh.geometry.computeBoundingSphere();
+    this.mesh.computeLineDistances();return this;
+  }
+  setOpacity(v){this.mat.opacity=clamp(v,0,1);this.mesh.visible=this.mat.opacity>0.001;return this;}
+}
+
+/* Arrow: shaft (cylinder) + head (cone) in a Group, all one material.
+   AxisArrow extends it with growTo(t) for animated axis growth.        */
+const _UP=new THREE.Vector3(0,1,0);
+class Arrow {
+  constructor(color,dir,{sR=.02,sH=.9,hR=.06,hH=.2,segs=8}={}){
+    this.mat=new THREE.MeshBasicMaterial({color,transparent:true,opacity:0,depthWrite:false});
+    this.group=new THREE.Group();
+    const shaft=new THREE.Mesh(new THREE.CylinderGeometry(sR,sR,sH,6),this.mat);
+    shaft.position.y=sH/2;
+    const head=new THREE.Mesh(new THREE.ConeGeometry(hR,hH,segs),this.mat);
+    head.position.y=sH+hH/2;
+    this.group.add(shaft,head);
+    this.group.quaternion.setFromUnitVectors(_UP,dir.clone().normalize());
+    this.group.visible=false;
+    scene.add(this.group);
+  }
+  get position(){return this.group.position;}
+  setOpacity(v){this.mat.opacity=clamp(v,0,1);this.group.visible=this.mat.opacity>0.001;return this;}
+  setPosition(v){this.group.position.copy(v);return this;}
+}
+
+class AxisArrow {
+  constructor(color,dir,len=3.2){
+    this.mat=new THREE.MeshBasicMaterial({color,transparent:true,opacity:0,depthWrite:false});
+    this.group=new THREE.Group();
+    // shaft height=1 so scale.y == world length
+    this._shaft=new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,1,6),this.mat);
+    this._shaft.position.y=0.5;
+    this._head=new THREE.Mesh(new THREE.ConeGeometry(.07,.22,8),this.mat);
+    this._head.position.y=1.11;
+    this.group.add(this._shaft,this._head);
+    this.group.quaternion.setFromUnitVectors(_UP,dir.clone().normalize());
+    this.group.visible=false;
+    scene.add(this.group);
+    this.len=len;
+  }
+  growTo(t){
+    const tc=clamp(t,0,1),l=this.len*tc;
+    this._shaft.scale.y=Math.max(l+.12,.001);
+    this._shaft.position.y=(l+.12)/2;
+    this._head.position.y=l+.11;
+    this.setOpacity(tc*.9);return this;
+  }
+  get position(){return this.group.position;}
+  setOpacity(v){this.mat.opacity=clamp(v,0,1);this.group.visible=this.mat.opacity>0.001;return this;}
+}
+
+/* ══ Geometry ══════════════════════════════════════════════════════ */
+
+const pA=new Point();pA.position.set(0,0,0);
+const pB=new Point();
+const pC=new Point();pC.position.set(.5,0,2.5);
+const pD=new Point();pD.position.set(1.5,1,.5);
+const pE=new Point(),pF=new Point(),pG=new Point(),pH=new Point();
+
+const lineAB=new SolidLine(CW,.7);
+const lineBC=new SolidLine(CW,.7),lineCD=new SolidLine(CW,.7),lineDA=new SolidLine(CW,.7);
+const lineAE=new SolidLine(CW,.7),lineBF=new SolidLine(CW,.7);
+const lineCG=new SolidLine(CW,.7),lineDH=new SolidLine(CW,.7);
+const lineEF=new SolidLine(CW,.7),lineFG=new SolidLine(CW,.7);
+const lineGH=new SolidLine(CW,.7),lineHE=new SolidLine(CW,.7);
+
+const axX =new AxisArrow(CX,new THREE.Vector3( 1,0,0));
+const axY =new AxisArrow(CY,new THREE.Vector3( 0,1,0));
+const axZ =new AxisArrow(CZ,new THREE.Vector3( 0,0,1));
+const axXn=new AxisArrow(CX,new THREE.Vector3(-1,0,0),1.2);
+const axYn=new AxisArrow(CY,new THREE.Vector3( 0,-1,0),1.2);
+const axZn=new AxisArrow(CZ,new THREE.Vector3( 0,0,-1),1.2);
+
+const projX=new DashLine(CX),projY=new DashLine(CY),projZ=new DashLine(CZ);
+
+// Movement arrows: B's initial 3D journey
+const arrZ =new Arrow(CZ,new THREE.Vector3( 0,0, 1));
+const arrXn=new Arrow(CX,new THREE.Vector3(-1,0, 0));
+const arrYn=new Arrow(CY,new THREE.Vector3( 0,-1,0));
+// B, D, C flattening step
+const arrB_X=new Arrow(CX,new THREE.Vector3(1,0,0));
+const arrB_Y=new Arrow(CY,new THREE.Vector3(0,1,0));
+const arrB_Z=new Arrow(CZ,new THREE.Vector3(0,0,1));
+const arrD_X=new Arrow(CX,new THREE.Vector3(1,0,0));
+const arrD_Y=new Arrow(CY,new THREE.Vector3(0,-1,0));
+const arrD_Z=new Arrow(CZ,new THREE.Vector3(0,0,-1));
+const arrC_X=new Arrow(CX,new THREE.Vector3(1,0,0));
+const arrC_Z=new Arrow(CZ,new THREE.Vector3(0,0,1));
+// Cube expansion
+const arrE_Y=new Arrow(CY,new THREE.Vector3(0,1,0));
+const arrF_Y=new Arrow(CY,new THREE.Vector3(0,1,0));
+const arrG_Y=new Arrow(CY,new THREE.Vector3(0,1,0));
+const arrH_Y=new Arrow(CY,new THREE.Vector3(0,1,0));
+
+const planeMat=new THREE.MeshBasicMaterial({color:CW,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false});
+const planeGeo=new THREE.BufferGeometry();
+planeGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(18),3));
+const planeMesh=new THREE.Mesh(planeGeo,planeMat);
+planeMesh.visible=false;
+scene.add(planeMesh);
+
+const volumeMat=new THREE.MeshBasicMaterial({color:CW,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false});
+const volumeGeo=new THREE.BufferGeometry();
+volumeGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(90),3));
+const volumeMesh=new THREE.Mesh(volumeGeo,volumeMat);
+volumeMesh.visible=false;
+scene.add(volumeMesh);
+
+/* ── labels ── */
+const el={
+  a:document.getElementById('la'),b:document.getElementById('lb'),
+  c:document.getElementById('lc'),d:document.getElementById('ld'),
+  e:document.getElementById('le'),f:document.getElementById('lf'),
+  g:document.getElementById('lg'),h:document.getElementById('lh'),
+
+  x:document.getElementById('lx'),y:document.getElementById('ly'),z:document.getElementById('lz'),
+  cx:document.getElementById('cx'),cy:document.getElementById('cy'),cz:document.getElementById('cz'),
+  plane:document.getElementById('lplane'),hint:document.getElementById('hint'),
+  clen:document.getElementById('clen'),
+  popup:document.getElementById('intro-popup')
+};
+const _v=new THREE.Vector3();
+function scr(w){_v.copy(w).project(cam);return{x:(_v.x*.5+.5)*innerWidth,y:(_v.y*-.5+.5)*innerHeight};}
+function pl(e,w,ox=10,oy=0){const s=scr(w);e.style.left=(s.x+ox)+'px';e.style.top=(s.y+oy)+'px';}
+function op(e,v){e.style.opacity=String(clamp(v,0,1));}
+
+let sp=0,tp=0;
+window.addEventListener('scroll',()=>{
+  tp=document.body.scrollHeight>innerHeight?(scrollY/(document.body.scrollHeight-innerHeight))*2.0:0;
+},{passive:true});
+window.addEventListener('resize',()=>{
+  cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();R.setSize(innerWidth,innerHeight);
+});
+
+/* ══════════════════════════════════════════
+   BEAT TIMELINE  (scroll 0–100%)
+
+   0–6%    A appears (zoomed in)
+   6–18%   Zoom out to flat 2D view
+   18–26%  B appears in 2D (z=0)
+   26–36%  Line draws A→B (2D, pen stroke)
+   36–48%  X axis draws, then Y axis draws (2D, both with arrowheads)
+   48–60%  Camera tilts to 3D — Z axis grows during tilt
+   60–68%  Projection dashed lines appear
+   68–74%  B moves in Z (camera follows), then camera rotates
+   74–78%  B moves in X, camera rotates after
+   78–82%  B moves in Y, camera rotates after
+   82–88%  Clean up — just A, B, line
+   88–94%  C, D + extra lines
+   94–100% Filled plane
+══════════════════════════════════════════ */
+
+function tick(){
+  requestAnimationFrame(tick);
+  sp+=(tp-sp)*.06;
+  const p=sp;
+  el.hint.style.opacity=p<.01?'1':'0';
+  
+  if(p < .01) {
+    el.popup.style.opacity = '1';
+    el.popup.style.transform = 'translate(-50%, -50%) scale(1)';
+    el.popup.style.pointerEvents = 'auto';
+    el.popup.style.filter = 'blur(0px)';
+  } else {
+    el.popup.style.opacity = '0';
+    el.popup.style.transform = 'translate(-50%, -50%) scale(0.95)';
+    el.popup.style.pointerEvents = 'none';
+    el.popup.style.filter = 'blur(4px)';
+  }
+
+  const tB_X = eio(rng(p, 1.00, 1.04));
+  const tB_Y = eio(rng(p, 1.05, 1.09));
+  const tB_Z = eio(rng(p, 1.10, 1.14));
+
+  const tD_X = eio(rng(p, 1.15, 1.19));
+  const tD_Y = eio(rng(p, 1.20, 1.24));
+  const tD_Z = eio(rng(p, 1.25, 1.29));
+
+  const tC_X = eio(rng(p, 1.30, 1.34));
+  const tC_Z = eio(rng(p, 1.35, 1.39));
+
+  /* ── old B position ── */
+  const Bz_old=p<.70?0   :p<.74?lerp(0, 2,eio(rng(p,.70,.74))):2;
+  const Bx_old=p<.76?2   :p<.79?lerp(2,-1,eio(rng(p,.76,.79))):-1;
+  const By_old=p<.81?1.5 :p<.84?lerp(1.5,-1,eio(rng(p,.81,.84))):-1;
+  
+  const Bx = lerp(Bx_old, 0, tB_X);
+  const By = lerp(By_old, 0, tB_Y);
+  const Bz = lerp(Bz_old, 3, tB_Z);
+  pB.position.set(Bx,By,Bz);
+
+  const Dx = lerp(1.5, 3, tD_X);
+  const Dy = lerp(1, 0, tD_Y);
+  const Dz = lerp(.5, 0, tD_Z);
+  pD.position.set(Dx, Dy, Dz);
+
+  const Cx = lerp(.5, 3, tC_X);
+  const Cy = 0;
+  const Cz = lerp(2.5, 3, tC_Z);
+  pC.position.set(Cx, Cy, Cz);
+
+  /* Cube Expansion */
+  const tGrow = eio(rng(p, 1.42, 1.48));
+  const tTop = eio(rng(p, 1.49, 1.55));
+  
+  const Ey = lerp(0, 3, tGrow); pE.position.set(0, Ey, 0);
+  const Fy = lerp(By, By + 3, tGrow); pF.position.set(Bx, Fy, Bz);
+  const Gy = lerp(Cy, Cy + 3, tGrow); pG.position.set(Cx, Gy, Cz);
+  const Hy = lerp(Dy, Dy + 3, tGrow); pH.position.set(Dx, Hy, Dz);
+
+  const showTop = tGrow > 0 ? 1 : 0;
+  const _cubeOp = lerp(0, .9, eoq(rng(p, 1.40, 1.43)));
+  pE.setOpacity(_cubeOp); pF.setOpacity(_cubeOp);
+  pG.setOpacity(_cubeOp); pH.setOpacity(_cubeOp);
+
+  op(el.e, rng(p, 1.41, 1.44));
+  op(el.f, rng(p, 1.41, 1.44));
+  op(el.g, rng(p, 1.41, 1.44));
+  op(el.h, rng(p, 1.41, 1.44));
+
+  /* Beat 1: A appears */
+  pA.setOpacity(lerp(0,.9,eoq(rng(p,0,.06))));
+  op(el.a,rng(p,.03,.10));
+
+  /* Beat 2: B appears in 2D */
+  pB.setOpacity(lerp(0,.9,eoq(rng(p,.18,.26))));
+  op(el.b,rng(p,.20,.28));
+
+  /* Beat 3: Line draws (pen stroke) — only in 2D phase */
+  {
+    const t=eoq(rng(p,.26,.35));
+    lineAB.setOpacity(lerp(0,.7,Math.min(t*4,1)));
+    if(p<.35) lineAB.setPoints(0,0,0,lerp(0,Bx,t),lerp(0,By,t),0);
+    if(p>.32&&p<.38){
+      const pulse=1+.16*Math.sin(rng(p,.32,.38)*Math.PI);
+      pA.scale.setScalar(pulse);pB.scale.setScalar(pulse);
+    } else {pA.scale.setScalar(1);pB.scale.setScalar(1);}
+  }
+
+  /* Beat 4: X then Y axes draw in 2D view */
+  {
+    const tX=rng(p,.36,.44),tY=rng(p,.41,.49);
+    axX.growTo(tX);axXn.growTo(tX*.6);
+    axY.growTo(tY);axYn.growTo(tY*.6);
+    op(el.x,rng(p,.41,.48));
+    op(el.y,rng(p,.46,.53));
+  }
+
+  /* Beat 5: Camera tilts to 3D (48–60%) — Z axis grows during tilt */
+  {
+    const tZ=rng(p,.50,.60);
+    axZ.growTo(tZ);axZn.growTo(tZ*.6);
+    op(el.z,rng(p,.54,.62));
+  }
+
+  /* Dashed lines and measurements */
+  const projFadeOut=1-rng(p,.82,.88); // fades out before C and D appear
+
+  // projX: foot is on X-axis at (Bx,0,0), draws vertically up to B
+  const tPX = eoq(rng(p,.44,.49));
+  projX.setOpacity(lerp(0,.35,tPX)*projFadeOut);
+  projX.setPoints(Bx,0,0,Bx,lerp(0,By,tPX),0);
+  op(el.cx,tPX*projFadeOut);
+  el.cx.textContent=`x: ${Bx.toFixed(1)}`;
+
+  const tPY = eoq(rng(p,.49,.54));
+  projY.setOpacity(lerp(0,.35,tPY)*projFadeOut);
+  projY.setPoints(0,By,0,lerp(0,Bx,tPY),By,0);
+  op(el.cy,tPY*projFadeOut);
+  el.cy.textContent=`y: ${By.toFixed(1)}`;
+
+  const tPZ = eoq(rng(p,.60,.66));
+  projZ.setOpacity(lerp(0,.35,tPZ)*projFadeOut);
+  projZ.setPoints(0,0,Bz,lerp(0,Bx,tPZ),lerp(0,By,tPZ),Bz);
+  op(el.cz,tPZ*projFadeOut);
+  el.cz.textContent=`z: ${Bz.toFixed(1)}`;
+
+  const lenAB=Math.sqrt(Bx*Bx+By*By+Bz*Bz);
+  const tLen=eoq(rng(p,.32,.38));
+  op(el.clen,Math.max(tLen,tPX)*projFadeOut);
+  el.clen.textContent=`len: ${lenAB.toFixed(2)}`;
+
+  /* Movement arrows — appear just before each move */
+  arrZ.setOpacity(lerp(0,.7,rng(p,.68,.70))*(1-rng(p,.74,.76)));
+  arrXn.setOpacity(lerp(0,.7,rng(p,.74,.76))*(1-rng(p,.79,.81)));
+  arrYn.setOpacity(lerp(0,.7,rng(p,.79,.81))*(1-rng(p,.84,.86)));
+  arrZ.position.copy(pB.position).add(new THREE.Vector3(0,0,.25));
+  arrXn.position.copy(pB.position).add(new THREE.Vector3(-.25,0,0));
+  arrYn.position.copy(pB.position).add(new THREE.Vector3(0,-.25,0));
+
+  /* Always keep AB line current */
+  lineAB.setPoints(0,0,0,Bx,By,Bz);
+
+  /* Beat 9: C, D + extra lines */
+  {
+    const tC=eoq(rng(p,.88,.93));
+    pC.setOpacity(lerp(0,.9,tC)); pD.setOpacity(lerp(0,.9,tC));
+    op(el.c,rng(p,.89,.94));op(el.d,rng(p,.89,.94));
+    const tBC=eoq(rng(p,.90,.94)),tCD=eoq(rng(p,.91,.95)),tDA=eoq(rng(p,.92,.96));
+    const C=pC.position,D=pD.position;
+    lineBC.setOpacity(lerp(0,.7,Math.min(tBC*5,1)));
+    lineBC.setPoints(Bx,By,Bz,lerp(Bx,C.x,tBC),lerp(By,C.y,tBC),lerp(Bz,C.z,tBC));
+    lineCD.setOpacity(lerp(0,.7,Math.min(tCD*5,1)));
+    lineCD.setPoints(C.x,C.y,C.z,lerp(C.x,D.x,tCD),lerp(C.y,D.y,tCD),lerp(C.z,D.z,tCD));
+    lineDA.setOpacity(lerp(0,.7,Math.min(tDA*5,1)));
+    lineDA.setPoints(D.x,D.y,D.z,lerp(D.x,0,tDA),lerp(D.y,0,tDA),lerp(D.z,0,tDA));
+  }
+
+  /* Beat 10: Filled plane */
+  {
+    planeMat.opacity=lerp(0,.13,eoq(rng(p,.95,1.0)));
+    planeMesh.visible=planeMat.opacity>0.001;
+    op(el.plane,rng(p,.96,1.0));
+    const C=pC.position,D=pD.position,pa=planeGeo.attributes.position.array;
+    pa[0]=0;pa[1]=0;pa[2]=0;pa[3]=Bx;pa[4]=By;pa[5]=Bz;pa[6]=C.x;pa[7]=C.y;pa[8]=C.z;
+    pa[9]=0;pa[10]=0;pa[11]=0;pa[12]=C.x;pa[13]=C.y;pa[14]=C.z;pa[15]=D.x;pa[16]=D.y;pa[17]=D.z;
+    planeGeo.attributes.position.needsUpdate=true;planeGeo.computeBoundingSphere();
+  }
+
+  const opB_X=lerp(0,.7,rng(p,.98,1.00))*(1-rng(p,1.04,1.05));
+  arrB_X.setOpacity(opB_X); arrB_X.position.copy(pB.position).add(new THREE.Vector3(.25,0,0));
+  const opB_Y=lerp(0,.7,rng(p,1.03,1.05))*(1-rng(p,1.09,1.10));
+  arrB_Y.setOpacity(opB_Y); arrB_Y.position.copy(pB.position).add(new THREE.Vector3(0,.25,0));
+  const opB_Z=lerp(0,.7,rng(p,1.08,1.10))*(1-rng(p,1.14,1.15));
+  arrB_Z.setOpacity(opB_Z); arrB_Z.position.copy(pB.position).add(new THREE.Vector3(0,0,.25));
+
+  /* Movement arrows for D */
+  const opD_X=lerp(0,.7,rng(p,1.13,1.15))*(1-rng(p,1.19,1.20));
+  arrD_X.setOpacity(opD_X); arrD_X.position.copy(pD.position).add(new THREE.Vector3(.25,0,0));
+  const opD_Y=lerp(0,.7,rng(p,1.18,1.20))*(1-rng(p,1.24,1.25));
+  arrD_Y.setOpacity(opD_Y); arrD_Y.position.copy(pD.position).add(new THREE.Vector3(0,-.25,0));
+  const opD_Z=lerp(0,.7,rng(p,1.23,1.25))*(1-rng(p,1.29,1.30));
+  arrD_Z.setOpacity(opD_Z); arrD_Z.position.copy(pD.position).add(new THREE.Vector3(0,0,-.25));
+
+  /* Movement arrows for C */
+  const opC_X=lerp(0,.7,rng(p,1.28,1.30))*(1-rng(p,1.34,1.35));
+  arrC_X.setOpacity(opC_X); arrC_X.position.copy(pC.position).add(new THREE.Vector3(.25,0,0));
+  const opC_Z=lerp(0,.7,rng(p,1.33,1.35))*(1-rng(p,1.39,1.40));
+  arrC_Z.setOpacity(opC_Z); arrC_Z.position.copy(pC.position).add(new THREE.Vector3(0,0,.25));
+
+  /* Vertical Lines for Cube */
+  lineAE.setOpacity(lerp(0,.7,showTop)); lineAE.setPoints(0,0,0,0,Ey,0);
+  lineBF.setOpacity(lerp(0,.7,showTop)); lineBF.setPoints(Bx,By,Bz,Bx,Fy,Bz);
+  lineCG.setOpacity(lerp(0,.7,showTop)); lineCG.setPoints(Cx,Cy,Cz,Cx,Gy,Cz);
+  lineDH.setOpacity(lerp(0,.7,showTop)); lineDH.setPoints(Dx,Dy,Dz,Dx,Hy,Dz);
+
+  /* Top Edges for Cube */
+  const E=pE.position,F=pF.position,G=pG.position,H=pH.position;
+  const _top=lerp(0,.7,Math.min(tTop*5,1));
+  lineEF.setOpacity(_top); lineEF.setPoints(E.x,E.y,E.z,lerp(E.x,F.x,tTop),lerp(E.y,F.y,tTop),lerp(E.z,F.z,tTop));
+  lineFG.setOpacity(_top); lineFG.setPoints(F.x,F.y,F.z,lerp(F.x,G.x,tTop),lerp(F.y,G.y,tTop),lerp(F.z,G.z,tTop));
+  lineGH.setOpacity(_top); lineGH.setPoints(G.x,G.y,G.z,lerp(G.x,H.x,tTop),lerp(G.y,H.y,tTop),lerp(G.z,H.z,tTop));
+  lineHE.setOpacity(_top); lineHE.setPoints(H.x,H.y,H.z,lerp(H.x,E.x,tTop),lerp(H.y,E.y,tTop),lerp(H.z,E.z,tTop));
+
+  /* Mesh Cube Faces */
+  {
+    volumeMat.opacity=lerp(0,.08,eoq(rng(p,1.55,1.61)));
+    volumeMesh.visible=volumeMat.opacity>0.001;
+    const pa=volumeGeo.attributes.position.array;
+    let i=0;
+    const addTri=(p1,p2,p3)=>{
+      pa[i++]=p1.x;pa[i++]=p1.y;pa[i++]=p1.z;
+      pa[i++]=p2.x;pa[i++]=p2.y;pa[i++]=p2.z;
+      pa[i++]=p3.x;pa[i++]=p3.y;pa[i++]=p3.z;
+    };
+    addTri(E,F,G);addTri(E,G,H);
+    addTri(pA.position,pB.position,F);addTri(pA.position,F,E);
+    addTri(pB.position,pC.position,G);addTri(pB.position,G,F);
+    addTri(pC.position,pD.position,H);addTri(pC.position,H,G);
+    addTri(pD.position,pA.position,E);addTri(pD.position,E,H);
+    volumeGeo.attributes.position.needsUpdate=true;
+    volumeGeo.computeBoundingSphere();
+  }
+
+  /* Growth Arrows */
+  const opGrow=lerp(0,.7,rng(p,1.40,1.42))*(1-rng(p,1.48,1.50));
+  arrE_Y.setOpacity(opGrow); arrE_Y.position.copy(pE.position).add(new THREE.Vector3(0,.25,0));
+  arrF_Y.setOpacity(opGrow); arrF_Y.position.copy(pF.position).add(new THREE.Vector3(0,.25,0));
+  arrG_Y.setOpacity(opGrow); arrG_Y.position.copy(pG.position).add(new THREE.Vector3(0,.25,0));
+  arrH_Y.setOpacity(opGrow); arrH_Y.position.copy(pH.position).add(new THREE.Vector3(0,.25,0));
+
+  /* ── CAMERA ──
+     Phase 1 (0–48%)  : 2D front view — camera looks straight at XY plane
+     Phase 2 (48–60%) : tilt from 2D → 3D isometric
+     Phase 3 (60%+)   : settled 3D, plus orbit when B moves then inspects
+
+     Orbit: camera FOLLOWS B as it moves (tracks), then ROTATES after it stops.
+  */
+  {
+    // Home position
+    if(p<.07){
+      hPos.copy(C_INTRO.pos);hLook.copy(C_INTRO.look);
+    } else if(p<.18){
+      const t=eio(rng(p,.07,.18));
+      hPos.lerpVectors(C_INTRO.pos,C2D.pos,t);
+      hLook.lerpVectors(C_INTRO.look,C2D.look,t);
+    } else if(p<.60){
+      // Stay in 2D, then at 48% start tilting to 3D
+      const t=eio(rng(p,.48,.60));
+      hPos.lerpVectors(C2D.pos,C3D.pos,t);
+      hLook.lerpVectors(C2D.look,C3D.look,t);
+    } else {
+      hPos.copy(C3D.pos);hLook.copy(C3D.look);
+    }
+
+    // Orbit: continuous angle accumulates AFTER each move completes
+    let angle=ORB_BASE;
+    if(p>=.74) angle+=rng(p,.74,.77)*Math.PI*.45;   // post-Z rotate
+    if(p>=.79) angle+=rng(p,.79,.82)*Math.PI*.38;   // post-X rotate
+    if(p>=.84) angle+=rng(p,.84,.87)*Math.PI*.38;   // post-Y rotate
+    if(p>=.95) angle+=rng(p,.95,.99)*Math.PI*.40;   // final
+    if(p>=1.41) angle+=rng(p,1.41,1.46)*Math.PI*.15; // post-flatten rotate
+    if(p>=1.62) angle+=rng(p,1.62,1.68)*Math.PI*.25; // post-cube rotate
+
+    // Orbit center follows B
+    const ox=lerp(0,Bx,.45),oy=lerp(0,By,.3),oz=lerp(0,Bz,.45);
+    oPos.set(ox+ORB_R*Math.sin(angle),ORB_Y,oz+ORB_R*Math.cos(angle));
+    oLook.set(ox,oy,oz);
+
+    // Orbit weight — enters at 60% (3D transition done), stays there
+    const wantOrbit=p>=.60?1:0;
+    orbitW+=(wantOrbit-orbitW)*.04;
+
+    fPos.lerpVectors(hPos,oPos,orbitW);
+    fLook.lerpVectors(hLook,oLook,orbitW);
+  }
+
+  camP.lerp(fPos,.055);camL.lerp(fLook,.055);
+  cam.position.copy(camP);cam.lookAt(camL);
+
+  /* ── labels ── */
+  pl(el.a,new THREE.Vector3(0,0,0),10,-26);
+  pl(el.b,pB.position,10,-26);
+  pl(el.c,pC.position,10,-18);
+  pl(el.d,pD.position,10,-18);
+  pl(el.e,pE.position,10,-18);
+  pl(el.f,pF.position,10,-18);
+  pl(el.g,pG.position,10,-18);
+  pl(el.h,pH.position,10,-18);
+  pl(el.x,new THREE.Vector3(3.4,0,0),6,-6);
+  pl(el.y,new THREE.Vector3(0,3.4,0),6,-6);
+  pl(el.z,new THREE.Vector3(0,0,3.4),6,-6);
+  pl(el.cx,new THREE.Vector3(Bx,By*.5,0),6,0);
+  pl(el.cy,new THREE.Vector3(Bx*.5,By,0),4,-14);
+  pl(el.cz,new THREE.Vector3(Bx*.5,By*.5,Bz),6,0);
+  const C=pC.position,D=pD.position;
+  pl(el.clen,new THREE.Vector3(Bx*.5,By*.5,Bz*.5),15,-15);
+  pl(el.plane,new THREE.Vector3((Bx+C.x+D.x)/4,(By+C.y+D.y)/4,(Bz+C.z+D.z)/4),0,0);
+
+  R.render(scene,cam);
+}
+tick();
+</script>
+</body>
+</html>

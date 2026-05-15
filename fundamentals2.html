@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Fundamentals of 3D — CreateAccess</title>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#f9f9f7;font-family:'Lexend',sans-serif}
+#cv{position:fixed;inset:0;z-index:0;display:block;cursor:default}
+
+/* progress — 2px top */
+#prog{position:fixed;top:0;left:0;right:0;height:2px;z-index:90;background:#ebebeb}
+#prog-fill{height:100%;width:0%;background:#FF9022;transition:width 1s cubic-bezier(.4,0,.2,1)}
+
+/* caption */
+#caption{
+  position:fixed;bottom:38px;left:40px;z-index:90;
+  max-width:400px;pointer-events:none;
+}
+#cap-title{
+  font-size:15px;font-weight:500;color:#111;line-height:1.25;
+  letter-spacing:-.02em;margin-bottom:5px;
+  opacity:0;transition:opacity .5s ease;
+}
+#cap-body{
+  font-size:12px;font-weight:300;color:#555;line-height:1.75;
+  opacity:0;transition:opacity .5s ease .07s;
+}
+#cap-title.on{opacity:1}#cap-body.on{opacity:1}
+#cap-body b{color:#111;font-weight:400}
+#cap-body .cx{color:#b03a35}#cap-body .cy{color:#267326}
+#cap-body .cz{color:#2f5f99}#cap-body .co{color:#FF9022}
+#cap-body .cg{color:#00AA00}
+
+/* ── in-scene action label ── */
+/* These are HTML divs positioned by JS projection — feel like scene notation */
+.action-lbl{
+  position:fixed;z-index:50;
+  font-family:'DM Mono',monospace;font-size:11px;font-weight:300;
+  color:#888;letter-spacing:.05em;
+  cursor:pointer;
+  opacity:0;transition:opacity .5s ease, color .2s;
+  white-space:nowrap;
+  display:flex;align-items:center;gap:5px;
+  pointer-events:none;
+}
+.action-lbl.on{opacity:1;pointer-events:all}
+.action-lbl:hover{color:#FF9022}
+.action-lbl .dot{
+  width:6px;height:6px;border-radius:50%;
+  background:currentColor;flex-shrink:0;
+  transition:transform .2s;
+}
+.action-lbl:hover .dot{transform:scale(1.4)}
+
+/* world labels */
+.wlbl{
+  position:fixed;z-index:40;pointer-events:none;
+  font-family:'DM Mono',monospace;font-size:11px;font-weight:300;
+  letter-spacing:.02em;white-space:nowrap;
+  opacity:0;transition:opacity .4s ease;
+}
+.wlbl.on{opacity:1}
+.wlbl.coord{color:#444;font-size:11px}
+.wlbl.ax{color:#b03a35}.wlbl.ay{color:#267326}.wlbl.az{color:#2f5f99}
+.wlbl.delta{font-size:10.5px}
+.wlbl.dist-lbl{color:#666;font-size:11px}
+.wlbl.pt-name{font-family:'Lexend',sans-serif;font-size:13px;font-weight:500;color:#111}
+
+/* ── 3D depth scrubber ── */
+#scrubber-wrap{
+  position:fixed;right:32px;top:50%;transform:translateY(-50%);
+  z-index:60;width:36px;
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  opacity:0;transition:opacity .6s ease;pointer-events:none;
+}
+#scrubber-wrap.on{opacity:1;pointer-events:all}
+#scrubber-label{
+  font-family:'DM Mono',monospace;font-size:9px;font-weight:300;
+  color:#aaa;letter-spacing:.08em;text-transform:lowercase;
+  text-align:center;line-height:1.4;
+}
+#scrubber-track{
+  width:2px;height:160px;background:#e0e0e0;border-radius:2px;
+  position:relative;cursor:ns-resize;
+}
+#scrubber-thumb{
+  position:absolute;left:50%;transform:translateX(-50%);
+  width:10px;height:10px;border-radius:50%;
+  background:#FF9022;top:0%;
+  transition:top .05s;
+  pointer-events:none;
+}
+#scrubber-track::before{
+  content:'';position:absolute;left:50%;transform:translateX(-50%);
+  top:0;width:2px;background:#FF9022;border-radius:2px;
+  height:0%;transition:height .05s;
+}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="prog"><div id="prog-fill"></div></div>
+
+<!-- caption -->
+<div id="caption">
+  <div id="cap-title"></div>
+  <div id="cap-body"></div>
+</div>
+
+<!-- in-scene action labels (positioned by JS each frame) -->
+<div class="action-lbl" id="act-place-b" onclick="onAction('place_b')">
+  <span class="dot"></span>place point B here
+</div>
+<div class="action-lbl" id="act-connect" onclick="onAction('connect')">
+  <span class="dot"></span>connect the points
+</div>
+<div class="action-lbl" id="act-distances" onclick="onAction('distances')">
+  <span class="dot"></span>show distances
+</div>
+<div class="action-lbl" id="act-deeper" onclick="onAction('deeper')">
+  <span class="dot"></span>drag to go deeper ↓
+</div>
+<div class="action-lbl" id="act-add-c" onclick="onAction('add_c')">
+  <span class="dot"></span>click to place point C
+</div>
+<div class="action-lbl" id="act-add-d" onclick="onAction('add_d')">
+  <span class="dot"></span>click to place point D
+</div>
+<div class="action-lbl" id="act-lift" onclick="onAction('lift')">
+  <span class="dot"></span>lift to build a cube ↑
+</div>
+<div class="action-lbl" id="act-transform" onclick="onAction('transform')">
+  <span class="dot"></span>add transform handles
+</div>
+
+<!-- world labels -->
+<div class="wlbl pt-name" id="lA">A</div>
+<div class="wlbl pt-name" id="lB">B</div>
+<div class="wlbl pt-name" id="lC">C</div>
+<div class="wlbl pt-name" id="lD">D</div>
+<div class="wlbl coord" id="coordA"></div>
+<div class="wlbl coord" id="coordB"></div>
+<div class="wlbl ax" id="lX">x</div>
+<div class="wlbl ay" id="lY">y</div>
+<div class="wlbl az" id="lZ">z</div>
+<div class="wlbl delta ax" id="ldx"></div>
+<div class="wlbl delta ay" id="ldy"></div>
+<div class="wlbl delta ax" id="ldx3"></div>
+<div class="wlbl delta ay" id="ldy3"></div>
+<div class="wlbl delta az" id="ldz1"></div>
+<div class="wlbl dist-lbl" id="ldist"></div>
+
+<!-- depth scrubber -->
+<div id="scrubber-wrap">
+  <div id="scrubber-label">drag<br>down</div>
+  <div id="scrubber-track">
+    <div id="scrubber-thumb"></div>
+  </div>
+</div>
+
+<script type="importmap">{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"
+}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ═══════════════════════════════
+   MATH / UTILS
+═══════════════════════════════ */
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+const easeOut3 = t => 1-Math.pow(1-t,3);
+const V3 = (x=0,y=0,z=0) => new THREE.Vector3(x,y,z);
+const tmpV = new THREE.Vector3();
+
+function mkSpring(v=0,k=200,d=22){
+  let val=v,vel=0;
+  return{
+    get:()=>val,
+    tick(tgt,dt){const f=k*(tgt-val)-d*vel;vel+=f*dt;val+=vel*dt;return val;},
+    set(x){val=x;vel=0;}
+  };
+}
+
+/* ═══════════════════════════════
+   RENDERER
+═══════════════════════════════ */
+const cv=document.getElementById('cv');
+const W=()=>window.innerWidth, H=()=>window.innerHeight;
+
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(W(),H());
+renderer.setClearColor(0xf9f9f7,1);
+
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(44,W()/H(),.01,500);
+camera.up.set(0,1,0);
+
+const orbit=new OrbitControls(camera,cv);
+orbit.enableDamping=true; orbit.dampingFactor=.07;
+orbit.enablePan=false; orbit.minDistance=4; orbit.maxDistance=40;
+orbit.enabled=false;
+
+const clock=new THREE.Clock();
+
+/* ═══════════════════════════════
+   CAMERA
+═══════════════════════════════ */
+// Flat 2D: camera at z=16 looking straight at XY plane
+// After scrubber: lerps to iso
+const CAM_FLAT = { pos:V3(0,0,16), look:V3(0,0,0) };
+const CAM_ISO  = { pos:V3(10,9,11), look:V3(1,.5,1) };
+const CAM_ISO2 = { pos:V3(9,9,12),  look:V3(0,.5,1) };
+const CAM_CUBE = { pos:V3(6.5,6,7.5),look:V3(0,1.2,0) };
+
+const camCurP=V3(0,0,16), camCurL=V3(0,0,0);
+let camTgtP=V3(0,0,16),   camTgtL=V3(0,0,0);
+let orbitMode=false; // true once scrubber completes
+
+function setCam(preset,instant=false){
+  camTgtP.copy(preset.pos);
+  camTgtL.copy(preset.look);
+  if(instant){
+    camCurP.copy(preset.pos);
+    camCurL.copy(preset.look);
+    camera.position.copy(camCurP);
+    camera.lookAt(camCurL);
+    orbit.target.copy(camCurL);
+  }
+}
+
+function tickCam(dt){
+  if(orbitMode){orbit.update();return;}
+  const s=clamp(.03+dt*.8,.03,.15);
+  camCurP.lerp(camTgtP,s);
+  camCurL.lerp(camTgtL,s);
+  camera.position.copy(camCurP);
+  camera.lookAt(camCurL);
+  orbit.target.copy(camCurL);
+}
+
+/* ═══════════════════════════════
+   MATERIALS
+═══════════════════════════════ */
+const COL={
+  dark:0x111111,org:0xFF9022,
+  X:0xb03a35,Y:0x267326,Z:0x2f5f99,
+  grid:0xdddddd,gridMin:0xeeeeee,
+};
+
+function mSolid(col,op=1){
+  return new THREE.MeshBasicMaterial({color:col,transparent:op<1,opacity:op,
+    side:THREE.DoubleSide,depthWrite:false});
+}
+function mLine(col,op=1){
+  return new THREE.LineBasicMaterial({color:col,transparent:op<1,opacity:op,depthWrite:false});
+}
+function mDash(col,op=.65){
+  return new THREE.LineDashedMaterial({color:col,transparent:op<1,opacity:op,
+    dashSize:.18,gapSize:.1,depthWrite:false});
+}
+
+/* ═══════════════════════════════
+   SCENE HELPERS
+═══════════════════════════════ */
+function mkLineObj(col,op=1){
+  const g=new THREE.BufferGeometry().setFromPoints([V3(),V3(1,0,0)]);
+  const l=new THREE.Line(g,mLine(col,op));
+  l.visible=false;scene.add(l);return l;
+}
+function mkDashObj(col,op=.65){
+  const g=new THREE.BufferGeometry().setFromPoints([V3(),V3(1,0,0)]);
+  const l=new THREE.LineSegments(g,mDash(col,op));
+  l.visible=false;scene.add(l);return l;
+}
+function setLP(l,p1,p2){
+  const a=l.geometry.attributes.position.array;
+  a[0]=p1.x;a[1]=p1.y;a[2]=p1.z;
+  a[3]=p2.x;a[4]=p2.y;a[5]=p2.z;
+  l.geometry.attributes.position.needsUpdate=true;
+  l.geometry.computeBoundingSphere();
+  if(l.material.isLineDashedMaterial)l.computeLineDistances();
+}
+
+/* animated draw line */
+function mkAnimLine(col,op=.7){
+  const g=new THREE.BufferGeometry().setFromPoints([V3(),V3(1,0,0)]);
+  const m=new THREE.LineDashedMaterial({color:col,opacity:op,transparent:true,
+    dashSize:200,gapSize:.001,depthWrite:false});
+  const l=new THREE.Line(g,m);
+  l.visible=false;scene.add(l);return l;
+}
+function updateAnimLine(l,p1,p2,t){
+  setLP(l,p1,p2);
+  const len=p1.distanceTo(p2);
+  l.material.dashSize=len*clamp(t,0,1)+.001;
+  l.material.gapSize=Math.max(.001,len*(1-clamp(t,0,1))+.001);
+  l.computeLineDistances();
+}
+
+function mkAxis(col,dir,len=5.2){
+  const g=new THREE.Group();g.visible=false;scene.add(g);
+  const sh=new THREE.Mesh(new THREE.CylinderGeometry(.011,.011,len,8),mSolid(col,.55));
+  sh.quaternion.setFromUnitVectors(V3(0,1,0),dir.clone().normalize());
+  sh.position.copy(dir.clone().multiplyScalar(len/2));
+  const hd=new THREE.Mesh(new THREE.ConeGeometry(.046,.155,8),mSolid(col,.72));
+  hd.quaternion.setFromUnitVectors(V3(0,1,0),dir.clone().normalize());
+  hd.position.copy(dir.clone().multiplyScalar(len+.077));
+  g.add(sh,hd);return g;
+}
+
+function mkPt(col,r=.1){
+  const g=new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(r,24,24),mSolid(col)));
+  // invisible larger hit sphere
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(r*4.5,8,8),
+    new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false})));
+  g.visible=false;scene.add(g);return g;
+}
+
+function mkGiz(col,dir){
+  const g=new THREE.Group();g.visible=false;scene.add(g);
+  const sh=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.9,8),mSolid(col,.9));
+  sh.position.y=.45;
+  const hd=new THREE.Mesh(new THREE.ConeGeometry(.068,.21,8),mSolid(col,.96));
+  hd.position.y=1.005;
+  g.add(sh,hd);
+  g.quaternion.setFromUnitVectors(V3(0,1,0),dir.clone().normalize());
+  g._axis=dir.clone().normalize();
+  return g;
+}
+
+/* ═══════════════════════════════
+   SCENE OBJECTS
+═══════════════════════════════ */
+
+/* 2D XY grid — drawn on z=0 plane */
+function mkXYGrid(hs=8){
+  const verts=[],cols=[];
+  const push=(x1,y1,x2,y2,col)=>{
+    verts.push(x1,y1,0,x2,y2,0);
+    const c=new THREE.Color(col);
+    cols.push(c.r,c.g,c.b,c.r,c.g,c.b);
+  };
+  for(let i=-hs;i<=hs;i++){
+    const col=(i%5===0)?COL.grid:COL.gridMin;
+    push(i,-hs,i,hs,col);
+    push(-hs,i,hs,i,col);
+  }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));
+  const mat=new THREE.LineBasicMaterial({vertexColors:true,transparent:true,opacity:.85,depthWrite:false});
+  const m=new THREE.LineSegments(geo,mat);
+  m.position.z=-.01;
+  return m;
+}
+const grid2D=mkXYGrid(); scene.add(grid2D);
+const grid3D=new THREE.GridHelper(28,28,COL.grid,COL.gridMin);
+grid3D.visible=false; scene.add(grid3D);
+
+/* axes */
+const axX=mkAxis(COL.X,V3(1,0,0)); const axY=mkAxis(COL.Y,V3(0,1,0)); const axZ=mkAxis(COL.Z,V3(0,0,1));
+const axXn=mkAxis(0xcccccc,V3(-1,0,0),3); const axYn=mkAxis(0xcccccc,V3(0,-1,0),3); const axZn=mkAxis(0xcccccc,V3(0,0,-1),3);
+const AXES2D=[axX,axY,axXn,axYn];
+const AXES3D=[axX,axY,axZ,axXn,axYn,axZn];
+
+/* points */
+const ptA=mkPt(COL.dark,.1);   ptA.position.set(0,0,0);
+const ptB=mkPt(COL.org,.115);  ptB.position.set(3,2,0);
+const ptC=mkPt(COL.dark,.1);   ptC.position.set(-2,0,2.5);
+const ptD=mkPt(COL.dark,.1);   ptD.position.set(2,0,4);
+const scA=mkSpring(0,240,24),scB=mkSpring(0,240,24),scC=mkSpring(0,240,24),scD=mkSpring(0,240,24);
+
+/* ghost for click placement */
+const clickGhost=new THREE.Mesh(new THREE.SphereGeometry(.09,20,20),mSolid(COL.org,.2));
+clickGhost.visible=false; scene.add(clickGhost);
+
+/* lines */
+const lineAB=mkAnimLine(COL.dark,.65);
+let lineABprog=0, drawLineAnim=false;
+
+const dashLegX=mkDashObj(COL.X);
+const dashLegY=mkDashObj(COL.Y);
+/* 3D coordinate drop — tip-to-tail path:
+   dashDrop : B  → (Bx, 0, Bz)   vertical drop to XZ floor  (gray)
+   dashToX  : (Bx,0,Bz) → (Bx,0,0)  along Z on floor        (blue Z)
+   dashToZ  : (Bx,0,0)  → (0,0,0)   along X on floor        (red X)
+   dashToY  : (Bx,0,Bz) → (Bx,By,Bz) vertical up to B height (green Y) */
+const dashDrop=mkDashObj(0x999999,.45); // vertical drop, neutral gray
+const dashToX =mkDashObj(COL.Z,.55);   // travels along Z axis — blue
+const dashToZ =mkDashObj(COL.X,.55);   // travels along X axis — red
+const dashToY =mkDashObj(COL.Y,.55);   // vertical = Y — green
+let legXvis=false,legYvis=false;
+
+/* triangle */
+const triGeo=new THREE.BufferGeometry();
+triGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(9),3));
+const triMesh=new THREE.Mesh(triGeo,mSolid(COL.org,.08));
+triMesh.visible=false; scene.add(triMesh);
+const eAB=mkLineObj(COL.dark,.4);
+const eAC=mkLineObj(COL.dark,.4);
+const eBC=mkLineObj(COL.dark,.4);
+const normGrp=new THREE.Group(); normGrp.visible=false; scene.add(normGrp);
+normGrp.add(new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.52,8),mSolid(COL.dark,.45)));
+normGrp.children[0].position.y=.26;
+normGrp.add(new THREE.Mesh(new THREE.ConeGeometry(.044,.13,8),mSolid(COL.dark,.58)));
+normGrp.children[1].position.y=.585;
+
+/* quad */
+const quadGeo=new THREE.BufferGeometry();
+quadGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(18),3));
+const quadMesh=new THREE.Mesh(quadGeo,mSolid(COL.org,.06));
+quadMesh.visible=false; scene.add(quadMesh);
+const eCD=mkLineObj(COL.dark,.4);
+const eAD=mkLineObj(COL.dark,.4);
+const eBD=mkLineObj(COL.dark,.4);
+
+/* cube */
+const CSIZ=2.4;
+const cubeGrp=new THREE.Group(); cubeGrp.position.set(0,CSIZ/2,0); cubeGrp.visible=false; scene.add(cubeGrp);
+const cubeWire=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(CSIZ,CSIZ,CSIZ)),mLine(COL.dark,.5));
+const cubeFill=new THREE.Mesh(new THREE.BoxGeometry(CSIZ,CSIZ,CSIZ),mSolid(COL.org,.07));
+cubeFill.visible=false;
+const cubeVertsGrp=new THREE.Group();
+[[1,1,1],[1,1,-1],[1,-1,1],[1,-1,-1],[-1,1,1],[-1,1,-1],[-1,-1,1],[-1,-1,-1]].forEach(v=>{
+  const s=new THREE.Mesh(new THREE.SphereGeometry(.065,12,12),mSolid(COL.dark,.8));
+  s.position.set(v[0]*CSIZ/2,v[1]*CSIZ/2,v[2]*CSIZ/2); cubeVertsGrp.add(s);
+});
+cubeGrp.add(cubeWire,cubeFill,cubeVertsGrp);
+let cubeExtrude=0, startCubeAnim=false;
+function setCubeMode(m){
+  cubeVertsGrp.visible=(m===0);
+  cubeWire.visible=(m<=1);
+  cubeFill.visible=(m===2);
+}
+
+/* gizmos */
+const gizXp=mkGiz(COL.X,V3(1,0,0)),gizXn2=mkGiz(COL.X,V3(-1,0,0));
+const gizYp=mkGiz(COL.Y,V3(0,1,0)),gizYn2=mkGiz(COL.Y,V3(0,-1,0));
+const gizZp=mkGiz(COL.Z,V3(0,0,1)),gizZn2=mkGiz(COL.Z,V3(0,0,-1));
+const GIZMOS=[gizXp,gizXn2,gizYp,gizYn2,gizZp,gizZn2];
+
+/* ═══════════════════════════════
+   STAGE STATE
+═══════════════════════════════ */
+let stage='point_a';
+let waitingForClick=null; // 'B'|'C'|'D'
+let hasDraggedA=false, hasDraggedB=false, hasDraggedC=false, hasDraggedD=false;
+let hasDraggedGizmo=false;
+let is3d=false; // flips when scrubber completes
+let scrubberActive=false;
+let scrubDepth=0; // 0=flat, 1=full 3d
+
+/* ═══════════════════════════════
+   LABEL / ACTION HELPERS
+═══════════════════════════════ */
+function tog(id,on){
+  const el=document.getElementById(id);
+  if(el)el.classList.toggle('on',!!on);
+}
+function showAct(id){tog(id,true);}
+function hideAct(id){tog(id,false);}
+function hideAllAct(){
+  document.querySelectorAll('.action-lbl').forEach(el=>el.classList.remove('on'));
+}
+function setVis(obj,v){
+  const was=obj.visible; obj.visible=!!v;
+  if(v&&!was){
+    if(obj===ptA)scA.set(0);
+    if(obj===ptB)scB.set(0);
+    if(obj===ptC)scC.set(0);
+    if(obj===ptD)scD.set(0);
+  }
+}
+
+/* ═══════════════════════════════
+   CAPTION
+═══════════════════════════════ */
+let capTimer=null;
+function setCaption(title,body){
+  const t=document.getElementById('cap-title');
+  const b=document.getElementById('cap-body');
+  t.classList.remove('on');b.classList.remove('on');
+  if(capTimer)clearTimeout(capTimer);
+  capTimer=setTimeout(()=>{
+    t.innerHTML=title; b.innerHTML=body||'';
+    t.classList.add('on'); b.classList.add('on');
+  },140);
+}
+
+/* ═══════════════════════════════
+   STAGE MACHINE
+   Each stage sets visibility, camera, caption, actions
+═══════════════════════════════ */
+function enterStage(s){
+  stage=s;
+  hideAllAct();
+  waitingForClick=null;
+  clickGhost.visible=false;
+  updateProgress();
+
+  const A=ptA.position, B=ptB.position;
+
+  switch(s){
+
+    case 'point_a':
+      is3d=false;
+      grid2D.visible=true; grid3D.visible=false;
+      AXES2D.forEach(a=>a.visible=true);
+      AXES3D.forEach(a=>a.visible=false);
+      tog('lX',true);tog('lY',true);tog('lZ',false);
+      setVis(ptA,true);
+      setVis(ptB,false);
+      tog('lA',true); tog('coordA',true);
+      tog('ldist',false);
+      lineAB.visible=false; dashLegX.visible=false; dashLegY.visible=false;
+      legXvis=false; legYvis=false;
+      dashDrop.visible=false; dashToX.visible=false; dashToZ.visible=false; dashToY.visible=false;
+      setVis(triMesh,false);setVis(eAB,false);setVis(eAC,false);setVis(eBC,false);
+      setVis(normGrp,false);setVis(quadMesh,false);setVis(eCD,false);setVis(eAD,false);setVis(eBD,false);
+      setVis(cubeGrp,false); GIZMOS.forEach(g=>setVis(g,false));
+      setCam(CAM_FLAT);
+      setCaption('A point','This is <b>point A</b> at the origin <b>(0, 0)</b>. Every coordinate system starts here. <span class="co">Drag A</span> to move it — watch its coordinates update.');
+      // action appears after first drag, set below
+      break;
+
+    case 'place_b':
+      is3d=false;
+      setVis(ptA,true); tog('lA',true); tog('coordA',true);
+      tog('lB',false);
+      waitingForClick='B';
+      clickGhost.visible=true;
+      setCam(CAM_FLAT);
+      setCaption('A second point','<span class="co">Click anywhere</span> on the plane to place point B. Any location in 2D space is described by exactly two numbers — x and y.');
+      break;
+
+    case 'point_b':
+      is3d=false;
+      setVis(ptA,true); setVis(ptB,true);
+      tog('lA',true); tog('lB',true); tog('coordA',true); tog('coordB',true);
+      setCam(CAM_FLAT);
+      setCaption('Two points','B is at its own coordinates. <span class="co">Drag B</span> anywhere — both points can live at any (x, y) location.');
+      // show "connect" action after B dragged
+      break;
+
+    case 'line':
+      is3d=false;
+      setVis(ptA,true); setVis(ptB,true);
+      tog('lA',true); tog('lB',true); tog('coordA',true); tog('coordB',true);
+      lineAB.visible=true; lineABprog=0; drawLineAnim=true;
+      tog('ldist',true);
+      setCam(CAM_FLAT);
+      setCaption('A line segment','Two points connected by a <b>line segment</b>. It has a length — the straight-line distance between them. <span class="co">Drag either point</span> to reshape it.');
+      setTimeout(()=>showAct('act-distances'),1800);
+      break;
+
+    case 'legs':
+      is3d=false;
+      setVis(ptA,true); setVis(ptB,true);
+      tog('lA',true); tog('lB',true);
+      lineAB.visible=true; lineABprog=1; drawLineAnim=false;
+      updateAnimLine(lineAB,ptA.position,ptB.position,1);
+      legXvis=true; legYvis=true;
+      dashLegX.visible=true; dashLegY.visible=true;
+      tog('ldx',true); tog('ldy',true); tog('ldist',true);
+      setCam(CAM_FLAT);
+      setCaption('Breaking down distance','The dotted lines show <span class="cx">Δx</span> (horizontal) and <span class="cy">Δy</span> (vertical) separately. Together they fully describe the gap. <span class="co">Drag B</span> to see them update.');
+      setTimeout(()=>showAct('act-deeper'),2000);
+      break;
+
+    case 'z_intro':
+      // scrubber takes over — camera is controlled by scrub
+      setCaption('A third dimension','Drag the scrubber → to tilt the world into 3D. Watch the <span class="cz">Z axis</span> emerge.');
+      tog('scrubber-wrap',true);
+      scrubberActive=true;
+      scrubDepth=0;
+      updateScrubber(0);
+      break;
+
+    case 'z_explore':
+      is3d=true;
+      grid2D.visible=false; grid3D.visible=true;
+      AXES2D.forEach(a=>a.visible=false);
+      AXES3D.forEach(a=>a.visible=true);
+      tog('lX',true); tog('lY',true); tog('lZ',true);
+      setVis(ptA,true); setVis(ptB,true);
+      tog('lA',true); tog('lB',true); tog('coordB',true);
+      lineAB.visible=true; lineABprog=1; drawLineAnim=false;
+      updateAnimLine(lineAB,ptA.position,ptB.position,1);
+      dashDrop.visible=true; dashToX.visible=true; dashToZ.visible=true; dashToY.visible=true;
+      tog('ldx3',true); tog('ldy3',true); tog('ldz1',true);
+      tog('ldist',true);
+      orbitMode=true; orbit.enabled=true;
+      setCam(CAM_ISO);
+      setCaption('Three dimensions','Every point now has <b>three coordinates</b>: <span class="cx">(x</span>, <span class="cy"> y</span>, <span class="cz"> z)</span>. The dotted lines from B reach each axis to show all three values at once. <span class="co">Drag B</span> and orbit freely.');
+      setTimeout(()=>showAct('act-add-c'),3000);
+      break;
+
+    case 'triangle':
+      is3d=true;
+      setVis(ptA,true); setVis(ptB,true);
+      tog('lA',true); tog('lB',true); tog('lC',true);
+      lineAB.visible=false;
+      dashDrop.visible=false; dashToX.visible=false; dashToZ.visible=false; dashToY.visible=false;
+      tog('ldx3',false); tog('ldy3',false); tog('ldz1',false); tog('ldist',false);
+      waitingForClick='C';
+      clickGhost.visible=true;
+      orbit.enabled=true;
+      setCam(CAM_ISO2);
+      setCaption('Three points — a face','<span class="co">Click on the floor</span> to place point C. Three points define a flat surface — a <b>face</b>.');
+      break;
+
+    case 'triangle_placed':
+      is3d=true;
+      setVis(ptA,true); setVis(ptB,true); setVis(ptC,true);
+      tog('lA',true); tog('lB',true); tog('lC',true);
+      setVis(triMesh,true); setVis(eAB,true); setVis(eAC,true); setVis(eBC,true);
+      setVis(normGrp,true);
+      orbit.enabled=true;
+      setCam(CAM_ISO2);
+      setCaption('A face','The filled triangle is a <b>face</b>. The arrow is the <b>normal</b> — it tells the software which side faces outward. <span class="co">Drag any point</span> to reshape it.');
+      setTimeout(()=>showAct('act-add-d'),2500);
+      break;
+
+    case 'quad':
+      is3d=true;
+      setVis(ptA,true); setVis(ptB,true); setVis(ptC,true);
+      tog('lA',true); tog('lB',true); tog('lC',true); tog('lD',true);
+      setVis(triMesh,true);
+      waitingForClick='D';
+      clickGhost.visible=true;
+      orbit.enabled=true;
+      setCam(CAM_ISO2);
+      setCaption('Four points — a plane','<span class="co">Click on the floor</span> to place point D and close the quad — a four-sided flat surface.');
+      break;
+
+    case 'quad_placed':
+      is3d=true;
+      setVis(ptA,true); setVis(ptB,true); setVis(ptC,true); setVis(ptD,true);
+      tog('lA',true); tog('lB',true); tog('lC',true); tog('lD',true);
+      setVis(triMesh,true); setVis(eAB,true); setVis(eAC,true); setVis(eBC,true);
+      setVis(quadMesh,true); setVis(eCD,true); setVis(eAD,true); setVis(eBD,true);
+      setVis(normGrp,false);
+      orbit.enabled=true;
+      setCam(CAM_ISO2);
+      setCaption('A quad','Four corners, one flat surface. Floors, walls, tabletops in every 3D tool are quads. <span class="co">Drag any corner</span> to warp it.');
+      setTimeout(()=>showAct('act-lift'),2500);
+      break;
+
+    case 'cube':
+      is3d=true;
+      setVis(ptA,false); setVis(ptB,false); setVis(ptC,false); setVis(ptD,false);
+      tog('lA',false); tog('lB',false); tog('lC',false); tog('lD',false);
+      setVis(triMesh,false); setVis(quadMesh,false);
+      [eAB,eAC,eBC,eCD,eAD,eBD].forEach(e=>setVis(e,false));
+      setVis(cubeGrp,true);
+      cubeExtrude=0; startCubeAnim=true;
+      orbit.enabled=true;
+      setCam(CAM_CUBE);
+      setCaption('Volume — a cube','<b>8 vertices, 12 edges, 6 faces</b>. Raise the quad and you get a cube — the default object in every 3D application. <span class="co">Orbit to inspect it.</span>');
+      setTimeout(()=>showAct('act-transform'),5000);
+      break;
+
+    case 'transform':
+      is3d=true;
+      setVis(cubeGrp,true);
+      GIZMOS.forEach(g=>setVis(g,true));
+      orbit.enabled=true;
+      setCam(CAM_CUBE);
+      setCaption('Move · Rotate · Scale','The <b>transform gizmo</b>. <span class="cx">Red = X</span>, <span class="cy">Green = Y</span>, <span class="cz">Blue = Z</span>. These exact arrows exist in Blender, UEFN, Unity, and Cesium. <span class="co">Drag the arrows</span> to move the cube.');
+      break;
+
+    case 'finish':
+      is3d=true;
+      setVis(cubeGrp,true);
+      GIZMOS.forEach(g=>setVis(g,false));
+      orbit.enabled=true;
+      setCam(CAM_CUBE);
+      setCaption('You understand 3D space','Points. Edges. Faces. Normals. Distance. Volume. Transforms. <span class="cg">Every 3D application runs on exactly what you just built from scratch.</span>');
+      break;
+  }
+}
+
+/* ═══════════════════════════════
+   ACTION CALLBACKS
+═══════════════════════════════ */
+window.onAction=function(id){
+  switch(id){
+    case 'place_b':  enterStage('place_b'); break;
+    case 'connect':  enterStage('line'); break;
+    case 'distances':enterStage('legs'); break;
+    case 'deeper':   enterStage('z_intro'); break;
+    case 'add_c':    enterStage('triangle'); break;
+    case 'add_d':    enterStage('quad'); break;
+    case 'lift':     enterStage('cube'); break;
+    case 'transform':enterStage('transform'); break;
+  }
+};
+
+/* ═══════════════════════════════
+   PROGRESS BAR
+═══════════════════════════════ */
+const STAGE_ORDER=['point_a','place_b','point_b','line','legs','z_intro','z_explore',
+  'triangle','triangle_placed','quad','quad_placed','cube','transform','finish'];
+function updateProgress(){
+  const idx=STAGE_ORDER.indexOf(stage);
+  const pct=idx<0?0:idx/(STAGE_ORDER.length-1);
+  document.getElementById('prog-fill').style.width=(pct*100)+'%';
+}
+
+/* ═══════════════════════════════
+   SCRUBBER
+═══════════════════════════════ */
+const scrubTrack=document.getElementById('scrubber-track');
+const scrubThumb=document.getElementById('scrubber-thumb');
+let scrubDragging=false, scrubY0=0, scrubVal0=0;
+
+scrubTrack.addEventListener('pointerdown',e=>{
+  if(!scrubberActive)return;
+  scrubDragging=true;
+  scrubY0=e.clientY;
+  scrubVal0=scrubDepth;
+  scrubTrack.setPointerCapture(e.pointerId);
+  e.stopPropagation();
+});
+scrubTrack.addEventListener('pointermove',e=>{
+  if(!scrubDragging)return;
+  const trackH=scrubTrack.getBoundingClientRect().height;
+  const dy=(e.clientY-scrubY0)/trackH;
+  scrubDepth=clamp(scrubVal0+dy,0,1);
+  updateScrubber(scrubDepth);
+  applyScrubCamera(scrubDepth);
+  e.stopPropagation();
+});
+scrubTrack.addEventListener('pointerup',e=>{
+  if(!scrubDragging)return;
+  scrubDragging=false;
+  if(scrubDepth>0.88){
+    // complete — transition fully to 3D
+    scrubDepth=1;
+    updateScrubber(1);
+    tog('scrubber-wrap',false);
+    scrubberActive=false;
+    setTimeout(()=>enterStage('z_explore'),400);
+  }
+  e.stopPropagation();
+});
+
+function updateScrubber(t){
+  scrubThumb.style.top=(t*100)+'%';
+  // update track fill via CSS pseudo — use inline style trick
+  scrubTrack.style.setProperty('--fill',t*100+'%');
+  // direct style on fill bar
+  const fill=scrubTrack.querySelector('::before'); // can't do this in JS
+  // Instead update via a real child element
+  if(!scrubTrack._fillEl){
+    const el=document.createElement('div');
+    el.style.cssText='position:absolute;left:50%;transform:translateX(-50%);top:0;width:2px;background:#FF9022;border-radius:2px;pointer-events:none;';
+    scrubTrack.appendChild(el);
+    scrubTrack._fillEl=el;
+  }
+  scrubTrack._fillEl.style.height=(t*100)+'%';
+}
+
+function applyScrubCamera(t){
+  // Blend between flat and iso camera
+  const p=CAM_FLAT.pos.clone().lerp(CAM_ISO.pos,easeOut3(t));
+  const lk=CAM_FLAT.look.clone().lerp(CAM_ISO.look,easeOut3(t));
+  camCurP.copy(p); camTgtP.copy(p);
+  camCurL.copy(lk); camTgtL.copy(lk);
+  camera.position.copy(p);
+  camera.lookAt(lk);
+  orbit.target.copy(lk);
+  // Also lift ptB's Z proportionally
+  ptB.position.z=t*3;
+}
+
+/* ═══════════════════════════════
+   BOUNDING BOX for points
+═══════════════════════════════ */
+const BOUND_XZ=5, BOUND_Y_MIN=0, BOUND_Y_MAX=6;
+function boundPt(p,floor=false){
+  p.x=clamp(p.x,-BOUND_XZ,BOUND_XZ);
+  p.z=clamp(p.z,-BOUND_XZ,BOUND_XZ);
+  if(floor) p.y=0;
+  else p.y=clamp(p.y,BOUND_Y_MIN,BOUND_Y_MAX);
+}
+
+/* ═══════════════════════════════
+   GEOMETRY UPDATE
+═══════════════════════════════ */
+function updateGeo(dt){
+  const A=ptA.position,B=ptB.position,C2=ptC.position,D2=ptD.position;
+
+  // springs
+  ptA.scale.setScalar(Math.max(0,scA.tick(ptA.visible?1:0,dt)));
+  ptB.scale.setScalar(Math.max(0,scB.tick(ptB.visible?1:0,dt)));
+  ptC.scale.setScalar(Math.max(0,scC.tick(ptC.visible?1:0,dt)));
+  ptD.scale.setScalar(Math.max(0,scD.tick(ptD.visible?1:0,dt)));
+
+  // line draw
+  if(drawLineAnim&&lineAB.visible){
+    lineABprog=clamp(lineABprog+dt*1.6,0,1);
+    updateAnimLine(lineAB,A,B,lineABprog);
+    if(lineABprog>=1)drawLineAnim=false;
+  }else if(lineAB.visible){
+    updateAnimLine(lineAB,A,B,1);
+  }
+
+  // 2D legs
+  if(legXvis)setLP(dashLegX,V3(A.x,A.y,A.z),V3(B.x,A.y,A.z));
+  if(legYvis)setLP(dashLegY,V3(B.x,A.y,A.z),V3(B.x,B.y,A.z));
+
+  // 3D coordinate drop — tip-to-tail:
+  // B → floor point (Bx,0,Bz) — vertical drop
+  // floor point → (Bx,0,0) — along Z (shows z value)
+  // (Bx,0,0) → (0,0,0) — along X (shows x value)
+  // floor point → B — vertical segment (shows y value)
+  if(dashDrop.visible){
+    const floor=V3(B.x,0,B.z);
+    setLP(dashDrop, B, floor);                    // vertical drop (gray)
+    setLP(dashToX,  floor, V3(B.x,0,0));          // Z leg on floor (blue)
+    setLP(dashToZ,  V3(B.x,0,0), V3(0,0,0));      // X leg on floor (red)
+    setLP(dashToY,  floor, V3(floor.x,B.y,floor.z)); // Y leg upward (green) — same as drop but labeled
+  }
+
+  // labels
+  if(document.getElementById('ldist').classList.contains('on')){
+    document.getElementById('ldist').textContent=`d = ${A.distanceTo(B).toFixed(2)}`;
+  }
+  if(legXvis){
+    document.getElementById('ldx').textContent=`Δx = ${Math.abs(B.x-A.x).toFixed(1)}`;
+    document.getElementById('ldy').textContent=`Δy = ${Math.abs(B.y-A.y).toFixed(1)}`;
+  }
+  if(dashDrop.visible){
+    document.getElementById('ldx3').textContent=`x = ${B.x.toFixed(1)}`;
+    document.getElementById('ldy3').textContent=`y = ${B.y.toFixed(1)}`;
+    document.getElementById('ldz1').textContent=`z = ${B.z.toFixed(1)}`;
+  }
+  const fmt=(v)=>v.toFixed(1);
+  if(document.getElementById('coordA').classList.contains('on'))
+    document.getElementById('coordA').textContent=is3d?`(${fmt(A.x)}, ${fmt(A.y)}, ${fmt(A.z)})`:`(${fmt(A.x)}, ${fmt(A.y)})`;
+  if(document.getElementById('coordB').classList.contains('on'))
+    document.getElementById('coordB').textContent=is3d?`(${fmt(B.x)}, ${fmt(B.y)}, ${fmt(B.z)})`:`(${fmt(B.x)}, ${fmt(B.y)})`;
+
+  // triangle
+  if(triMesh.visible){
+    const pa=triGeo.attributes.position.array;
+    [A,B,C2].forEach((p,i)=>{pa[i*3]=p.x;pa[i*3+1]=p.y;pa[i*3+2]=p.z;});
+    triGeo.attributes.position.needsUpdate=true; triGeo.computeBoundingSphere();
+    setLP(eAB,A,B);setLP(eAC,A,C2);setLP(eBC,B,C2);
+    const ab=B.clone().sub(A),ac=C2.clone().sub(A);
+    const n=ab.cross(ac).normalize();
+    normGrp.position.copy(A.clone().add(B).add(C2).divideScalar(3));
+    if(n.length()>.01)normGrp.quaternion.setFromUnitVectors(V3(0,1,0),n);
+  }
+
+  // quad
+  if(quadMesh.visible){
+    const pa=quadGeo.attributes.position.array;
+    [A,B,C2,A,C2,D2].forEach((p,i)=>{pa[i*3]=p.x;pa[i*3+1]=p.y;pa[i*3+2]=p.z;});
+    quadGeo.attributes.position.needsUpdate=true; quadGeo.computeBoundingSphere();
+    setLP(eAB,A,B);setLP(eAC,A,C2);setLP(eBC,B,C2);
+    setLP(eCD,C2,D2);setLP(eAD,A,D2);setLP(eBD,B,D2);
+  }
+
+  // cube extrude
+  if(startCubeAnim){
+    cubeExtrude=clamp(cubeExtrude+dt*.6,0,1);
+    cubeGrp.scale.setScalar(easeOut3(cubeExtrude));
+    if(cubeExtrude>=1){
+      startCubeAnim=false;
+      setTimeout(()=>setCubeMode(1),1500);
+      setTimeout(()=>setCubeMode(2),3000);
+    }
+  }
+
+  // gizmos follow cube
+  if(GIZMOS[0].visible)GIZMOS.forEach(g=>g.position.copy(cubeGrp.position));
+}
+
+/* ═══════════════════════════════
+   LABEL PROJECTION
+═══════════════════════════════ */
+function proj(wp,el,ox=10,oy=-18){
+  tmpV.copy(wp).project(camera);
+  if(tmpV.z>1){el.style.display='none';return;}
+  el.style.display='';
+  el.style.left=(tmpV.x*.5+.5)*W()+ox+'px';
+  el.style.top=(-.5*tmpV.y+.5)*H()+oy+'px';
+}
+
+function updateLabels(){
+  const A=ptA.position,B=ptB.position,C2=ptC.position,D2=ptD.position;
+  if(ptA.visible)proj(A,document.getElementById('lA'),-16,-18);
+  if(ptB.visible)proj(B,document.getElementById('lB'),8,-18);
+  if(ptC.visible)proj(C2,document.getElementById('lC'),8,-18);
+  if(ptD.visible)proj(D2,document.getElementById('lD'),8,-18);
+  if(document.getElementById('coordA').classList.contains('on'))
+    proj(A,document.getElementById('coordA'),14,-5);
+  if(document.getElementById('coordB').classList.contains('on'))
+    proj(B,document.getElementById('coordB'),14,-5);
+
+  proj(V3(5.5,0,0),document.getElementById('lX'),3,3);
+  proj(V3(0,5.5,0),document.getElementById('lY'),3,-15);
+  proj(V3(0,0,5.5),document.getElementById('lZ'),3,3);
+
+  const mx=V3((A.x+B.x)/2,A.y-.4,0);
+  proj(mx,document.getElementById('ldx'),-14,2);
+  const my=V3(B.x+.2,(A.y+B.y)/2,0);
+  proj(my,document.getElementById('ldy'),4,0);
+
+  // 3D coord labels — on their segments
+  const floor3=V3(B.x,0,B.z);
+  // X label: midpoint of (Bx,0,0)→(0,0,0) — along floor X leg
+  proj(V3(B.x/2, 0, 0),          document.getElementById('ldx3'), 4,-14);
+  // Y label: midpoint of vertical segment floor→B
+  proj(V3(B.x, B.y/2, B.z),      document.getElementById('ldy3'), 8, 0);
+  // Z label: midpoint of (Bx,0,Bz)→(Bx,0,0) — along floor Z leg
+  proj(V3(B.x, 0, B.z/2),        document.getElementById('ldz1'), 4, 8);
+
+  const mid=A.clone().add(B).multiplyScalar(.5);
+  proj(mid,document.getElementById('ldist'),8,-18);
+
+  // position action labels at semantic world locations
+  proj(V3(3.5,2.5,0),document.getElementById('act-place-b'),0,0);
+  proj(mid,document.getElementById('act-connect'),0,-28);
+  proj(mid,document.getElementById('act-distances'),0,22);
+  proj(V3(0,-3.5,0),document.getElementById('act-deeper'),0,0);
+  proj(V3(-3,0,3),document.getElementById('act-add-c'),0,0);
+  proj(V3(3,0,5),document.getElementById('act-add-d'),0,0);
+  proj(V3(3,0,3),document.getElementById('act-lift'),0,0);
+  proj(V3(3,0,3),document.getElementById('act-transform'),0,0);
+}
+
+/* ═══════════════════════════════
+   DRAGGING
+═══════════════════════════════ */
+const raycaster=new THREE.Raycaster();
+const mouse2=new THREE.Vector2();
+const dragPlane=new THREE.Plane();
+const xyPlane=new THREE.Plane(V3(0,0,1),0);
+const floorPlane=new THREE.Plane(V3(0,1,0),0);
+let dragging=null,gizActive=null,gizDragStart=V3(),gizObjStart=V3();
+
+function getNDC(e){
+  const r=cv.getBoundingClientRect();
+  mouse2.x=((e.clientX-r.left)/r.width)*2-1;
+  mouse2.y=-((e.clientY-r.top)/r.height)*2+1;
+}
+
+// which points are draggable in each stage
+function getDraggable(){
+  switch(stage){
+    case 'point_a': return [ptA];
+    case 'point_b': return [ptB];
+    case 'line':
+    case 'legs':    return [ptA,ptB];
+    case 'z_explore': return [ptB];
+    case 'triangle_placed': return [ptB,ptC];
+    case 'quad_placed':     return [ptB,ptC,ptD];
+    default: return [];
+  }
+}
+
+cv.addEventListener('mousemove',e=>{
+  if(!waitingForClick)return;
+  getNDC(e); raycaster.setFromCamera(mouse2,camera);
+  const hit=new THREE.Vector3();
+  const plane=is3d?floorPlane:xyPlane;
+  if(raycaster.ray.intersectPlane(plane,hit)){
+    clickGhost.position.copy(hit);
+    clickGhost.visible=true;
+  }
+});
+
+cv.addEventListener('pointerdown',e=>{
+  if(scrubDragging)return;
+  getNDC(e); raycaster.setFromCamera(mouse2,camera);
+
+  // click to place
+  if(waitingForClick){
+    const hit=new THREE.Vector3();
+    const plane=is3d?floorPlane:xyPlane;
+    if(raycaster.ray.intersectPlane(plane,hit)){
+      doPlace(waitingForClick,hit);
+    }
+    return;
+  }
+
+  // gizmo
+  if(stage==='transform'||stage==='finish'){
+    const pool=[];
+    GIZMOS.forEach(g=>g.children.forEach(c=>pool.push({c,g})));
+    const hits=raycaster.intersectObjects(pool.map(x=>x.c));
+    if(hits.length){
+      const found=pool.find(x=>x.c===hits[0].object);
+      if(found){
+        gizActive=found.g; orbit.enabled=false;
+        dragPlane.setFromNormalAndCoplanarPoint(
+          camera.position.clone().sub(hits[0].point).normalize(),hits[0].point);
+        gizDragStart.copy(hits[0].point);
+        gizObjStart.copy(cubeGrp.position);
+        cv.style.cursor='grabbing'; return;
+      }
+    }
+  }
+
+  // point drag
+  const cands=getDraggable();
+  const hits=raycaster.intersectObjects(cands,true);
+  if(hits.length){
+    let root=hits[0].object;
+    while(root.parent&&root.parent!==scene)root=root.parent;
+    dragging=root;
+    orbit.enabled=false;
+    const n=is3d?camera.position.clone().normalize():V3(0,0,1);
+    dragPlane.setFromNormalAndCoplanarPoint(n,dragging.position);
+    cv.style.cursor='grabbing';
+  }
+});
+
+cv.addEventListener('pointermove',e=>{
+  if(scrubDragging)return;
+  getNDC(e); raycaster.setFromCamera(mouse2,camera);
+  const pt=V3();
+
+  if(gizActive){
+    if(raycaster.ray.intersectPlane(dragPlane,pt)){
+      const delta=pt.clone().sub(gizDragStart);
+      const ax=gizActive._axis;
+      cubeGrp.position.copy(gizObjStart.clone().add(ax.clone().multiplyScalar(delta.dot(ax))));
+      if(!hasDraggedGizmo){hasDraggedGizmo=true;}
+    }
+    return;
+  }
+
+  if(!dragging)return;
+  if(raycaster.ray.intersectPlane(dragPlane,pt)){
+    // floor constraint for 3D surface stages
+    const floorStages=['triangle_placed','quad_placed'];
+    if(floorStages.includes(stage))pt.y=0;
+    else if(!is3d)pt.z=0;
+    // apply bounding
+    boundPt(pt, floorStages.includes(stage));
+    dragging.position.copy(pt);
+
+    // record drags + trigger next actions
+    if(dragging===ptA&&!hasDraggedA){
+      hasDraggedA=true;
+      setTimeout(()=>showAct('act-place-b'),600);
+    }
+    if(dragging===ptB&&stage==='point_b'&&!hasDraggedB){
+      hasDraggedB=true;
+      setTimeout(()=>showAct('act-connect'),600);
+    }
+    if(dragging===ptB&&stage==='z_explore'&&!hasDraggedB){
+      hasDraggedB=true;
+    }
+  }
+},{passive:true});
+
+window.addEventListener('pointerup',()=>{
+  dragging=null; gizActive=null;
+  if(is3d&&orbit&&(stage!=='z_intro'))orbit.enabled=true;
+  cv.style.cursor='';
+});
+
+/* ═══════════════════════════════
+   PLACE POINT
+═══════════════════════════════ */
+function doPlace(which,pos){
+  clickGhost.visible=false;
+  waitingForClick=null;
+
+  if(which==='B'){
+    ptB.position.set(pos.x,pos.y,0);
+    scB.set(0); ptB.visible=true;
+    enterStage('point_b');
+    return;
+  }
+  if(which==='C'){
+    ptC.position.set(pos.x,0,pos.z);
+    scC.set(0);
+    enterStage('triangle_placed');
+    return;
+  }
+  if(which==='D'){
+    ptD.position.set(pos.x,0,pos.z);
+    scD.set(0);
+    enterStage('quad_placed');
+    return;
+  }
+}
+
+/* ═══════════════════════════════
+   RENDER LOOP
+═══════════════════════════════ */
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),.05);
+  tickCam(dt);
+  updateGeo(dt);
+  updateLabels();
+  renderer.render(scene,camera);
+}
+animate();
+
+window.addEventListener('resize',()=>{
+  camera.aspect=W()/H(); camera.updateProjectionMatrix();
+  renderer.setSize(W(),H());
+});
+
+/* ═══════════════════════════════
+   BOOT
+═══════════════════════════════ */
+setCam(CAM_FLAT,true);
+setCubeMode(0);
+
+// axes visible from start
+AXES2D.forEach(a=>a.visible=true);
+tog('lX',true); tog('lY',true);
+
+setTimeout(()=>enterStage('point_a'),300);
+</script>
+</body>
+</html>
