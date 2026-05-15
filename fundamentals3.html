@@ -1,1385 +1,2053 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Fundamentals of 3D — CreateAccess</title>
-<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
-<style>
-:root{
-  --panel-h: 148px;
-  --orange: #FF9022;
-}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{width:100%;height:100%;overflow:hidden;background:#efefed;font-family:'Lexend',sans-serif}
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Fundamentals of 3D — CreateAccess</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --panel-h: 148px;
+        --orange: #ff9022;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #efefed;
+        font-family: "Lexend", sans-serif;
+      }
 
-/* ── outer frame ── */
-#app{
-  display:flex;flex-direction:column;
-  width:100%;height:100%;
-}
+      /* ── outer frame ── */
+      #app {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
 
-/* ── canvas window ── */
-#canvas-wrap{
-  position:relative;
-  flex:1;min-height:0;
-  background:#f8f8f6;
-  overflow:hidden;
-}
-#cv{
-  position:absolute;inset:0;
-  display:block;width:100%;height:100%;
-}
+      /* ── canvas window ── */
+      #canvas-wrap {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at center, #ffffff 0%, #efefed 100%);
+        overflow: hidden;
+      }
+      #cv {
+        position: absolute;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
 
-/* progress bar — top of canvas window */
-#prog{
-  position:absolute;top:0;left:0;right:0;height:2px;z-index:20;
-  background:rgba(0,0,0,.06);
-}
-#prog-fill{
-  height:100%;width:0%;background:var(--orange);
-  transition:width .9s cubic-bezier(.4,0,.2,1);
-}
+      /* progress dots */
+      #prog-dots {
+        position: absolute;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        z-index: 50;
+        pointer-events: none;
+      }
+      .prog-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.12);
+        transition: all 0.3s ease;
+      }
+      .prog-dot.active {
+        background: var(--orange);
+        transform: scale(1.3);
+      }
 
-/* ── info panel ── */
-#panel{
-  flex-shrink:0;
-  height:var(--panel-h);
-  background:#ffffff;
-  border-top:1px solid #e4e4e0;
-  display:flex;align-items:stretch;
-  padding:0;
-}
-#panel-text{
-  flex:1;
-  padding:20px 24px;
-  display:flex;flex-direction:column;justify-content:center;
-  min-width:0;
-}
-#cap-step{
-  font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--orange);font-family:'DM Mono',monospace;margin-bottom:7px;
-  opacity:0;transition:opacity .4s ease;
-}
-#cap-step.on{opacity:1}
-#cap-title{
-  font-size:15px;font-weight:500;color:#111;line-height:1.25;
-  letter-spacing:-.02em;margin-bottom:6px;
-  opacity:0;transition:opacity .45s ease;
-}
-#cap-body{
-  font-size:12px;font-weight:300;color:#555;line-height:1.7;
-  opacity:0;transition:opacity .45s ease .05s;
-}
-#cap-title.on{opacity:1}
-#cap-body.on{opacity:1}
-#cap-body b{color:#222;font-weight:400}
-#cap-body .cx{color:#b03a35}#cap-body .cy{color:#267326}
-#cap-body .cz{color:#2f5f99}#cap-body .co{color:var(--orange)}
+      /* ── info panel (floating HUD) ── */
+      #panel {
+        position: absolute;
+        bottom: 60px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(92%, 440px);
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 14px;
+        box-shadow:
+          0 12px 32px rgba(0, 0, 0, 0.06),
+          0 4px 12px rgba(0, 0, 0, 0.03);
+        padding: 24px 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        z-index: 50;
+        pointer-events: auto;
+        cursor: grab;
+      }
+      #panel * {
+        pointer-events: auto;
+      }
 
-/* action area — right side of panel */
-#panel-action{
-  flex-shrink:0;
-  width:200px;
-  padding:20px 20px 20px 0;
-  display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-end;
-  gap:10px;
-}
-/* orange continue button */
-#continue{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:10px 20px;
-  background:var(--orange);border:none;border-radius:7px;
-  font-family:'Lexend',sans-serif;font-size:13px;font-weight:500;color:#fff;
-  cursor:pointer;
-  opacity:0;transition:opacity .4s ease, transform .15s ease, background .15s;
-  pointer-events:none;
-  white-space:nowrap;
-}
-#continue.on{opacity:1;pointer-events:all}
-#continue:hover{background:#e07010;transform:translateY(-1px)}
-#continue:active{transform:translateY(0)}
-#continue svg{flex-shrink:0}
+      .panel-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
 
-/* prompt line inside panel */
-#cap-prompt{
-  font-family:'DM Mono',monospace;font-size:10px;font-weight:300;
-  color:var(--orange);letter-spacing:.04em;text-align:right;
-  opacity:0;transition:opacity .4s ease;
-  line-height:1.5;
-}
-#cap-prompt.on{opacity:1}
+      #cap-title {
+        font-size: 16px;
+        font-weight: 500;
+        color: #111;
+        line-height: 1.25;
+        letter-spacing: -0.01em;
+        opacity: 0;
+        transition: opacity 0.45s ease;
+      }
+      #cap-body {
+        font-size: 13px;
+        font-weight: 300;
+        color: #555;
+        line-height: 1.6;
+        opacity: 0;
+        transition: opacity 0.45s ease 0.05s;
+      }
+      #cap-title.on {
+        opacity: 1;
+      }
+      #cap-body.on {
+        opacity: 1;
+      }
+      #cap-body b {
+        color: #222;
+        font-weight: 400;
+      }
+      #cap-body .cx {
+        color: #b03a35;
+      }
+      #cap-body .cy {
+        color: #267326;
+      }
+      #cap-body .cz {
+        color: #2f5f99;
+      }
+      #cap-body .co {
+        color: var(--orange);
+      }
 
-/* formula callout — floats in canvas area top-right */
-#formula-card{
-  position:absolute;top:14px;right:14px;z-index:15;
-  background:rgba(255,255,255,0.93);
-  border:1px solid #e4e4e0;border-radius:8px;
-  padding:10px 14px;
-  font-family:'DM Mono',monospace;font-size:11px;font-weight:300;
-  color:#555;line-height:1.8;
-  opacity:0;transition:opacity .5s ease;pointer-events:none;
-  min-width:170px;
-  box-shadow:0 2px 10px rgba(0,0,0,.05);
-}
-#formula-card.on{opacity:1}
-#formula-card .fc-title{
-  font-size:9px;letter-spacing:.1em;text-transform:uppercase;
-  color:#aaa;margin-bottom:5px;font-family:'Lexend',sans-serif;font-weight:400;
-}
-#formula-card .fc-eq{color:#111;font-size:12px}
-#formula-card .fc-vals{color:#888;font-size:10px;margin-top:3px;white-space:pre}
+      .panel-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 6px;
+      }
 
-/* world labels — z-index relative to canvas-wrap */
-.wlbl{
-  position:absolute;z-index:10;pointer-events:none;
-  font-family:'DM Mono',monospace;font-size:11px;font-weight:300;
-  letter-spacing:.02em;white-space:nowrap;
-  opacity:0;transition:opacity .5s ease;
-}
-.wlbl.on{opacity:1}
-.wlbl.pt{font-family:'Lexend',sans-serif;font-size:13px;font-weight:500;color:#111}
-.wlbl.coord{color:#333;font-size:11px}
-.wlbl.ax-lbl{font-size:11px}
-.wlbl.cx{color:#b03a35}.wlbl.cy{color:#267326}.wlbl.cz{color:#2f5f99}
-.wlbl.dist{color:#666;font-size:11px}
+      #continue {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: var(--orange);
+        border: none;
+        border-radius: 6px;
+        font-family: "Lexend", sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        color: #fff;
+        cursor: pointer;
+        opacity: 0;
+        transition:
+          opacity 0.4s ease,
+          transform 0.15s ease,
+          background 0.15s;
+        pointer-events: none;
+        white-space: nowrap;
+      }
+      #continue.on {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      #continue:hover {
+        background: #e07010;
+        transform: translateY(-1px);
+      }
+      #continue:active {
+        transform: translateY(0);
+      }
+      #continue svg {
+        flex-shrink: 0;
+      }
 
-/* click-to-place cursor hint */
-#place-hint{
-  position:absolute;z-index:12;pointer-events:none;
-  font-family:'DM Mono',monospace;font-size:10px;color:#bbb;
-  letter-spacing:.05em;
-  opacity:0;transition:opacity .4s;
-}
-#place-hint.on{opacity:1}
+      #cap-prompt {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        font-weight: 300;
+        color: var(--orange);
+        letter-spacing: 0.02em;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        line-height: 1.5;
+      }
+      #cap-prompt.on {
+        opacity: 1;
+      }
 
-/* callout pill — white pill with border, used for annotations */
-.callout{
-  background:rgba(255,255,255,0.92);
-  border:1px solid #ddd;border-radius:4px;
-  padding:2px 8px;font-size:10px;font-weight:400;
-  color:#333;font-family:'DM Mono',monospace;
-  white-space:nowrap;
-}
+      /* formula callout — floats in canvas area top-right */
+      #formula-card {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        z-index: 15;
+        background: rgba(255, 255, 255, 0.93);
+        border: 1px solid #e4e4e0;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        font-weight: 300;
+        color: #555;
+        line-height: 1.8;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+        pointer-events: none;
+        min-width: 170px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      }
+      #formula-card.on {
+        opacity: 1;
+      }
+      #formula-card .fc-title {
+        font-size: 9px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #aaa;
+        margin-bottom: 5px;
+        font-family: "Lexend", sans-serif;
+        font-weight: 400;
+      }
+      #formula-card .fc-eq {
+        color: #111;
+        font-size: 12px;
+      }
+      #formula-card .fc-vals {
+        color: #888;
+        font-size: 10px;
+        margin-top: 3px;
+        white-space: pre;
+      }
 
-/* scroll hint (kept but unused) */
-#scroll-hint{display:none}
-  .home-btn {
-    position: fixed;
-    top: 24px;
-    left: 24px;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    background: rgba(23, 30, 53, 0.7);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: #fff;
-    text-decoration: none;
-    font-family: 'Lexend', sans-serif;
-    font-size: 13px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-  }
-  .home-btn:hover {
-    background: rgba(23, 30, 53, 0.95);
-    border-color: #ff9022;
-    color: #ff9022;
-    transform: translateX(-4px);
-  }
-  </style>
-</head>
-<body>
-<a href="index.html" class="home-btn">
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-  <span>Home</span>
-</a>
-<div id="app">
+      /* world labels — z-index relative to canvas-wrap */
+      .wlbl {
+        position: absolute;
+        z-index: 10;
+        pointer-events: none;
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        font-weight: 300;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+      }
+      .wlbl.on {
+        opacity: 1;
+      }
+      .wlbl.pt {
+        font-family: "Lexend", sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        color: #111;
+      }
+      .wlbl.coord {
+        color: #333;
+        font-size: 11px;
+      }
+      .wlbl.ax-lbl {
+        font-size: 11px;
+      }
+      .wlbl.cx {
+        color: #b03a35;
+      }
+      .wlbl.cy {
+        color: #267326;
+      }
+      .wlbl.cz {
+        color: #2f5f99;
+      }
+      .wlbl.dist {
+        color: #666;
+        font-size: 11px;
+      }
 
-  <!-- canvas window -->
-  <div id="canvas-wrap">
-    <canvas id="cv"></canvas>
-    <div id="prog"><div id="prog-fill"></div></div>
+      /* click-to-place cursor hint */
+      #place-hint {
+        position: absolute;
+        z-index: 12;
+        pointer-events: none;
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        color: #bbb;
+        letter-spacing: 0.05em;
+        opacity: 0;
+        transition: opacity 0.4s;
+      }
+      #place-hint.on {
+        opacity: 1;
+      }
 
-    <!-- formula callout lives inside canvas-wrap -->
-    <div id="formula-card">
-      <div class="fc-title">Pythagorean theorem</div>
-      <div class="fc-eq" id="fc-eq">d = √(x² + y²)</div>
-      <div class="fc-vals" id="fc-vals"></div>
+      /* callout pill — white pill with border, used for annotations */
+      .callout {
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 2px 8px;
+        font-size: 10px;
+        font-weight: 400;
+        color: #333;
+        font-family: "DM Mono", monospace;
+        white-space: nowrap;
+      }
+
+      /* scroll hint (kept but unused) */
+      #scroll-hint {
+        display: none;
+      }
+      .home-btn {
+        position: fixed;
+        top: 24px;
+        left: 24px;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background: rgba(23, 30, 53, 0.7);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: #fff;
+        text-decoration: none;
+        font-family: "Lexend", sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+      }
+      .home-btn:hover {
+        background: rgba(23, 30, 53, 0.95);
+        border-color: #ff9022;
+        color: #ff9022;
+        transform: translateX(-4px);
+      }
+    </style>
+  </head>
+  <body>
+    <a href="index.html" class="home-btn">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="m15 18-6-6 6-6" />
+      </svg>
+      <span>Home</span>
+    </a>
+    <div id="app">
+      <!-- canvas window -->
+      <div id="canvas-wrap">
+        <canvas id="cv"></canvas>
+
+        <!-- formula callout lives inside canvas-wrap -->
+        <div id="formula-card">
+          <div class="fc-title">Pythagorean theorem</div>
+          <div class="fc-eq" id="fc-eq">d = √(x² + y²)</div>
+          <div class="fc-vals" id="fc-vals"></div>
+        </div>
+
+        <!-- world labels (absolute inside canvas-wrap) -->
+        <div
+          class="wlbl pt"
+          id="lOrigin"
+          style="
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 2px 7px;
+            font-size: 11px;
+            font-weight: 400;
+            color: #333;
+          "
+        >
+          origin (0, 0)
+        </div>
+
+        <div class="wlbl ax-lbl cx" id="lX">x</div>
+        <div class="wlbl ax-lbl cy" id="lY">y</div>
+        <div class="wlbl ax-lbl cz" id="lZ">z</div>
+        <div class="wlbl pt" id="lA">A</div>
+        <div class="wlbl pt" id="lB">B</div>
+        <div class="wlbl pt" id="lC">C</div>
+        <div class="wlbl pt" id="lD">D</div>
+        <div class="wlbl coord" id="coordA"></div>
+        <div class="wlbl coord" id="coordB"></div>
+        <div class="wlbl cx" id="ldx"></div>
+        <div class="wlbl cy" id="ldy"></div>
+        <div class="wlbl dist" id="ldist"></div>
+        <div class="wlbl dist" id="ldistAB"></div>
+        <div class="wlbl cz" id="lcoordAz"></div>
+        <div id="place-hint">click to place</div>
+      </div>
+
+      <!-- info panel -->
+      <div id="panel">
+        <div class="panel-header">
+          <div id="cap-title"></div>
+        </div>
+        <div id="cap-body"></div>
+        <div class="panel-footer">
+          <div id="cap-prompt"></div>
+          <button id="continue" onclick="nextBeat()">
+            Continue
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path
+                d="M3 7h8M8 4l3 3-3 3"
+                stroke="currentColor"
+                stroke-width="1.4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="prog-dots"></div>
     </div>
 
-    <!-- world labels (absolute inside canvas-wrap) -->
-    <div class="wlbl pt" id="lOrigin" style="background:rgba(255,255,255,0.88);border:1px solid #ddd;border-radius:4px;padding:2px 7px;font-size:11px;font-weight:400;color:#333">origin (0, 0)</div>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module">
+      import * as THREE from "three";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-    <div class="wlbl ax-lbl cx" id="lX">x</div>
-    <div class="wlbl ax-lbl cy" id="lY">y</div>
-    <div class="wlbl ax-lbl cz" id="lZ">z</div>
-    <div class="wlbl pt" id="lA">A</div>
-    <div class="wlbl pt" id="lB">B</div>
-    <div class="wlbl pt" id="lC">C</div>
-    <div class="wlbl pt" id="lD">D</div>
-    <div class="wlbl coord" id="coordA"></div>
-    <div class="wlbl coord" id="coordB"></div>
-    <div class="wlbl cx" id="ldx"></div>
-    <div class="wlbl cy" id="ldy"></div>
-    <div class="wlbl dist" id="ldist"></div>
-    <div class="wlbl dist" id="ldistAB"></div>
-    <div class="wlbl cz" id="lcoordAz"></div>
-    <div id="place-hint">click to place</div>
-  </div>
-
-  <!-- info panel -->
-  <div id="panel">
-    <div id="panel-text">
-      <div id="cap-step"></div>
-      <div id="cap-title"></div>
-      <div id="cap-body"></div>
-    </div>
-    <div id="panel-action">
-      <div id="cap-prompt"></div>
-      <button id="continue" onclick="nextBeat()">
-        Continue
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.4"
-            stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-
-</div>
-
-<script type="importmap">{"imports":{
-  "three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",
-  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"
-}}</script>
-<script type="module">
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-/* ═══════════════════
+      /* ═══════════════════
    UTILS
    Math helpers and a simple spring physics function used for
    smooth point pop-in animations throughout the lesson.
 ═══════════════════ */
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const easeOut=(t)=>1-Math.pow(1-t,3);          // decelerates into final value
-const easeInOut=(t)=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2; // smooth S-curve
-const V3=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z); // shorthand constructor
-const tmpV=new THREE.Vector3(); // reusable vector for projection math
+      const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+      const easeOut = (t) => 1 - Math.pow(1 - t, 3); // decelerates into final value
+      const easeInOut = (t) =>
+        t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; // smooth S-curve
+      const V3 = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z); // shorthand constructor
+      const tmpV = new THREE.Vector3(); // reusable vector for projection math
 
-// Spring: simulates physical spring with stiffness k and damping d.
-// Call .tick(target, dt) each frame to move val toward target smoothly.
-// Used to animate point scale from 0→1 when points appear.
-function mkSpring(v=0,k=200,d=22){
-  let val=v,vel=0;
-  return{
-    get:()=>val,
-    tick(tgt,dt){const f=k*(tgt-val)-d*vel;vel+=f*dt;val+=vel*dt;return val;},
-    set(x){val=x;vel=0;}
-  };
-}
+      // Spring: simulates physical spring with stiffness k and damping d.
+      // Call .tick(target, dt) each frame to move val toward target smoothly.
+      // Used to animate point scale from 0→1 when points appear.
+      function mkSpring(v = 0, k = 200, d = 22) {
+        let val = v,
+          vel = 0;
+        return {
+          get: () => val,
+          tick(tgt, dt) {
+            const f = k * (tgt - val) - d * vel;
+            vel += f * dt;
+            val += vel * dt;
+            return val;
+          },
+          set(x) {
+            val = x;
+            vel = 0;
+          },
+        };
+      }
 
-/* ═══════════════════
+      /* ═══════════════════
    RENDERER
 ═══════════════════ */
-const cv=document.getElementById('cv');
-const wrap=document.getElementById('canvas-wrap');
-const W=()=>wrap.clientWidth, H=()=>wrap.clientHeight;
-const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.setSize(W(),H());
-renderer.setClearColor(0xf8f8f6,1);
+      const cv = document.getElementById("cv");
+      const wrap = document.getElementById("canvas-wrap");
+      const W = () => wrap.clientWidth,
+        H = () => wrap.clientHeight;
+      const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+      renderer.setSize(W(), H());
+      renderer.setClearColor(0xf8f8f6, 1);
 
-const scene=new THREE.Scene();
-const camera=new THREE.PerspectiveCamera(44,W()/H(),.01,500);
-camera.up.set(0,1,0);
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(44, W() / H(), 0.01, 500);
+      camera.up.set(0, 1, 0);
 
-const orbit=new OrbitControls(camera,cv);
-orbit.enableDamping=true;orbit.dampingFactor=.07;
-orbit.enablePan=false;orbit.minDistance=4;orbit.maxDistance=50;
-orbit.enabled=false;
+      const orbit = new OrbitControls(camera, cv);
+      orbit.enableDamping = true;
+      orbit.dampingFactor = 0.07;
+      orbit.enablePan = false;
+      orbit.minDistance = 4;
+      orbit.maxDistance = 50;
+      orbit.enabled = false;
 
-const clock=new THREE.Clock();
+      const clock = new THREE.Clock();
 
-/* ═══════════════════
+      /* ═══════════════════
    CAMERA SYSTEM
 ═══════════════════ */
-const CAMS={
-  flat: {pos:V3(0,0,16), look:V3(0,0,0)},
-  side: {pos:V3(0,0,16), look:V3(0,0,0)}, // will be overridden for Z reveal
-  iso:  {pos:V3(10,8,10),look:V3(0,0,0)},
-};
+      const CAMS = {
+        flat: { pos: V3(0, 0, 16), look: V3(0, 0, 0) },
+        side: { pos: V3(0, 0, 16), look: V3(0, 0, 0) }, // will be overridden for Z reveal
+        iso: { pos: V3(10, 8, 10), look: V3(0, 0, 0) },
+      };
 
-let camCurP=V3(0,0,16), camCurL=V3(0,0,0);
-let camTgtP=V3(0,0,16), camTgtL=V3(0,0,0);
-let camLocked=false; // when true, camera lerp is driven by animation not targets
+      let camCurP = V3(0, 0, 16),
+        camCurL = V3(0, 0, 0);
+      let camTgtP = V3(0, 0, 16),
+        camTgtL = V3(0, 0, 0);
+      let camLocked = false; // when true, camera lerp is driven by animation not targets
 
-function setCam(k,instant=false){
-  const c=CAMS[k];
-  camTgtP.copy(c.pos); camTgtL.copy(c.look);
-  if(instant){
-    camCurP.copy(c.pos); camCurL.copy(c.look);
-    camera.position.copy(camCurP); camera.lookAt(camCurL);
-    orbit.target.copy(camCurL);
-  }
-}
+      function setCam(k, instant = false) {
+        const c = CAMS[k];
+        camTgtP.copy(c.pos);
+        camTgtL.copy(c.look);
+        if (instant) {
+          camCurP.copy(c.pos);
+          camCurL.copy(c.look);
+          camera.position.copy(camCurP);
+          camera.lookAt(camCurL);
+          orbit.target.copy(camCurL);
+        }
+      }
 
-function tickCam(dt){
-  if(orbit.enabled){orbit.update();return;}
-  if(camLocked)return; // animation drives directly
-  const s=clamp(.028+dt*.9,.028,.14);
-  camCurP.lerp(camTgtP,s); camCurL.lerp(camTgtL,s);
-  camera.position.copy(camCurP); camera.lookAt(camCurL);
-  orbit.target.copy(camCurL);
-}
+      function tickCam(dt) {
+        if (orbit.enabled) {
+          orbit.update();
+          return;
+        }
+        if (camLocked) return; // animation drives directly
+        const s = clamp(0.028 + dt * 0.9, 0.028, 0.14);
+        camCurP.lerp(camTgtP, s);
+        camCurL.lerp(camTgtL, s);
+        camera.position.copy(camCurP);
+        camera.lookAt(camCurL);
+        orbit.target.copy(camCurL);
+      }
 
-/* ═══════════════════
+      /* ═══════════════════
    MATERIALS
 ═══════════════════ */
-const COL={
-  dark:0x111111,org:0xFF9022,
-  X:0xb03a35,Y:0x267326,Z:0x2f5f99,
-  Xl:0xecc8c5,Yl:0xc5e0c5,Zl:0xc5d5ed,
-  grid:0xd8d8d4,gridMin:0xecece8,
-  gray:0x999999,lgray:0xcccccc,
-};
-function mSolid(col,op=1){return new THREE.MeshBasicMaterial({color:col,transparent:op<1,opacity:op,side:THREE.DoubleSide,depthWrite:false});}
-function mLine(col,op=1){return new THREE.LineBasicMaterial({color:col,transparent:op<1,opacity:op,depthWrite:false});}
-function mDash(col,op=.65,sz=.18,gp=.1){return new THREE.LineDashedMaterial({color:col,transparent:op<1,opacity:op,dashSize:sz,gapSize:gp,depthWrite:false});}
+      const COL = {
+        dark: 0x111111,
+        org: 0xff9022,
+        X: 0xb03a35,
+        Y: 0x267326,
+        Z: 0x2f5f99,
+        Xl: 0xecc8c5,
+        Yl: 0xc5e0c5,
+        Zl: 0xc5d5ed,
+        grid: 0xd8d8d4,
+        gridMin: 0xecece8,
+        gray: 0x999999,
+        lgray: 0xcccccc,
+      };
+      function mSolid(col, op = 1) {
+        return new THREE.MeshBasicMaterial({
+          color: col,
+          transparent: op < 1,
+          opacity: op,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        });
+      }
+      function mLine(col, op = 1) {
+        return new THREE.LineBasicMaterial({
+          color: col,
+          transparent: op < 1,
+          opacity: op,
+          depthWrite: false,
+        });
+      }
+      function mDash(col, op = 0.65, sz = 0.18, gp = 0.1) {
+        return new THREE.LineDashedMaterial({
+          color: col,
+          transparent: op < 1,
+          opacity: op,
+          dashSize: sz,
+          gapSize: gp,
+          depthWrite: false,
+        });
+      }
 
-/* ═══════════════════
+      /* ═══════════════════
    GEOMETRY HELPERS
 ═══════════════════ */
-function mkLineObj(col,op=.7){
-  const g=new THREE.BufferGeometry().setFromPoints([V3(),V3(1,0,0)]);
-  const l=new THREE.Line(g,mLine(col,op));
-  l.visible=false;scene.add(l);return l;
-}
-function mkDashObj(col,op=.6){
-  const g=new THREE.BufferGeometry().setFromPoints([V3(),V3(1,0,0)]);
-  const l=new THREE.LineSegments(g,mDash(col,op));
-  l.visible=false;scene.add(l);return l;
-}
-function setLP(l,p1,p2){
-  const a=l.geometry.attributes.position.array;
-  a[0]=p1.x;a[1]=p1.y;a[2]=p1.z;
-  a[3]=p2.x;a[4]=p2.y;a[5]=p2.z;
-  l.geometry.attributes.position.needsUpdate=true;
-  l.geometry.computeBoundingSphere();
-  if(l.material.isLineDashedMaterial)l.computeLineDistances();
-}
+      function mkLineObj(col, op = 0.7) {
+        const g = new THREE.BufferGeometry().setFromPoints([V3(), V3(1, 0, 0)]);
+        const l = new THREE.Line(g, mLine(col, op));
+        l.visible = false;
+        scene.add(l);
+        return l;
+      }
+      function mkDashObj(col, op = 0.6) {
+        const g = new THREE.BufferGeometry().setFromPoints([V3(), V3(1, 0, 0)]);
+        const l = new THREE.LineSegments(g, mDash(col, op));
+        l.visible = false;
+        scene.add(l);
+        return l;
+      }
+      function setLP(l, p1, p2) {
+        const a = l.geometry.attributes.position.array;
+        a[0] = p1.x;
+        a[1] = p1.y;
+        a[2] = p1.z;
+        a[3] = p2.x;
+        a[4] = p2.y;
+        a[5] = p2.z;
+        l.geometry.attributes.position.needsUpdate = true;
+        l.geometry.computeBoundingSphere();
+        if (l.material.isLineDashedMaterial) l.computeLineDistances();
+      }
 
-// animated draw line using dashOffset trick
-function mkAnimLine(col,op=.7){
-  const g=new THREE.BufferGeometry().setFromPoints([V3(),V3(1,0,0)]);
-  const m=new THREE.LineDashedMaterial({color:col,opacity:op,transparent:true,dashSize:300,gapSize:.001,depthWrite:false});
-  const l=new THREE.Line(g,m);
-  l.visible=false;scene.add(l);return l;
-}
-function setAnimLine(l,p1,p2,t){
-  // update endpoints
-  const a=l.geometry.attributes.position.array;
-  a[0]=p1.x;a[1]=p1.y;a[2]=p1.z;
-  a[3]=p2.x;a[4]=p2.y;a[5]=p2.z;
-  l.geometry.attributes.position.needsUpdate=true;
-  l.geometry.computeBoundingSphere();
-  const len=p1.distanceTo(p2);
-  const drawn=len*clamp(t,0,1);
-  l.material.dashSize=drawn+.001;
-  l.material.gapSize=Math.max(.001,len-drawn+.001);
-  l.computeLineDistances();
-}
+      // animated draw line using dashOffset trick
+      function mkAnimLine(col, op = 0.7) {
+        const g = new THREE.BufferGeometry().setFromPoints([V3(), V3(1, 0, 0)]);
+        const m = new THREE.LineDashedMaterial({
+          color: col,
+          opacity: op,
+          transparent: true,
+          dashSize: 300,
+          gapSize: 0.001,
+          depthWrite: false,
+        });
+        const l = new THREE.Line(g, m);
+        l.visible = false;
+        scene.add(l);
+        return l;
+      }
+      function setAnimLine(l, p1, p2, t) {
+        // update endpoints
+        const a = l.geometry.attributes.position.array;
+        a[0] = p1.x;
+        a[1] = p1.y;
+        a[2] = p1.z;
+        a[3] = p2.x;
+        a[4] = p2.y;
+        a[5] = p2.z;
+        l.geometry.attributes.position.needsUpdate = true;
+        l.geometry.computeBoundingSphere();
+        const len = p1.distanceTo(p2);
+        const drawn = len * clamp(t, 0, 1);
+        l.material.dashSize = drawn + 0.001;
+        l.material.gapSize = Math.max(0.001, len - drawn + 0.001);
+        l.computeLineDistances();
+      }
 
-// axis arrow group
-function mkAxisArrow(col,dir,len=5.5){
-  const g=new THREE.Group();g.visible=false;scene.add(g);
-  // positive shaft
-  const sh=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,len,8),mSolid(col,.6));
-  sh.quaternion.setFromUnitVectors(V3(0,1,0),dir.clone().normalize());
-  sh.position.copy(dir.clone().multiplyScalar(len/2));
-  const hd=new THREE.Mesh(new THREE.ConeGeometry(.05,.17,8),mSolid(col,.75));
-  hd.quaternion.setFromUnitVectors(V3(0,1,0),dir.clone().normalize());
-  hd.position.copy(dir.clone().multiplyScalar(len+.085));
-  // negative (lighter)
-  const shn=new THREE.Mesh(new THREE.CylinderGeometry(.009,.009,len,8),mSolid(col,.25));
-  shn.quaternion.setFromUnitVectors(V3(0,1,0),dir.clone().negate().normalize());
-  shn.position.copy(dir.clone().negate().multiplyScalar(len/2));
-  g.add(sh,hd,shn);
-  g._len=len;g._dir=dir.clone();
-  return g;
-}
+      // axis arrow group
+      function mkAxisArrow(col, dir, len = 5.5) {
+        const g = new THREE.Group();
+        g.visible = false;
+        scene.add(g);
+        // positive shaft
+        const sh = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.012, 0.012, len, 8),
+          mSolid(col, 0.6),
+        );
+        sh.quaternion.setFromUnitVectors(V3(0, 1, 0), dir.clone().normalize());
+        sh.position.copy(dir.clone().multiplyScalar(len / 2));
+        const hd = new THREE.Mesh(
+          new THREE.ConeGeometry(0.05, 0.17, 8),
+          mSolid(col, 0.75),
+        );
+        hd.quaternion.setFromUnitVectors(V3(0, 1, 0), dir.clone().normalize());
+        hd.position.copy(dir.clone().multiplyScalar(len + 0.085));
+        // negative (lighter)
+        const shn = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.009, 0.009, len, 8),
+          mSolid(col, 0.25),
+        );
+        shn.quaternion.setFromUnitVectors(
+          V3(0, 1, 0),
+          dir.clone().negate().normalize(),
+        );
+        shn.position.copy(
+          dir
+            .clone()
+            .negate()
+            .multiplyScalar(len / 2),
+        );
+        g.add(sh, hd, shn);
+        g._len = len;
+        g._dir = dir.clone();
+        return g;
+      }
 
-// point group with invisible hit helper
-function mkPt(col,r=.065){
-  const g=new THREE.Group();
-  g.add(new THREE.Mesh(new THREE.SphereGeometry(r,22,22),mSolid(col)));
-  g.add(new THREE.Mesh(new THREE.SphereGeometry(r*5.5,8,8),
-    new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false})));
-  g.visible=false;scene.add(g);return g;
-}
+      // point group with invisible hit helper
+      function mkPt(col, r = 0.065) {
+        const g = new THREE.Group();
+        g.add(new THREE.Mesh(new THREE.SphereGeometry(r, 22, 22), mSolid(col)));
+        g.add(
+          new THREE.Mesh(
+            new THREE.SphereGeometry(r * 5.5, 8, 8),
+            new THREE.MeshBasicMaterial({
+              transparent: true,
+              opacity: 0,
+              depthWrite: false,
+            }),
+          ),
+        );
+        g.visible = false;
+        scene.add(g);
+        return g;
+      }
 
-// transform gizmo arrow (for moving a point)
-function mkGizArrow(col,dir){
-  const g=new THREE.Group();g.visible=false;scene.add(g);
-  const sh=new THREE.Mesh(new THREE.CylinderGeometry(.022,.022,.85,8),mSolid(col,.88));
-  sh.position.y=.425;
-  const hd=new THREE.Mesh(new THREE.ConeGeometry(.068,.21,8),mSolid(col,.96));
-  hd.position.y=.956;
-  g.add(sh,hd);
-  g.quaternion.setFromUnitVectors(V3(0,1,0),dir.clone().normalize());
-  g._axis=dir.clone().normalize();
-  return g;
-}
+      // transform gizmo arrow (for moving a point)
+      function mkGizArrow(col, dir) {
+        const g = new THREE.Group();
+        g.visible = false;
+        scene.add(g);
+        const sh = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.022, 0.022, 0.85, 8),
+          mSolid(col, 0.88),
+        );
+        sh.position.y = 0.425;
+        const hd = new THREE.Mesh(
+          new THREE.ConeGeometry(0.068, 0.21, 8),
+          mSolid(col, 0.96),
+        );
+        hd.position.y = 0.956;
+        g.add(sh, hd);
+        g.quaternion.setFromUnitVectors(V3(0, 1, 0), dir.clone().normalize());
+        g._axis = dir.clone().normalize();
+        return g;
+      }
 
-/* ═══════════════════
+      /* ═══════════════════
    2D GRID (XY plane)
 ═══════════════════ */
-function mkXYGrid(hs=9){
-  const verts=[],cols=[];
-  const push=(x1,y1,x2,y2,col)=>{
-    verts.push(x1,y1,0,x2,y2,0);
-    const c=new THREE.Color(col);
-    cols.push(c.r,c.g,c.b,c.r,c.g,c.b);
-  };
-  for(let i=-hs;i<=hs;i++){
-    const col=(i===0)?COL.grid:(Math.abs(i)%5===0?COL.grid:COL.gridMin);
-    push(i,-hs,i,hs,col);
-    push(-hs,i,hs,i,col);
-  }
-  const geo=new THREE.BufferGeometry();
-  geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
-  geo.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));
-  const mat=new THREE.LineBasicMaterial({vertexColors:true,transparent:true,opacity:.85,depthWrite:false});
-  const m=new THREE.LineSegments(geo,mat);
-  m.position.z=-.01;
-  return m;
-}
-const grid2D=mkXYGrid(); scene.add(grid2D);
-const grid3D=new THREE.GridHelper(28,28,COL.grid,COL.gridMin);
-grid3D.visible=false; scene.add(grid3D);
+      function mkXYGrid(hs = 9) {
+        const verts = [],
+          cols = [];
+        const push = (x1, y1, x2, y2, col) => {
+          verts.push(x1, y1, 0, x2, y2, 0);
+          const c = new THREE.Color(col);
+          cols.push(c.r, c.g, c.b, c.r, c.g, c.b);
+        };
+        for (let i = -hs; i <= hs; i++) {
+          const col =
+            i === 0 ? COL.grid : Math.abs(i) % 5 === 0 ? COL.grid : COL.gridMin;
+          push(i, -hs, i, hs, col);
+          push(-hs, i, hs, i, col);
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute(verts, 3),
+        );
+        geo.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3));
+        const mat = new THREE.LineBasicMaterial({
+          vertexColors: true,
+          transparent: true,
+          opacity: 0.85,
+          depthWrite: false,
+        });
+        const m = new THREE.LineSegments(geo, mat);
+        m.position.z = -0.01;
+        return m;
+      }
+      const grid2D = mkXYGrid();
+      scene.add(grid2D);
+      const grid3D = new THREE.GridHelper(28, 28, COL.grid, COL.gridMin);
+      grid3D.visible = false;
+      scene.add(grid3D);
 
-/* ═══════════════════
+      /* ═══════════════════
    SCENE OBJECTS
 ═══════════════════ */
 
-// origin dot
-const originDot=new THREE.Mesh(new THREE.SphereGeometry(.07,18,18),mSolid(COL.dark,.8));
-originDot.visible=false; scene.add(originDot);
+      // origin dot
+      const originDot = new THREE.Mesh(
+        new THREE.SphereGeometry(0.07, 18, 18),
+        mSolid(COL.dark, 0.8),
+      );
+      originDot.visible = false;
+      scene.add(originDot);
 
-// leader line from origin to annotation
-const originLeader=mkLineObj(COL.gray,.35);
-originLeader.visible=false;
+      // leader line from origin to annotation
+      const originLeader = mkLineObj(COL.gray, 0.35);
+      originLeader.visible = false;
 
-// origin pulse ring
-const pulseRing=new THREE.Mesh(
-  new THREE.RingGeometry(.06,.11,40),
-  new THREE.MeshBasicMaterial({color:COL.dark,transparent:true,opacity:0,side:THREE.DoubleSide})
-);
-scene.add(pulseRing);
+      // origin pulse ring
+      const pulseRing = new THREE.Mesh(
+        new THREE.RingGeometry(0.06, 0.11, 40),
+        new THREE.MeshBasicMaterial({
+          color: COL.dark,
+          transparent: true,
+          opacity: 0,
+          side: THREE.DoubleSide,
+        }),
+      );
+      scene.add(pulseRing);
 
-// axes
-const axX=mkAxisArrow(COL.X,V3(1,0,0));
-const axY=mkAxisArrow(COL.Y,V3(0,1,0));
-const axZ=mkAxisArrow(COL.Z,V3(0,0,1));
+      // axes
+      const axX = mkAxisArrow(COL.X, V3(1, 0, 0));
+      const axY = mkAxisArrow(COL.Y, V3(0, 1, 0));
+      const axZ = mkAxisArrow(COL.Z, V3(0, 0, 1));
 
-// points
-const ptA=mkPt(COL.dark,.07);
-const ptB=mkPt(COL.org,.08);
-const ptC=mkPt(COL.dark,.07);
-const ptD=mkPt(COL.dark,.07);
-const scA=mkSpring(0,240,24);
-const scB=mkSpring(0,240,24);
-const scC=mkSpring(0,240,24);
-const scD=mkSpring(0,240,24);
+      // points
+      const ptA = mkPt(COL.dark, 0.07);
+      const ptB = mkPt(COL.org, 0.08);
+      const ptC = mkPt(COL.dark, 0.07);
+      const ptD = mkPt(COL.dark, 0.07);
+      const scA = mkSpring(0, 240, 24);
+      const scB = mkSpring(0, 240, 24);
+      const scC = mkSpring(0, 240, 24);
+      const scD = mkSpring(0, 240, 24);
 
-// gizmo arrows on ptA
-const gizAx=mkGizArrow(COL.X,V3(1,0,0));
-const gizAy=mkGizArrow(COL.Y,V3(0,1,0));
-const gizAz=mkGizArrow(COL.Z,V3(0,0,1)); // only in 3D
+      // gizmo arrows on ptA
+      const gizAx = mkGizArrow(COL.X, V3(1, 0, 0));
+      const gizAy = mkGizArrow(COL.Y, V3(0, 1, 0));
+      const gizAz = mkGizArrow(COL.Z, V3(0, 0, 1)); // only in 3D
 
-// Pythagorean lines (origin → A)
-const legX=mkAnimLine(COL.X,.65);  // horizontal leg
-const legY=mkAnimLine(COL.Y,.65);  // vertical leg
-const hyp=mkAnimLine(COL.dark,.55); // hypotenuse
+      // Pythagorean lines (origin → A)
+      const legX = mkAnimLine(COL.X, 0.65); // horizontal leg
+      const legY = mkAnimLine(COL.Y, 0.65); // vertical leg
+      const hyp = mkAnimLine(COL.dark, 0.55); // hypotenuse
 
-// right angle marker
-const rightAngle=new THREE.LineLoop(
-  new THREE.BufferGeometry().setFromPoints([V3(0,0,0),V3(.25,0,0),V3(.25,.25,0),V3(0,.25,0)]),
-  mLine(COL.gray,.4)
-);
-rightAngle.visible=false; scene.add(rightAngle);
+      // right angle marker
+      const rightAngle = new THREE.LineLoop(
+        new THREE.BufferGeometry().setFromPoints([
+          V3(0, 0, 0),
+          V3(0.25, 0, 0),
+          V3(0.25, 0.25, 0),
+          V3(0, 0.25, 0),
+        ]),
+        mLine(COL.gray, 0.4),
+      );
+      rightAngle.visible = false;
+      scene.add(rightAngle);
 
-// edge A-B
-const edgeAB=mkAnimLine(COL.dark,.6);
-let edgeABprog=0, drawEdgeAB=false;
+      // edge A-B
+      const edgeAB = mkAnimLine(COL.dark, 0.6);
+      let edgeABprog = 0,
+        drawEdgeAB = false;
 
-// triangle and quad
-const triGeo=new THREE.BufferGeometry();
-triGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(9),3));
-const triMesh=new THREE.Mesh(triGeo,mSolid(COL.org,.07));
-triMesh.visible=false; scene.add(triMesh);
-const eBC=mkLineObj(COL.dark,.4);
-const eAC=mkLineObj(COL.dark,.4);
+      // triangle and quad
+      const triGeo = new THREE.BufferGeometry();
+      triGeo.setAttribute(
+        "position",
+        new THREE.BufferAttribute(new Float32Array(9), 3),
+      );
+      const triMesh = new THREE.Mesh(triGeo, mSolid(COL.org, 0.07));
+      triMesh.visible = false;
+      scene.add(triMesh);
+      const eBC = mkLineObj(COL.dark, 0.4);
+      const eAC = mkLineObj(COL.dark, 0.4);
 
-const quadGeo=new THREE.BufferGeometry();
-quadGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(18),3));
-const quadMesh=new THREE.Mesh(quadGeo,mSolid(COL.org,.06));
-quadMesh.visible=false; scene.add(quadMesh);
-const eAD=mkLineObj(COL.dark,.4);
-const eCD=mkLineObj(COL.dark,.4);
-const eBD=mkLineObj(COL.dark,.4);
+      const quadGeo = new THREE.BufferGeometry();
+      quadGeo.setAttribute(
+        "position",
+        new THREE.BufferAttribute(new Float32Array(18), 3),
+      );
+      const quadMesh = new THREE.Mesh(quadGeo, mSolid(COL.org, 0.06));
+      quadMesh.visible = false;
+      scene.add(quadMesh);
+      const eAD = mkLineObj(COL.dark, 0.4);
+      const eCD = mkLineObj(COL.dark, 0.4);
+      const eBD = mkLineObj(COL.dark, 0.4);
 
-// ghost for placement
-const clickGhost=new THREE.Mesh(
-  new THREE.SphereGeometry(.09,18,18),
-  mSolid(COL.org,.18)
-);
-clickGhost.visible=false; scene.add(clickGhost);
+      // ghost for placement
+      const clickGhost = new THREE.Mesh(
+        new THREE.SphereGeometry(0.09, 18, 18),
+        mSolid(COL.org, 0.18),
+      );
+      clickGhost.visible = false;
+      scene.add(clickGhost);
 
-/* ═══════════════════
+      /* ═══════════════════
    LABEL UTILS
 ═══════════════════ */
-function tog(id,on){
-  const el=document.getElementById(id);
-  if(el)el.classList.toggle('on',!!on);
-}
-function proj(wp,el,ox=8,oy=-18){
-  tmpV.copy(wp).project(camera);
-  if(tmpV.z>1){el.style.display='none';return;}
-  el.style.display='';
-  el.style.left=(tmpV.x*.5+.5)*W()+ox+'px';
-  el.style.top=(-.5*tmpV.y+.5)*H()+oy+'px';
-}
-function fmt(v){return v.toFixed(1);}
-function fmtPt2(x,y){return`(${fmt(x)}, ${fmt(y)})`;}
-function fmtPt3(x,y,z){return`(${fmt(x)}, ${fmt(y)}, ${fmt(z)})`;}
+      function tog(id, on) {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle("on", !!on);
+      }
+      function proj(wp, el, ox = 8, oy = -18) {
+        tmpV.copy(wp).project(camera);
+        if (tmpV.z > 1) {
+          el.style.display = "none";
+          return;
+        }
+        el.style.display = "";
+        el.style.left = (tmpV.x * 0.5 + 0.5) * W() + ox + "px";
+        el.style.top = (-0.5 * tmpV.y + 0.5) * H() + oy + "px";
+      }
+      function fmt(v) {
+        return v.toFixed(1);
+      }
+      function fmtPt2(x, y) {
+        return `(${fmt(x)}, ${fmt(y)})`;
+      }
+      function fmtPt3(x, y, z) {
+        return `(${fmt(x)}, ${fmt(y)}, ${fmt(z)})`;
+      }
 
-function updateLabels(){
-  const A=ptA.position,B=ptB.position;
-  const C=ptC.position,D=ptD.position;
+      function updateLabels() {
+        const A = ptA.position,
+          B = ptB.position;
+        const C = ptC.position,
+          D = ptD.position;
 
-  // origin label — project to tip of leader line
-  if(originDot.visible) proj(V3(1.2,1.05,0),document.getElementById('lOrigin'),4,0);
+        // origin label — project to tip of leader line
+        if (originDot.visible)
+          proj(V3(1.2, 1.05, 0), document.getElementById("lOrigin"), 4, 0);
 
-  // axis tips
-  proj(V3(5.7,0,0),  document.getElementById('lX'),3,3);
-  proj(V3(0,5.7,0),  document.getElementById('lY'),3,-15);
-  proj(V3(0,0,5.7),  document.getElementById('lZ'),3,3);
+        // axis tips
+        proj(V3(5.7, 0, 0), document.getElementById("lX"), 3, 3);
+        proj(V3(0, 5.7, 0), document.getElementById("lY"), 3, -15);
+        proj(V3(0, 0, 5.7), document.getElementById("lZ"), 3, 3);
 
-  // point names — offset upper-left for A, upper-right for others
-  if(ptA.visible) proj(A,document.getElementById('lA'),-20,-20);
-  if(ptB.visible) proj(B,document.getElementById('lB'),10,-20);
-  if(ptC.visible) proj(C,document.getElementById('lC'),10,-20);
-  if(ptD.visible) proj(D,document.getElementById('lD'),10,-20);
+        // point names — offset upper-left for A, upper-right for others
+        if (ptA.visible) proj(A, document.getElementById("lA"), -20, -20);
+        if (ptB.visible) proj(B, document.getElementById("lB"), 10, -20);
+        if (ptC.visible) proj(C, document.getElementById("lC"), 10, -20);
+        if (ptD.visible) proj(D, document.getElementById("lD"), 10, -20);
 
-  // coords — below the point, clear of gizmo arrows
-  if(document.getElementById('coordA').classList.contains('on'))
-    proj(A,document.getElementById('coordA'),10,22);
-  if(document.getElementById('coordB').classList.contains('on'))
-    proj(B,document.getElementById('coordB'),10,22);
+        // coords — below the point, clear of gizmo arrows
+        if (document.getElementById("coordA").classList.contains("on"))
+          proj(A, document.getElementById("coordA"), 10, 22);
+        if (document.getElementById("coordB").classList.contains("on"))
+          proj(B, document.getElementById("coordB"), 10, 22);
 
-  // Δx label — midpoint of horizontal leg
-  if(document.getElementById('ldx').classList.contains('on'))
-    proj(V3(A.x/2,0,0),document.getElementById('ldx'),-14,10);
-  // Δy label — midpoint of vertical leg
-  if(document.getElementById('ldy').classList.contains('on'))
-    proj(V3(A.x,A.y/2,0),document.getElementById('ldy'),6,0);
-  // dist label — offset to left of hypotenuse midpoint, perpendicular offset
-  if(document.getElementById('ldist').classList.contains('on')){
-    // place label to the left of the hyp midpoint
-    const mid=V3(A.x/2, A.y/2, 0);
-    // perpendicular to A direction: rotate 90deg
-    const len=Math.sqrt(A.x*A.x+A.y*A.y);
-    const px = len>0.1 ? -A.y/len : 0;
-    const py = len>0.1 ?  A.x/len : 1;
-    const labelPos=V3(mid.x+px*.6, mid.y+py*.6, 0);
-    proj(labelPos, document.getElementById('ldist'), -16, -6);
-  }
-  // edge A-B dist label — offset perpendicular above the line
-  if(document.getElementById('ldistAB').classList.contains('on')){
-    const mid=A.clone().add(B).multiplyScalar(.5);
-    const dx=B.x-A.x, dy=B.y-A.y;
-    const len=Math.sqrt(dx*dx+dy*dy);
-    const px = len>0.1 ? -dy/len : 0;
-    const py = len>0.1 ?  dx/len : 1;
-    const labelPos=V3(mid.x+px*.4, mid.y+py*.4, 0);
-    proj(labelPos, document.getElementById('ldistAB'), -16, -6);
-  }
+        // Δx label — midpoint of horizontal leg
+        if (document.getElementById("ldx").classList.contains("on"))
+          proj(V3(A.x / 2, 0, 0), document.getElementById("ldx"), -14, 10);
+        // Δy label — midpoint of vertical leg
+        if (document.getElementById("ldy").classList.contains("on"))
+          proj(V3(A.x, A.y / 2, 0), document.getElementById("ldy"), 6, 0);
+        // dist label — offset to left of hypotenuse midpoint, perpendicular offset
+        if (document.getElementById("ldist").classList.contains("on")) {
+          // place label to the left of the hyp midpoint
+          const mid = V3(A.x / 2, A.y / 2, 0);
+          // perpendicular to A direction: rotate 90deg
+          const len = Math.sqrt(A.x * A.x + A.y * A.y);
+          const px = len > 0.1 ? -A.y / len : 0;
+          const py = len > 0.1 ? A.x / len : 1;
+          const labelPos = V3(mid.x + px * 0.6, mid.y + py * 0.6, 0);
+          proj(labelPos, document.getElementById("ldist"), -16, -6);
+        }
+        // edge A-B dist label — offset perpendicular above the line
+        if (document.getElementById("ldistAB").classList.contains("on")) {
+          const mid = A.clone().add(B).multiplyScalar(0.5);
+          const dx = B.x - A.x,
+            dy = B.y - A.y;
+          const len = Math.sqrt(dx * dx + dy * dy);
+          const px = len > 0.1 ? -dy / len : 0;
+          const py = len > 0.1 ? dx / len : 1;
+          const labelPos = V3(mid.x + px * 0.4, mid.y + py * 0.4, 0);
+          proj(labelPos, document.getElementById("ldistAB"), -16, -6);
+        }
 
-  // 3D z coord on point A
-  if(document.getElementById('lcoordAz').classList.contains('on'))
-    proj(A,document.getElementById('lcoordAz'),12,-5);
-}
+        // 3D z coord on point A
+        if (document.getElementById("lcoordAz").classList.contains("on"))
+          proj(A, document.getElementById("lcoordAz"), 12, -5);
+      }
 
-function setVis(obj,v){
-  const was=obj.visible; obj.visible=!!v;
-  if(v&&!was){
-    if(obj===ptA)scA.set(0);
-    if(obj===ptB)scB.set(0);
-    if(obj===ptC)scC.set(0);
-    if(obj===ptD)scD.set(0);
-  }
-}
+      function setVis(obj, v) {
+        const was = obj.visible;
+        obj.visible = !!v;
+        if (v && !was) {
+          if (obj === ptA) scA.set(0);
+          if (obj === ptB) scB.set(0);
+          if (obj === ptC) scC.set(0);
+          if (obj === ptD) scD.set(0);
+        }
+      }
 
-/* ═══════════════════
+      /* ═══════════════════
    CAPTION SYSTEM
 ═══════════════════ */
-let capTimer=null;
-function setCaption(title,body,prompt='',delay=140){
-  const t=document.getElementById('cap-title');
-  const b=document.getElementById('cap-body');
-  const p=document.getElementById('cap-prompt');
-  const s=document.getElementById('cap-step');
-  t.classList.remove('on');b.classList.remove('on');p.classList.remove('on');
-  if(capTimer)clearTimeout(capTimer);
-  capTimer=setTimeout(()=>{
-    s.textContent=`Step ${beatIdx+1} of ${TOTAL_BEATS}`;
-    s.classList.add('on');
-    t.innerHTML=title||''; b.innerHTML=body||''; p.innerHTML=prompt||'';
-    if(title)t.classList.add('on');
-    if(body)b.classList.add('on');
-    if(prompt)p.classList.add('on');
-  },delay);
-}
-function setPrompt(txt,delay=0){
-  const p=document.getElementById('cap-prompt');
-  p.classList.remove('on');
-  setTimeout(()=>{p.innerHTML=txt;if(txt)p.classList.add('on');},delay);
-}
-function clearPrompt(){document.getElementById('cap-prompt').classList.remove('on');}
+      let capTimer = null;
+      function setCaption(title, body, prompt = "", delay = 140) {
+        const t = document.getElementById("cap-title");
+        const b = document.getElementById("cap-body");
+        const p = document.getElementById("cap-prompt");
+        t.classList.remove("on");
+        b.classList.remove("on");
+        p.classList.remove("on");
+        if (capTimer) clearTimeout(capTimer);
+        capTimer = setTimeout(() => {
+          t.innerHTML = title || "";
+          b.innerHTML = body || "";
+          p.innerHTML = prompt || "";
+          if (title) t.classList.add("on");
+          if (body) b.classList.add("on");
+          if (prompt) p.classList.add("on");
+        }, delay);
+      }
+      function setPrompt(txt, delay = 0) {
+        const p = document.getElementById("cap-prompt");
+        p.classList.remove("on");
+        setTimeout(() => {
+          p.innerHTML = txt;
+          if (txt) p.classList.add("on");
+        }, delay);
+      }
+      function clearPrompt() {
+        document.getElementById("cap-prompt").classList.remove("on");
+      }
 
-function showContinue(label='Continue', delay=0){
-  if(delay>0){setTimeout(()=>tog('continue',true),delay);return;}
-  tog('continue',true);
-}
-function hideContinue(){tog('continue',false);}
-function showScroll(){}
-function hideScroll(){}
+      function showContinue(label = "Continue", delay = 0) {
+        if (delay > 0) {
+          setTimeout(() => tog("continue", true), delay);
+          return;
+        }
+        tog("continue", true);
+      }
+      function hideContinue() {
+        tog("continue", false);
+      }
+      function showScroll() {}
+      function hideScroll() {}
 
-/* ═══════════════════
+      /* ═══════════════════
    ANIMATION HELPERS
 ═══════════════════ */
-// queue of timed animations within a beat
-const anims=[];
-function after(ms,fn){return setTimeout(fn,ms);}
+      // queue of timed animations within a beat
+      const anims = [];
+      function after(ms, fn) {
+        return setTimeout(fn, ms);
+      }
 
-// animate a value from 0→1 over duration, calling fn(t) each frame
-const runningAnims=[];
-function animate01(duration,fn,onDone){
-  let elapsed=0;
-  const entry={elapsed:0,duration,fn,onDone,done:false};
-  runningAnims.push(entry);
-}
-function tickAnims(dt){
-  for(let i=runningAnims.length-1;i>=0;i--){
-    const a=runningAnims[i];
-    if(a.done)continue;
-    a.elapsed+=dt;
-    const t=clamp(a.elapsed/a.duration,0,1);
-    a.fn(easeInOut(t));
-    if(t>=1){a.done=true;runningAnims.splice(i,1);if(a.onDone)a.onDone();}
-  }
-}
+      // animate a value from 0→1 over duration, calling fn(t) each frame
+      const runningAnims = [];
+      function animate01(duration, fn, onDone) {
+        let elapsed = 0;
+        const entry = { elapsed: 0, duration, fn, onDone, done: false };
+        runningAnims.push(entry);
+      }
+      function tickAnims(dt) {
+        for (let i = runningAnims.length - 1; i >= 0; i--) {
+          const a = runningAnims[i];
+          if (a.done) continue;
+          a.elapsed += dt;
+          const t = clamp(a.elapsed / a.duration, 0, 1);
+          a.fn(easeInOut(t));
+          if (t >= 1) {
+            a.done = true;
+            runningAnims.splice(i, 1);
+            if (a.onDone) a.onDone();
+          }
+        }
+      }
 
-/* ═══════════════════
+      /* ═══════════════════
    BEAT SYSTEM
 ═══════════════════ */
-let beatIdx=0;
-let beatLocked=false; // when true, scroll/continue does nothing
-let hasMovedA=false; // tracks first gizmo drag on beat 6
-let placingPoint=null; // 'A'|'B'|'C'|'D'
-let pulseT=0;
-let legXprog=0,legYprog=0,hypprog=0;
-let drawLegX=false,drawLegY=false,drawHyp=false;
-let ptApos={x:3,y:2,z:0}; // default placement
+      let beatIdx = 0;
+      let beatLocked = false; // when true, scroll/continue does nothing
+      let hasMovedA = false; // tracks first gizmo drag on beat 6
+      let placingPoint = null; // 'A'|'B'|'C'|'D'
+      let pulseT = 0;
+      let legXprog = 0,
+        legYprog = 0,
+        hypprog = 0;
+      let drawLegX = false,
+        drawLegY = false,
+        drawHyp = false;
+      let ptApos = { x: 3, y: 2, z: 0 }; // default placement
 
-// Pythagorean state
-let pythState=0; // 0=hidden,1=legX,2=legY,3=hyp,4=formula
+      // Pythagorean state
+      let pythState = 0; // 0=hidden,1=legX,2=legY,3=hyp,4=formula
 
-const TOTAL_BEATS=16;
+      const TOTAL_BEATS = 16;
 
-function progress(idx){
-  document.getElementById('prog-fill').style.width=((idx/(TOTAL_BEATS-1))*100)+'%';
-}
+      function progress(idx) {
+        const dots = document.querySelectorAll(".prog-dot");
+        dots.forEach((d, i) => {
+          d.classList.toggle("active", i === idx);
+        });
+      }
 
-/* ─────────────────────────────────────────
+      /* ─────────────────────────────────────────
    BEAT DEFINITIONS
 ───────────────────────────────────────── */
-function runBeat(idx){
-  beatIdx=idx;
-  hideContinue();
-  progress(idx);
-  // clear any stale animations from previous beat
-  runningAnims.length=0;
-  beatLocked=false; // always reset at beat start; individual cases re-lock as needed
+      function runBeat(idx) {
+        beatIdx = idx;
+        hideContinue();
+        progress(idx);
+        // clear any stale animations from previous beat
+        runningAnims.length = 0;
+        beatLocked = false; // always reset at beat start; individual cases re-lock as needed
 
-  switch(idx){
+        switch (idx) {
+          /* ── Beat 0: coordinate plane ── */
+          case 0:
+            beatLocked = false;
+            grid2D.visible = true;
+            grid3D.visible = false;
+            axX.visible = false;
+            axY.visible = false;
+            axZ.visible = false;
+            originDot.visible = false;
+            originLeader.visible = false;
+            setVis(ptA, false);
+            setVis(ptB, false);
+            setVis(ptC, false);
+            setVis(ptD, false);
+            gizAx.visible = false;
+            gizAy.visible = false;
+            gizAz.visible = false;
+            legX.visible = false;
+            legY.visible = false;
+            hyp.visible = false;
+            rightAngle.visible = false;
+            edgeAB.visible = false;
+            setVis(triMesh, false);
+            setVis(eBC, false);
+            setVis(eAC, false);
+            setVis(quadMesh, false);
+            setVis(eAD, false);
+            setVis(eCD, false);
+            setVis(eBD, false);
+            pulseRing.material.opacity = 0;
+            tog("lOrigin", false);
+            tog("lX", false);
+            tog("lY", false);
+            tog("lZ", false);
+            tog("lA", false);
+            tog("lB", false);
+            tog("lC", false);
+            tog("lD", false);
+            tog("coordA", false);
+            tog("coordB", false);
+            tog("ldx", false);
+            tog("ldy", false);
+            tog("ldist", false);
+            tog("ldistAB", false);
+            tog("lcoordAz", false);
+            tog("formula-card", false);
+            setCam("flat", true);
+            setCaption(
+              "The coordinate plane",
+              "A flat grid where every location can be precisely described. It stretches in two directions: left and right, up and down.",
+            );
+            showContinue("got it →");
+            break;
 
-  /* ── Beat 0: coordinate plane ── */
-  case 0:
-    beatLocked=false;
-    grid2D.visible=true; grid3D.visible=false;
-    axX.visible=false; axY.visible=false; axZ.visible=false;
-    originDot.visible=false;
-    originLeader.visible=false;
-    setVis(ptA,false);setVis(ptB,false);setVis(ptC,false);setVis(ptD,false);
-    gizAx.visible=false;gizAy.visible=false;gizAz.visible=false;
-    legX.visible=false;legY.visible=false;hyp.visible=false;
-    rightAngle.visible=false;
-    edgeAB.visible=false;
-    setVis(triMesh,false);setVis(eBC,false);setVis(eAC,false);
-    setVis(quadMesh,false);setVis(eAD,false);setVis(eCD,false);setVis(eBD,false);
-    pulseRing.material.opacity=0;
-    tog('lOrigin',false);tog('lX',false);tog('lY',false);tog('lZ',false);
-    tog('lA',false);tog('lB',false);tog('lC',false);tog('lD',false);
-    tog('coordA',false);tog('coordB',false);
-    tog('ldx',false);tog('ldy',false);tog('ldist',false);tog('ldistAB',false);
-    tog('lcoordAz',false);
-    tog('formula-card',false);
-    setCam('flat',true);
-    setCaption('The coordinate plane','A flat grid where every location can be precisely described. It stretches in two directions: left and right, up and down.');
-    showContinue('got it →');
-    break;
+          /* ── Beat 1: origin ── */
+          case 1:
+            beatLocked = false;
+            originDot.visible = true;
+            originLeader.visible = true;
+            setLP(originLeader, V3(0, 0, 0), V3(1.2, 1.0, 0));
+            pulseT = 0;
+            tog("lOrigin", true);
+            setCaption(
+              "Right here is the origin.",
+              "Its location is <b>(0, 0)</b> in 2D space. Every measurement in this coordinate system starts from here.",
+            );
+            showContinue();
+            break;
 
-  /* ── Beat 1: origin ── */
-  case 1:
-    beatLocked=false;
-    originDot.visible=true;
-    originLeader.visible=true;
-    setLP(originLeader, V3(0,0,0), V3(1.2,1.0,0));
-    pulseT=0;
-    tog('lOrigin',true);
-    setCaption('Right here is the origin.','Its location is <b>(0, 0)</b> in 2D space. Every measurement in this coordinate system starts from here.');
-    showContinue();
-    break;
+          /* ── Beat 2: X axis ── */
+          case 2:
+            beatLocked = false;
+            tog("lOrigin", false);
+            originLeader.visible = false;
+            axX.visible = true;
+            axX.scale.set(0, 1, 1);
+            animate01(0.9, (t) => axX.scale.set(t, 1, 1));
+            tog("lX", true);
+            setCaption(
+              "This is the x axis.",
+              "It runs left and right in space. Positive values go right, negative values go left.",
+              "",
+              200,
+            );
+            showContinue("got it →", 800);
+            break;
 
-  /* ── Beat 2: X axis ── */
-  case 2:
-    beatLocked=false;
-    tog('lOrigin',false);
-    originLeader.visible=false;
-    axX.visible=true;
-    axX.scale.set(0,1,1);
-    animate01(.9,t=>axX.scale.set(t,1,1));
-    tog('lX',true);
-    setCaption('This is the x axis.','It runs left and right in space. Positive values go right, negative values go left.','' ,200);
-    showContinue('got it →',800);
-    break;
+          /* ── Beat 3: Y axis ── */
+          case 3:
+            beatLocked = false;
+            axY.visible = true;
+            axY.scale.set(1, 0, 1);
+            animate01(0.9, (t) => axY.scale.set(1, t, 1));
+            tog("lY", true);
+            setCaption(
+              "This is the y axis.",
+              "It runs up and down in space. Positive values go up, negative values go down.",
+              "",
+              200,
+            );
+            showContinue("got it →", 800);
+            break;
 
-  /* ── Beat 3: Y axis ── */
-  case 3:
-    beatLocked=false;
-    axY.visible=true;
-    axY.scale.set(1,0,1);
-    animate01(.9,t=>axY.scale.set(1,t,1));
-    tog('lY',true);
-    setCaption('This is the y axis.','It runs up and down in space. Positive values go up, negative values go down.','',200);
-    showContinue('got it →',800);
-    break;
+          /* ── Beat 4: both extend infinitely ── */
+          case 4:
+            beatLocked = false;
+            setCaption(
+              "They both extend infinitely.",
+              "Left and right. Up and down. The plane has no edges. It goes on forever in all four directions.",
+            );
+            showContinue("got it →");
+            break;
 
-  /* ── Beat 4: both extend infinitely ── */
-  case 4:
-    beatLocked=false;
-    setCaption('They both extend infinitely.','Left and right. Up and down. The plane has no edges. It goes on forever in all four directions.');
-    showContinue('got it →');
-    break;
+          /* ── Beat 5: place point A ── */
+          case 5:
+            beatLocked = false;
+            placingPoint = "A";
+            clickGhost.visible = true;
+            setCaption(
+              "Anywhere on this plane, there can be a point.",
+              "",
+              "click anywhere to place point A",
+            );
+            hideScroll();
+            break;
 
-  /* ── Beat 5: place point A ── */
-  case 5:
-    beatLocked=false;
-    placingPoint='A';
-    clickGhost.visible=true;
-    setCaption('Anywhere on this plane, there can be a point.','','↑  click anywhere to place point A');
-    hideScroll();
-    break;
+          /* ── Beat 6: gizmo intro ── */
+          case 6:
+            beatLocked = false;
+            hasMovedA = false;
+            placingPoint = null;
+            clickGhost.visible = false;
+            gizAx.visible = true;
+            gizAy.visible = true;
+            tog("lA", true);
+            tog("coordA", true);
+            setCaption(
+              "A point has an x value and a y value.",
+              'The colored arrows are a <b>transform gizmo</b>. Drag the <span style="color:#b03a35">red arrow</span> to move along X. Drag the <span style="color:#267326">green arrow</span> to move along Y. Watch the coordinates update.',
+              "drag an arrow to move point A",
+            );
+            break;
 
-  /* ── Beat 6: gizmo intro ── */
-  case 6:
-    beatLocked=false;
-    hasMovedA=false;
-    placingPoint=null;
-    clickGhost.visible=false;
-    gizAx.visible=true; gizAy.visible=true;
-    tog('lA',true); tog('coordA',true);
-    setCaption('A point has an x value and a y value.','The colored arrows are a <b>transform gizmo</b>. Drag the <span style="color:#b03a35">red arrow</span> to move along X. Drag the <span style="color:#267326">green arrow</span> to move along Y. Watch the coordinates update.','↑  drag an arrow to move point A');
-    break;
+          /* ── Beat 7: interactive legs ── */
+          case 7:
+            beatLocked = false;
+            gizAx.visible = false;
+            gizAy.visible = false;
+            tog("lA", true);
+            tog("coordA", true);
+            legX.visible = false;
+            legY.visible = false;
+            tog("ldx", false);
+            tog("ldy", false);
+            window._legPhase = 0;
+            setCaption(
+              "Coordinates describe exactly how to reach a point.",
+              'Starting at the origin, go <span style="color:#b03a35">x units</span> along the x axis, then <span style="color:#267326">y units</span> upward. You arrive at A.',
+              "click Continue to show the x distance",
+            );
+            showContinue();
+            break;
 
-  /* ── Beat 7: interactive legs ── */
-  case 7:
-    beatLocked=false;
-    gizAx.visible=false; gizAy.visible=false;
-    tog('lA',true); tog('coordA',true);
-    legX.visible=false; legY.visible=false;
-    tog('ldx',false); tog('ldy',false);
-    window._legPhase=0;
-    setCaption(
-      'Coordinates describe exactly how to reach a point.',
-      'Starting at the origin, go <span style="color:#b03a35">x units</span> along the x axis, then <span style="color:#267326">y units</span> upward. You arrive at A.',
-      '↑  click Continue to show the x distance'
-    );
-    showContinue();
-    break;
-
-  /* ── Beat 8: pythagorean distance ── */
-  case 8:
-    beatLocked=true;
-    hideContinue();
-    tog('formula-card',false);
-    setCaption('The distance from the origin to A uses the Pythagorean theorem.','These two legs form a right triangle. The straight-line distance is the hypotenuse.');
-    after(500,()=>{
-      const rx=ptA.position.x, ry=ptA.position.y;
-      const s=.28*Math.sign(rx)*Math.sign(ry);
-      rightAngle.geometry.setFromPoints([V3(rx,0,0),V3(rx-s,0,0),V3(rx-s,s,0),V3(rx,s,0)]);
-      rightAngle.visible=true;
-      after(500,()=>{
-        hyp.visible=true;
-        animate01(1.2,t=>{
-          setAnimLine(hyp,V3(0,0,0),ptA.position,t);
-        },()=>{
-          tog('ldist',true);
-          const d=ptA.position.length();
-          document.getElementById('ldist').textContent=`d = ${d.toFixed(2)}`;
-          after(300,()=>{
-            // show formula in callout card instead of cluttered world label
-            const ax=Math.abs(ptA.position.x),ay=Math.abs(ptA.position.y);
-            document.getElementById('fc-eq').textContent=`d = √(x² + y²)`;
-            document.getElementById('fc-vals').textContent=
-              `= √(${fmt(ax)}² + ${fmt(ay)}²)\n= ${d.toFixed(2)}`;
-            tog('formula-card',true);
-            beatLocked=false;
-            after(500,()=>showContinue('next →'));
-          });
-        });
-      });
-    });
-    break;
-
-  /* ── Beat 9: place point B ── */
-  case 9:
-    beatLocked=false;
-    hideContinue();
-    legX.visible=false; legY.visible=false;
-    rightAngle.visible=false;
-    tog('ldx',false); tog('ldy',false); tog('ldist',false);
-    tog('formula-card',false);
-    hyp.visible=false;
-    placingPoint='B';
-    clickGhost.visible=true;
-    setCaption('The distance between any two points works the same way.','','↑  click to place point B');
-    break;
-
-  /* ── Beat 10: edge A→B ── */
-  case 10:
-    beatLocked=false;
-    placingPoint=null; clickGhost.visible=false;
-    tog('coordA',false);
-    tog('coordB',true);
-    setCaption('We can connect two points with an edge.','An edge is a straight line between two vertices, the building block of all geometry.');
-    edgeAB.visible=true; edgeABprog=0; drawEdgeAB=true;
-    after(1200,()=>{
-      tog('ldistAB',true);
-      const d=ptA.position.distanceTo(ptB.position);
-      document.getElementById('ldistAB').textContent=`d = ${d.toFixed(2)}`;
-      showContinue('next →');
-    });
-    break;
-
-  /* ── Beat 11: triangle then quad — fully animated walkthrough ── */
-  case 11:
-    beatLocked=true;
-    hideContinue();
-    tog('coordB',false);
-    setCaption('Add a third point and you get a triangle.','A fourth point closes it into a rectangle, a special quadrilateral with right angles at every corner.');
-    // C = (B.x, A.y) — right angle at C
-    ptC.position.set(ptB.position.x, ptA.position.y, 0); scC.set(0); setVis(ptC,true);
-    tog('lC',true);
-    after(800,()=>{
-      // triangle: A-C (horizontal), C-B (vertical), A-B (hypotenuse = edgeAB)
-      setVis(triMesh,true); setVis(eAC,true); setVis(eBC,true);
-      updateTriGeo();
-      after(1400,()=>{
-        // D = (A.x, B.y) — completes the rectangle
-        ptD.position.set(ptA.position.x, ptB.position.y, 0); scD.set(0); setVis(ptD,true);
-        tog('lD',true);
-        after(800,()=>{
-          setVis(quadMesh,true);
-          setVis(eAD,true); setVis(eBD,true);
-          // hide the A-B edge — it becomes the interior diagonal of the rectangle
-          edgeAB.visible=false;
-          updateQuadGeo();
-          beatLocked=false;
-          after(600,()=>showContinue('next →'));
-        });
-      });
-    });
-    break;
-
-  /* ── Beat 12: clear to A only, intro third direction ── */
-  case 12:
-    beatLocked=true;
-    hideContinue();
-    tog('lB',false);tog('lC',false);tog('lD',false);
-    tog('ldistAB',false); tog('coordB',false);
-    // fade out all geometry over 600ms then hide
-    [ptB,ptC,ptD].forEach(pt=>{
-      if(pt.children[0])pt.children[0].material.opacity=1;
-    });
-    animate01(.6,t=>{
-      const op=1-t;
-      [ptB,ptC,ptD].forEach(pt=>{if(pt.children[0])pt.children[0].material.opacity=op;});
-      [edgeAB,triMesh,eBC,eAC,quadMesh,eAD,eCD,eBD].forEach(o=>{
-        if(o.material)o.material.opacity=(o===triMesh||o===quadMesh)?op*.07:op*.4;
-      });
-    },()=>{
-      setVis(ptB,false);setVis(ptC,false);setVis(ptD,false);
-      edgeAB.visible=false;
-      setVis(triMesh,false);setVis(eBC,false);setVis(eAC,false);
-      setVis(quadMesh,false);setVis(eAD,false);setVis(eCD,false);setVis(eBD,false);
-      // restore opacity for future use
-      [ptB,ptC,ptD].forEach(pt=>{if(pt.children[0])pt.children[0].material.opacity=1;});
-      [edgeAB,eBC,eAC,eAD,eCD,eBD].forEach(o=>{if(o.material)o.material.opacity=.4;});
-      triMesh.material.opacity=.07; quadMesh.material.opacity=.06;
-      tog('lA',true); tog('coordA',true);
-      gizAx.visible=false; gizAy.visible=false;
-      beatLocked=false;
-      setCaption('But what if there was a third direction?','We have left, right, up, and down. But what if we could move a point <b>forward or backward</b> through the screen?');
-      showContinue('show me →');
-    });
-    break;
-
-  /* ── Beat 13: Z axis reveal ── */
-  case 13:
-    beatLocked=true;
-    hideContinue();
-    tog('coordA',false);
-    hyp.visible=true;
-    setAnimLine(hyp,V3(0,0,0),ptA.position,1);
-    setCaption('Watch what happens when we introduce a third axis.','');
-
-    after(600,()=>{
-      camLocked=true;
-      const startP=camCurP.clone(), startL=camCurL.clone();
-      const endP=V3(16,0,0), endL=V3(0,0,0);
-      animate01(2.0,t=>{
-        const et=easeInOut(t);
-        camCurP.lerpVectors(startP,endP,et);
-        camCurL.lerpVectors(startL,endL,et);
-        camera.position.copy(camCurP);
-        camera.lookAt(camCurL);
-      },()=>{
-        after(600,()=>{
-          axZ.visible=true;
-          axZ.scale.set(1,0,1);
-          animate01(1.1,t=>axZ.scale.set(1,t,1),()=>{
-            tog('lZ',true);
-            setCaption('This is the Z axis.','It extends forwards and backwards in space. From this angle you can see it emerging from the plane.','' ,0);
-            // PAUSE HERE — let student take it in, then they click to continue
-            beatLocked=false;
-            after(400,()=>showContinue('continue →'));
-            // The swing-back happens on next beat advance
-            // Store state so nextBeat knows to swing
-            window._zRevealPhase2=true;
-          });
-        });
-      });
-    });
-    break;
-
-  /* ── Beat 14: swing to flat first (show Z axis emerging), then to iso ── */
-  case 14:
-    beatLocked=true;
-    hideContinue();
-    window._zRevealPhase2=false;
-    setCaption('Here is the Z axis from the front.','From this angle you can see it passing straight through the coordinate plane.');
-    {
-      // Phase A: swing from side-on back to flat 2D view
-      const fromP=camCurP.clone(), fromL=camCurL.clone();
-      const toFlatP=CAMS.flat.pos, toFlatL=CAMS.flat.look;
-      animate01(1.8,t=>{
-        const et=easeInOut(t);
-        camCurP.lerpVectors(fromP,toFlatP,et);
-        camCurL.lerpVectors(fromL,toFlatL,et);
-        camera.position.copy(camCurP);
-        camera.lookAt(camCurL);
-      },()=>{
-        // Hold on flat view for 1.4s so student sees Z axis head-on
-        after(1400,()=>{
-          // Phase B: swing to iso
-          setCaption('Now let\'s see it in 3D.','Watch the space open up as we rotate into full 3D.');
-          const fromP2=camCurP.clone(), fromL2=camCurL.clone();
-          const toP=CAMS.iso.pos, toL=CAMS.iso.look;
-          animate01(2.2,t=>{
-            const et=easeInOut(t);
-            camCurP.lerpVectors(fromP2,toP,et);
-            camCurL.lerpVectors(fromL2,toL,et);
-            camera.position.copy(camCurP);
-            camera.lookAt(camCurL);
-          },()=>{
-            camLocked=false;
-            camTgtP.copy(CAMS.iso.pos);
-            camTgtL.copy(CAMS.iso.look);
-            // switch to 3D floor grid now that we are in iso
-            grid2D.visible=false; grid3D.visible=true;
-            hyp.visible=true;
-            after(400,()=>{
-              gizAz.visible=true;
-              beatLocked=false;
-              setCaption('This is the Z axis.','It extends forwards and backwards in space. Now point A can move in a third direction.','↑  drag the blue arrow to pull A into 3D');
+          /* ── Beat 8: pythagorean distance ── */
+          case 8:
+            beatLocked = true;
+            hideContinue();
+            tog("formula-card", false);
+            setCaption(
+              "The distance from the origin to A uses the Pythagorean theorem.",
+              "These two legs form a right triangle. The straight-line distance is the hypotenuse.",
+            );
+            after(500, () => {
+              const rx = ptA.position.x,
+                ry = ptA.position.y;
+              const s = 0.28 * Math.sign(rx) * Math.sign(ry);
+              rightAngle.geometry.setFromPoints([
+                V3(rx, 0, 0),
+                V3(rx - s, 0, 0),
+                V3(rx - s, s, 0),
+                V3(rx, s, 0),
+              ]);
+              rightAngle.visible = true;
+              after(500, () => {
+                hyp.visible = true;
+                animate01(
+                  1.2,
+                  (t) => {
+                    setAnimLine(hyp, V3(0, 0, 0), ptA.position, t);
+                  },
+                  () => {
+                    tog("ldist", true);
+                    const d = ptA.position.length();
+                    document.getElementById("ldist").textContent =
+                      `d = ${d.toFixed(2)}`;
+                    after(300, () => {
+                      // show formula in callout card instead of cluttered world label
+                      const ax = Math.abs(ptA.position.x),
+                        ay = Math.abs(ptA.position.y);
+                      document.getElementById("fc-eq").textContent =
+                        `d = √(x² + y²)`;
+                      document.getElementById("fc-vals").textContent =
+                        `= √(${fmt(ax)}² + ${fmt(ay)}²)\n= ${d.toFixed(2)}`;
+                      tog("formula-card", true);
+                      beatLocked = false;
+                      after(500, () => showContinue("next →"));
+                    });
+                  },
+                );
+              });
             });
-          });
-        });
-      });
-    }
-    break;
+            break;
 
-  /* ── Beat 15: point in 3D — endpoint ── */
-  case 15:
-    beatLocked=false;
-    gizAz.visible=false;
-    orbit.enabled=true;
-    tog('lcoordAz',true);
-    setCaption('Now we are in 3D coordinate space.','Point A now has an x, y, and z coordinate. Every location in 3D space is described by exactly three numbers.');
-    showContinue('got it →');
-    break;
-  }
-}
+          /* ── Beat 9: place point B ── */
+          case 9:
+            beatLocked = false;
+            hideContinue();
+            legX.visible = false;
+            legY.visible = false;
+            rightAngle.visible = false;
+            tog("ldx", false);
+            tog("ldy", false);
+            tog("ldist", false);
+            tog("formula-card", false);
+            hyp.visible = false;
+            placingPoint = "B";
+            clickGhost.visible = true;
+            setCaption(
+              "The distance between any two points works the same way.",
+              "",
+              "click to place point B",
+            );
+            break;
 
-/* ═══════════════════
+          /* ── Beat 10: edge A→B ── */
+          case 10:
+            beatLocked = false;
+            placingPoint = null;
+            clickGhost.visible = false;
+            tog("coordA", false);
+            tog("coordB", true);
+            setCaption(
+              "We can connect two points with an edge.",
+              "An edge is a straight line between two vertices, the building block of all geometry.",
+            );
+            edgeAB.visible = true;
+            edgeABprog = 0;
+            drawEdgeAB = true;
+            after(1200, () => {
+              tog("ldistAB", true);
+              const d = ptA.position.distanceTo(ptB.position);
+              document.getElementById("ldistAB").textContent =
+                `d = ${d.toFixed(2)}`;
+              showContinue("next →");
+            });
+            break;
+
+          /* ── Beat 11: triangle then quad — fully animated walkthrough ── */
+          case 11:
+            beatLocked = true;
+            hideContinue();
+            tog("coordB", false);
+            setCaption(
+              "Add a third point and you get a triangle.",
+              "A fourth point closes it into a rectangle, a special quadrilateral with right angles at every corner.",
+            );
+            // C = (B.x, A.y) — right angle at C
+            ptC.position.set(ptB.position.x, ptA.position.y, 0);
+            scC.set(0);
+            setVis(ptC, true);
+            tog("lC", true);
+            after(800, () => {
+              // triangle: A-C (horizontal), C-B (vertical), A-B (hypotenuse = edgeAB)
+              setVis(triMesh, true);
+              setVis(eAC, true);
+              setVis(eBC, true);
+              updateTriGeo();
+              after(1400, () => {
+                // D = (A.x, B.y) — completes the rectangle
+                ptD.position.set(ptA.position.x, ptB.position.y, 0);
+                scD.set(0);
+                setVis(ptD, true);
+                tog("lD", true);
+                after(800, () => {
+                  setVis(quadMesh, true);
+                  setVis(eAD, true);
+                  setVis(eBD, true);
+                  // hide the A-B edge — it becomes the interior diagonal of the rectangle
+                  edgeAB.visible = false;
+                  updateQuadGeo();
+                  beatLocked = false;
+                  after(600, () => showContinue("next →"));
+                });
+              });
+            });
+            break;
+
+          /* ── Beat 12: clear to A only, intro third direction ── */
+          case 12:
+            beatLocked = true;
+            hideContinue();
+            tog("lB", false);
+            tog("lC", false);
+            tog("lD", false);
+            tog("ldistAB", false);
+            tog("coordB", false);
+            // fade out all geometry over 600ms then hide
+            [ptB, ptC, ptD].forEach((pt) => {
+              if (pt.children[0]) pt.children[0].material.opacity = 1;
+            });
+            animate01(
+              0.6,
+              (t) => {
+                const op = 1 - t;
+                [ptB, ptC, ptD].forEach((pt) => {
+                  if (pt.children[0]) pt.children[0].material.opacity = op;
+                });
+                [edgeAB, triMesh, eBC, eAC, quadMesh, eAD, eCD, eBD].forEach(
+                  (o) => {
+                    if (o.material)
+                      o.material.opacity =
+                        o === triMesh || o === quadMesh ? op * 0.07 : op * 0.4;
+                  },
+                );
+              },
+              () => {
+                setVis(ptB, false);
+                setVis(ptC, false);
+                setVis(ptD, false);
+                edgeAB.visible = false;
+                setVis(triMesh, false);
+                setVis(eBC, false);
+                setVis(eAC, false);
+                setVis(quadMesh, false);
+                setVis(eAD, false);
+                setVis(eCD, false);
+                setVis(eBD, false);
+                // restore opacity for future use
+                [ptB, ptC, ptD].forEach((pt) => {
+                  if (pt.children[0]) pt.children[0].material.opacity = 1;
+                });
+                [edgeAB, eBC, eAC, eAD, eCD, eBD].forEach((o) => {
+                  if (o.material) o.material.opacity = 0.4;
+                });
+                triMesh.material.opacity = 0.07;
+                quadMesh.material.opacity = 0.06;
+                tog("lA", true);
+                tog("coordA", true);
+                gizAx.visible = false;
+                gizAy.visible = false;
+                beatLocked = false;
+                setCaption(
+                  "But what if there was a third direction?",
+                  "We have left, right, up, and down. But what if we could move a point <b>forward or backward</b> through the screen?",
+                );
+                showContinue("show me →");
+              },
+            );
+            break;
+
+          /* ── Beat 13: Z axis reveal ── */
+          case 13:
+            beatLocked = true;
+            hideContinue();
+            tog("coordA", false);
+            hyp.visible = true;
+            setAnimLine(hyp, V3(0, 0, 0), ptA.position, 1);
+            setCaption(
+              "Watch what happens when we introduce a third axis.",
+              "",
+            );
+
+            after(600, () => {
+              camLocked = true;
+              const startP = camCurP.clone(),
+                startL = camCurL.clone();
+              const endP = V3(16, 0, 0),
+                endL = V3(0, 0, 0);
+              animate01(
+                2.0,
+                (t) => {
+                  const et = easeInOut(t);
+                  camCurP.lerpVectors(startP, endP, et);
+                  camCurL.lerpVectors(startL, endL, et);
+                  camera.position.copy(camCurP);
+                  camera.lookAt(camCurL);
+                },
+                () => {
+                  after(600, () => {
+                    axZ.visible = true;
+                    axZ.scale.set(1, 0, 1);
+                    animate01(
+                      1.1,
+                      (t) => axZ.scale.set(1, t, 1),
+                      () => {
+                        tog("lZ", true);
+                        setCaption(
+                          "This is the Z axis.",
+                          "It extends forwards and backwards in space. From this angle you can see it emerging from the plane.",
+                          "",
+                          0,
+                        );
+                        // PAUSE HERE — let student take it in, then they click to continue
+                        beatLocked = false;
+                        after(400, () => showContinue("continue →"));
+                        // The swing-back happens on next beat advance
+                        // Store state so nextBeat knows to swing
+                        window._zRevealPhase2 = true;
+                      },
+                    );
+                  });
+                },
+              );
+            });
+            break;
+
+          /* ── Beat 14: swing to flat first (show Z axis emerging), then to iso ── */
+          case 14:
+            beatLocked = true;
+            hideContinue();
+            window._zRevealPhase2 = false;
+            setCaption(
+              "Here is the Z axis from the front.",
+              "From this angle you can see it passing straight through the coordinate plane.",
+            );
+            {
+              // Phase A: swing from side-on back to flat 2D view
+              const fromP = camCurP.clone(),
+                fromL = camCurL.clone();
+              const toFlatP = CAMS.flat.pos,
+                toFlatL = CAMS.flat.look;
+              animate01(
+                1.8,
+                (t) => {
+                  const et = easeInOut(t);
+                  camCurP.lerpVectors(fromP, toFlatP, et);
+                  camCurL.lerpVectors(fromL, toFlatL, et);
+                  camera.position.copy(camCurP);
+                  camera.lookAt(camCurL);
+                },
+                () => {
+                  // Hold on flat view for 1.4s so student sees Z axis head-on
+                  after(1400, () => {
+                    // Phase B: swing to iso
+                    setCaption(
+                      "Now let's see it in 3D.",
+                      "Watch the space open up as we rotate into full 3D.",
+                    );
+                    const fromP2 = camCurP.clone(),
+                      fromL2 = camCurL.clone();
+                    const toP = CAMS.iso.pos,
+                      toL = CAMS.iso.look;
+                    animate01(
+                      2.2,
+                      (t) => {
+                        const et = easeInOut(t);
+                        camCurP.lerpVectors(fromP2, toP, et);
+                        camCurL.lerpVectors(fromL2, toL, et);
+                        camera.position.copy(camCurP);
+                        camera.lookAt(camCurL);
+                      },
+                      () => {
+                        camLocked = false;
+                        camTgtP.copy(CAMS.iso.pos);
+                        camTgtL.copy(CAMS.iso.look);
+                        // switch to 3D floor grid now that we are in iso
+                        grid2D.visible = false;
+                        grid3D.visible = true;
+                        hyp.visible = true;
+                        after(400, () => {
+                          gizAz.visible = true;
+                          beatLocked = false;
+                          setCaption(
+                            "This is the Z axis.",
+                            "It extends forwards and backwards in space. Now point A can move in a third direction.",
+                            "drag the blue arrow to pull A into 3D",
+                          );
+                        });
+                      },
+                    );
+                  });
+                },
+              );
+            }
+            break;
+
+          /* ── Beat 15: point in 3D — endpoint ── */
+          case 15:
+            beatLocked = false;
+            gizAz.visible = false;
+            orbit.enabled = true;
+            tog("lcoordAz", true);
+            setCaption(
+              "Now we are in 3D coordinate space.",
+              "Point A now has an x, y, and z coordinate. Every location in 3D space is described by exactly three numbers.",
+            );
+            showContinue("got it →");
+            break;
+        }
+      }
+
+      /* ═══════════════════
    GEOMETRY HELPERS
 ═══════════════════ */
-function updateTriGeo(){
-  // Right triangle: A, C(right angle), B
-  // C = (B.x, A.y) so right angle is at C
-  const A=ptA.position,B=ptB.position,C=ptC.position;
-  const pa=triGeo.attributes.position.array;
-  [A,C,B].forEach((p,i)=>{pa[i*3]=p.x;pa[i*3+1]=p.y;pa[i*3+2]=p.z;});
-  triGeo.attributes.position.needsUpdate=true;
-  triGeo.computeBoundingSphere();
-  setLP(eAC,A,C); // horizontal edge (A to C, same y)
-  setLP(eBC,C,B); // vertical edge (C to B, same x)
-  // eAB is the hypotenuse - already drawn as edgeAB
-}
-function updateQuadGeo(){
-  // Rectangle corners: A(Ax,Ay), C(Bx,Ay), B(Bx,By), D(Ax,By)
-  // Perimeter: A -> C -> B -> D -> A (no crossing)
-  // Two triangles: A-C-B and A-B-D
-  const A=ptA.position,B=ptB.position,C=ptC.position,D=ptD.position;
-  const pa=quadGeo.attributes.position.array;
-  [A,C,B, A,B,D].forEach((p,i)=>{pa[i*3]=p.x;pa[i*3+1]=p.y;pa[i*3+2]=p.z;});
-  quadGeo.attributes.position.needsUpdate=true;
-  quadGeo.computeBoundingSphere();
-  // Perimeter edges: A-C (top), C-B (right), B-D (bottom), D-A (left)
-  // eAC = top edge (A to C)
-  // eBC = right edge (C to B — note eBC goes B-C so same line)
-  // eCD is unused now; use eAD for left edge, eBD for bottom
-  setLP(eAC,A,C);  // top edge
-  setLP(eBC,C,B);  // right edge (reusing eBC)
-  setLP(eBD,B,D);  // bottom edge
-  setLP(eAD,D,A);  // left edge
-  setVis(eAC,true); setVis(eBC,true); setVis(eBD,true); setVis(eAD,true);
-  setVis(eCD,false); // not needed
-}
+      function updateTriGeo() {
+        // Right triangle: A, C(right angle), B
+        // C = (B.x, A.y) so right angle is at C
+        const A = ptA.position,
+          B = ptB.position,
+          C = ptC.position;
+        const pa = triGeo.attributes.position.array;
+        [A, C, B].forEach((p, i) => {
+          pa[i * 3] = p.x;
+          pa[i * 3 + 1] = p.y;
+          pa[i * 3 + 2] = p.z;
+        });
+        triGeo.attributes.position.needsUpdate = true;
+        triGeo.computeBoundingSphere();
+        setLP(eAC, A, C); // horizontal edge (A to C, same y)
+        setLP(eBC, C, B); // vertical edge (C to B, same x)
+        // eAB is the hypotenuse - already drawn as edgeAB
+      }
+      function updateQuadGeo() {
+        // Rectangle corners: A(Ax,Ay), C(Bx,Ay), B(Bx,By), D(Ax,By)
+        // Perimeter: A -> C -> B -> D -> A (no crossing)
+        // Two triangles: A-C-B and A-B-D
+        const A = ptA.position,
+          B = ptB.position,
+          C = ptC.position,
+          D = ptD.position;
+        const pa = quadGeo.attributes.position.array;
+        [A, C, B, A, B, D].forEach((p, i) => {
+          pa[i * 3] = p.x;
+          pa[i * 3 + 1] = p.y;
+          pa[i * 3 + 2] = p.z;
+        });
+        quadGeo.attributes.position.needsUpdate = true;
+        quadGeo.computeBoundingSphere();
+        // Perimeter edges: A-C (top), C-B (right), B-D (bottom), D-A (left)
+        // eAC = top edge (A to C)
+        // eBC = right edge (C to B — note eBC goes B-C so same line)
+        // eCD is unused now; use eAD for left edge, eBD for bottom
+        setLP(eAC, A, C); // top edge
+        setLP(eBC, C, B); // right edge (reusing eBC)
+        setLP(eBD, B, D); // bottom edge
+        setLP(eAD, D, A); // left edge
+        setVis(eAC, true);
+        setVis(eBC, true);
+        setVis(eBD, true);
+        setVis(eAD, true);
+        setVis(eCD, false); // not needed
+      }
 
-/* ═══════════════════
+      /* ═══════════════════
    BEAT ADVANCE
 ═══════════════════ */
-function nextBeat(){
-  if(beatLocked)return;
+      function nextBeat() {
+        if (beatLocked) return;
 
-  // beat 7: interactive leg reveal phases
-  if(beatIdx===7){
-    const phase=window._legPhase||0;
-    if(phase===0){
-      window._legPhase=1;
-      hideContinue();
-      beatLocked=true;
-      legX.visible=true;
-      animate01(1.0,t=>{
-        setAnimLine(legX,V3(0,0,0),V3(ptA.position.x,0,0),t);
-        tog('ldx',t>.1);
-        document.getElementById('ldx').textContent=`Δx = ${fmt(ptA.position.x)}`;
-      },()=>{
-        beatLocked=false;
-        setPrompt('↑  click Continue to show the y distance');
-        showContinue();
+        // beat 7: interactive leg reveal phases
+        if (beatIdx === 7) {
+          const phase = window._legPhase || 0;
+          if (phase === 0) {
+            window._legPhase = 1;
+            hideContinue();
+            beatLocked = true;
+            legX.visible = true;
+            animate01(
+              1.0,
+              (t) => {
+                setAnimLine(legX, V3(0, 0, 0), V3(ptA.position.x, 0, 0), t);
+                tog("ldx", t > 0.1);
+                document.getElementById("ldx").textContent =
+                  `Δx = ${fmt(ptA.position.x)}`;
+              },
+              () => {
+                beatLocked = false;
+                setPrompt("click Continue to show the y distance");
+                showContinue();
+              },
+            );
+            return;
+          }
+          if (phase === 1) {
+            window._legPhase = 2;
+            hideContinue();
+            beatLocked = true;
+            legY.visible = true;
+            animate01(
+              1.0,
+              (t) => {
+                setAnimLine(
+                  legY,
+                  V3(ptA.position.x, 0, 0),
+                  V3(ptA.position.x, ptA.position.y, 0),
+                  t,
+                );
+                tog("ldy", t > 0.1);
+                document.getElementById("ldy").textContent =
+                  `Δy = ${fmt(ptA.position.y)}`;
+              },
+              () => {
+                beatLocked = false;
+                setPrompt("");
+                showContinue();
+              },
+            );
+            return;
+          }
+          // phase 2 — advance normally
+        }
+
+        if (beatIdx < TOTAL_BEATS - 1) runBeat(beatIdx + 1);
+      }
+      window.nextBeat = nextBeat;
+
+      // keyboard shortcut
+      window.addEventListener("keydown", (e) => {
+        if (e.code === "Space" || e.code === "ArrowRight") {
+          e.preventDefault();
+          if (
+            !beatLocked &&
+            document.getElementById("continue").classList.contains("on")
+          )
+            nextBeat();
+        }
       });
-      return;
-    }
-    if(phase===1){
-      window._legPhase=2;
-      hideContinue();
-      beatLocked=true;
-      legY.visible=true;
-      animate01(1.0,t=>{
-        setAnimLine(legY,V3(ptA.position.x,0,0),V3(ptA.position.x,ptA.position.y,0),t);
-        tog('ldy',t>.1);
-        document.getElementById('ldy').textContent=`Δy = ${fmt(ptA.position.y)}`;
-      },()=>{
-        beatLocked=false;
-        setPrompt('');
-        showContinue();
-      });
-      return;
-    }
-    // phase 2 — advance normally
-  }
 
-  if(beatIdx<TOTAL_BEATS-1)runBeat(beatIdx+1);
-}
-window.nextBeat=nextBeat;
-
-// keyboard shortcut
-window.addEventListener('keydown',e=>{
-  if(e.code==='Space'||e.code==='ArrowRight'){
-    e.preventDefault();
-    if(!beatLocked&&document.getElementById('continue').classList.contains('on'))
-      nextBeat();
-  }
-});
-
-/* ═══════════════════
+      /* ═══════════════════
    CLICK TO PLACE
 ═══════════════════ */
-const raycaster=new THREE.Raycaster();
-const mouse2=new THREE.Vector2();
-const xyPlane=new THREE.Plane(V3(0,0,1),0);
-const floorPlane=new THREE.Plane(V3(0,1,0),0);
+      const raycaster = new THREE.Raycaster();
+      const mouse2 = new THREE.Vector2();
+      const xyPlane = new THREE.Plane(V3(0, 0, 1), 0);
+      const floorPlane = new THREE.Plane(V3(0, 1, 0), 0);
 
-function getNDC(e){
-  const r=cv.getBoundingClientRect();
-  mouse2.x=((e.clientX-r.left)/r.width)*2-1;
-  mouse2.y=-((e.clientY-r.top)/r.height)*2+1;
-}
+      function getNDC(e) {
+        const r = cv.getBoundingClientRect();
+        mouse2.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+        mouse2.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+      }
 
-cv.addEventListener('mousemove',e=>{
-  if(!placingPoint)return;
-  getNDC(e); raycaster.setFromCamera(mouse2,camera);
-  const hit=new THREE.Vector3();
-  if(raycaster.ray.intersectPlane(xyPlane,hit)){
-    clickGhost.position.copy(hit);
-    // show place-hint label near ghost
-    tmpV.copy(hit).project(camera);
-    const ph=document.getElementById('place-hint');
-    ph.style.left=(tmpV.x*.5+.5)*W()+14+'px';
-    ph.style.top=(-.5*tmpV.y+.5)*H()-22+'px';
-    ph.classList.add('on');
-  }
-});
+      cv.addEventListener("mousemove", (e) => {
+        if (!placingPoint) return;
+        getNDC(e);
+        raycaster.setFromCamera(mouse2, camera);
+        const hit = new THREE.Vector3();
+        if (raycaster.ray.intersectPlane(xyPlane, hit)) {
+          clickGhost.position.copy(hit);
+          // show place-hint label near ghost
+          tmpV.copy(hit).project(camera);
+          const ph = document.getElementById("place-hint");
+          ph.style.left = (tmpV.x * 0.5 + 0.5) * W() + 14 + "px";
+          ph.style.top = (-0.5 * tmpV.y + 0.5) * H() - 22 + "px";
+          ph.classList.add("on");
+        }
+      });
 
-/* ═══════════════════
+      /* ═══════════════════
    GIZMO DRAG
 ═══════════════════ */
-const dragPlane=new THREE.Plane();
-let gizDrag=null,gizDragStart=new THREE.Vector3(),gizPtStart=new THREE.Vector3();
-let ptDragActive=false;
+      const dragPlane = new THREE.Plane();
+      let gizDrag = null,
+        gizDragStart = new THREE.Vector3(),
+        gizPtStart = new THREE.Vector3();
+      let ptDragActive = false;
 
-cv.addEventListener('pointerdown',e=>{
-  if(beatLocked)return;
-  getNDC(e); raycaster.setFromCamera(mouse2,camera);
+      cv.addEventListener("pointerdown", (e) => {
+        if (beatLocked) return;
+        getNDC(e);
+        raycaster.setFromCamera(mouse2, camera);
 
-  // click to place point
-  if(placingPoint){
-    const hit=new THREE.Vector3();
-    if(raycaster.ray.intersectPlane(xyPlane,hit)){
-      doPlace(placingPoint,hit);
-    }
-    return;
-  }
+        // click to place point
+        if (placingPoint) {
+          const hit = new THREE.Vector3();
+          if (raycaster.ray.intersectPlane(xyPlane, hit)) {
+            doPlace(placingPoint, hit);
+          }
+          return;
+        }
 
-  // gizmo drag — only if gizmos are visible
-  const activeGiz=[];
-  if(gizAx.visible)activeGiz.push(gizAx);
-  if(gizAy.visible)activeGiz.push(gizAy);
-  if(gizAz.visible)activeGiz.push(gizAz);
+        // gizmo drag — only if gizmos are visible
+        const activeGiz = [];
+        if (gizAx.visible) activeGiz.push(gizAx);
+        if (gizAy.visible) activeGiz.push(gizAy);
+        if (gizAz.visible) activeGiz.push(gizAz);
 
-  if(activeGiz.length){
-    const meshes=[];
-    activeGiz.forEach(g=>g.children.forEach(c=>meshes.push({c,g})));
-    const hits=raycaster.intersectObjects(meshes.map(x=>x.c));
-    if(hits.length){
-      const found=meshes.find(x=>x.c===hits[0].object);
-      if(found){
-        gizDrag=found.g;
-        orbit.enabled=false;
-        dragPlane.setFromNormalAndCoplanarPoint(
-          camera.position.clone().sub(hits[0].point).normalize(),
-          hits[0].point
-        );
-        gizDragStart.copy(hits[0].point);
-        gizPtStart.copy(ptA.position);
-        cv.style.cursor='grabbing';
-        ptDragActive=true;
-        return;
-      }
-    }
-  }
-});
+        if (activeGiz.length) {
+          const meshes = [];
+          activeGiz.forEach((g) =>
+            g.children.forEach((c) => meshes.push({ c, g })),
+          );
+          const hits = raycaster.intersectObjects(meshes.map((x) => x.c));
+          if (hits.length) {
+            const found = meshes.find((x) => x.c === hits[0].object);
+            if (found) {
+              gizDrag = found.g;
+              orbit.enabled = false;
+              dragPlane.setFromNormalAndCoplanarPoint(
+                camera.position.clone().sub(hits[0].point).normalize(),
+                hits[0].point,
+              );
+              gizDragStart.copy(hits[0].point);
+              gizPtStart.copy(ptA.position);
+              cv.style.cursor = "grabbing";
+              ptDragActive = true;
+              return;
+            }
+          }
+        }
+      });
 
-cv.addEventListener('pointermove',e=>{
-  if(!gizDrag)return;
-  getNDC(e); raycaster.setFromCamera(mouse2,camera);
-  const pt=new THREE.Vector3();
-  if(raycaster.ray.intersectPlane(dragPlane,pt)){
-    const delta=pt.clone().sub(gizDragStart);
-    const ax=gizDrag._axis;
-    const move=delta.dot(ax);
-    const newPos=gizPtStart.clone().add(ax.clone().multiplyScalar(move));
-    // clamp
-    newPos.x=clamp(newPos.x,-7,7);
-    newPos.y=clamp(newPos.y,-5,5);
-    newPos.z=clamp(newPos.z,-7,7);
-    ptA.position.copy(newPos);
+      cv.addEventListener(
+        "pointermove",
+        (e) => {
+          if (!gizDrag) return;
+          getNDC(e);
+          raycaster.setFromCamera(mouse2, camera);
+          const pt = new THREE.Vector3();
+          if (raycaster.ray.intersectPlane(dragPlane, pt)) {
+            const delta = pt.clone().sub(gizDragStart);
+            const ax = gizDrag._axis;
+            const move = delta.dot(ax);
+            const newPos = gizPtStart
+              .clone()
+              .add(ax.clone().multiplyScalar(move));
+            // clamp
+            newPos.x = clamp(newPos.x, -7, 7);
+            newPos.y = clamp(newPos.y, -5, 5);
+            newPos.z = clamp(newPos.z, -7, 7);
+            ptA.position.copy(newPos);
 
-    // update coord label
-    const is3d=axZ.visible&&ptA.position.z!==0;
-    document.getElementById('coordA').textContent=
-      is3d?fmtPt3(newPos.x,newPos.y,newPos.z):fmtPt2(newPos.x,newPos.y);
+            // update coord label
+            const is3d = axZ.visible && ptA.position.z !== 0;
+            document.getElementById("coordA").textContent = is3d
+              ? fmtPt3(newPos.x, newPos.y, newPos.z)
+              : fmtPt2(newPos.x, newPos.y);
 
-    // if pulling Z (beat 16), update z coord label too
-    if(gizDrag===gizAz){
-      document.getElementById('lcoordAz').textContent=fmtPt3(newPos.x,newPos.y,newPos.z);
-    }
+            // if pulling Z (beat 16), update z coord label too
+            if (gizDrag === gizAz) {
+              document.getElementById("lcoordAz").textContent = fmtPt3(
+                newPos.x,
+                newPos.y,
+                newPos.z,
+              );
+            }
 
-    // update gizmo position
-    gizAx.position.copy(ptA.position);
-    gizAy.position.copy(ptA.position);
-    gizAz.position.copy(ptA.position);
+            // update gizmo position
+            gizAx.position.copy(ptA.position);
+            gizAy.position.copy(ptA.position);
+            gizAz.position.copy(ptA.position);
 
-    // live update lines if in pyth state
-    if(legX.visible)setAnimLine(legX,V3(0,0,0),V3(newPos.x,0,0),1);
-    if(legY.visible)setAnimLine(legY,V3(newPos.x,0,0),V3(newPos.x,newPos.y,0),1);
+            // live update lines if in pyth state
+            if (legX.visible)
+              setAnimLine(legX, V3(0, 0, 0), V3(newPos.x, 0, 0), 1);
+            if (legY.visible)
+              setAnimLine(
+                legY,
+                V3(newPos.x, 0, 0),
+                V3(newPos.x, newPos.y, 0),
+                1,
+              );
 
-    // beat 6: after first drag, show continue so user can advance to beat 7
-    if(beatIdx===6&&!hasMovedA){
-      hasMovedA=true;
-      after(400,()=>showContinue());
-    }
+            // beat 6: after first drag, show continue so user can advance to beat 7
+            if (beatIdx === 6 && !hasMovedA) {
+              hasMovedA = true;
+              after(400, () => showContinue());
+            }
 
-    // beat 14: after first drag on Z, advance automatically to beat 15
-    if(beatIdx===14&&newPos.z>0.3&&!beatLocked){
-      beatLocked=true;
-      after(1200,()=>runBeat(15));
-    }
-  }
-},{passive:true});
+            // beat 14: after first drag on Z, advance automatically to beat 15
+            if (beatIdx === 14 && newPos.z > 0.3 && !beatLocked) {
+              beatLocked = true;
+              after(1200, () => runBeat(15));
+            }
+          }
+        },
+        { passive: true },
+      );
 
-window.addEventListener('pointerup',()=>{
-  gizDrag=null; ptDragActive=false;
-  if(beatIdx>=15)orbit.enabled=true;
-  cv.style.cursor='';
-  document.getElementById('place-hint').classList.remove('on');
-});
+      window.addEventListener("pointerup", () => {
+        gizDrag = null;
+        ptDragActive = false;
+        if (beatIdx >= 15) orbit.enabled = true;
+        cv.style.cursor = "";
+        document.getElementById("place-hint").classList.remove("on");
+      });
 
-/* ═══════════════════
+      /* ═══════════════════
    PLACE POINT
 ═══════════════════ */
-function doPlace(which,pos){
-  placingPoint=null;
-  clickGhost.visible=false;
-  document.getElementById('place-hint').classList.remove('on');
+      function doPlace(which, pos) {
+        placingPoint = null;
+        clickGhost.visible = false;
+        document.getElementById("place-hint").classList.remove("on");
 
-  if(which==='A'){
-    ptA.position.set(pos.x,pos.y,0);
-    scA.set(0); setVis(ptA,true);
-    // gizmos follow A
-    gizAx.position.copy(ptA.position);
-    gizAy.position.copy(ptA.position);
-    gizAz.position.copy(ptA.position);
-    nextBeat();
-    return;
-  }
-  if(which==='B'){
-    ptB.position.set(pos.x,pos.y,0);
-    scB.set(0); setVis(ptB,true);
-    tog('lB',true);
-    nextBeat();
-    return;
-  }
-}
+        if (which === "A") {
+          ptA.position.set(pos.x, pos.y, 0);
+          scA.set(0);
+          setVis(ptA, true);
+          // gizmos follow A
+          gizAx.position.copy(ptA.position);
+          gizAy.position.copy(ptA.position);
+          gizAz.position.copy(ptA.position);
+          nextBeat();
+          return;
+        }
+        if (which === "B") {
+          ptB.position.set(pos.x, pos.y, 0);
+          scB.set(0);
+          setVis(ptB, true);
+          tog("lB", true);
+          nextBeat();
+          return;
+        }
+      }
 
-/* ═══════════════════
+      /* ═══════════════════
    MAIN LOOP
 ═══════════════════ */
-function updateGeo(dt){
-  const A=ptA.position;
+      function updateGeo(dt) {
+        const A = ptA.position;
 
-  // springs
-  ptA.scale.setScalar(Math.max(0,scA.tick(ptA.visible?1:0,dt)));
-  ptB.scale.setScalar(Math.max(0,scB.tick(ptB.visible?1:0,dt)));
-  ptC.scale.setScalar(Math.max(0,scC.tick(ptC.visible?1:0,dt)));
-  ptD.scale.setScalar(Math.max(0,scD.tick(ptD.visible?1:0,dt)));
+        // springs
+        ptA.scale.setScalar(Math.max(0, scA.tick(ptA.visible ? 1 : 0, dt)));
+        ptB.scale.setScalar(Math.max(0, scB.tick(ptB.visible ? 1 : 0, dt)));
+        ptC.scale.setScalar(Math.max(0, scC.tick(ptC.visible ? 1 : 0, dt)));
+        ptD.scale.setScalar(Math.max(0, scD.tick(ptD.visible ? 1 : 0, dt)));
 
-  // origin pulse
-  if(beatIdx===1&&originDot.visible){
-    pulseT+=dt*.9;
-    const s=Math.abs(Math.sin(pulseT*Math.PI));
-    pulseRing.scale.setScalar(.5+s*2.8);
-    pulseRing.material.opacity=s*.28;
-  } else if(pulseRing.material.opacity>.005){
-    pulseRing.material.opacity*=.88;
-  }
+        // origin pulse
+        if (beatIdx === 1 && originDot.visible) {
+          pulseT += dt * 0.9;
+          const s = Math.abs(Math.sin(pulseT * Math.PI));
+          pulseRing.scale.setScalar(0.5 + s * 2.8);
+          pulseRing.material.opacity = s * 0.28;
+        } else if (pulseRing.material.opacity > 0.005) {
+          pulseRing.material.opacity *= 0.88;
+        }
 
-  // edge A-B animated draw
-  if(drawEdgeAB&&edgeAB.visible){
-    edgeABprog=clamp(edgeABprog+dt*1.4,0,1);
-    setAnimLine(edgeAB,ptA.position,ptB.position,edgeABprog);
-    if(edgeABprog>=1)drawEdgeAB=false;
-  }else if(edgeAB.visible){
-    setAnimLine(edgeAB,ptA.position,ptB.position,1);
-  }
+        // edge A-B animated draw
+        if (drawEdgeAB && edgeAB.visible) {
+          edgeABprog = clamp(edgeABprog + dt * 1.4, 0, 1);
+          setAnimLine(edgeAB, ptA.position, ptB.position, edgeABprog);
+          if (edgeABprog >= 1) drawEdgeAB = false;
+        } else if (edgeAB.visible) {
+          setAnimLine(edgeAB, ptA.position, ptB.position, 1);
+        }
 
-  // distance labels live update if edge visible
-  if(edgeAB.visible&&tog){
-    const d=ptA.position.distanceTo(ptB.position);
-    if(document.getElementById('ldistAB').classList.contains('on'))
-      document.getElementById('ldistAB').textContent=`d = ${d.toFixed(2)}`;
-  }
+        // distance labels live update if edge visible
+        if (edgeAB.visible && tog) {
+          const d = ptA.position.distanceTo(ptB.position);
+          if (document.getElementById("ldistAB").classList.contains("on"))
+            document.getElementById("ldistAB").textContent =
+              `d = ${d.toFixed(2)}`;
+        }
 
-  // live distance update if hyp visible
-  if(hyp.visible){
-    setAnimLine(hyp,V3(0,0,0),ptA.position,1);
-    if(document.getElementById('ldist').classList.contains('on')){
-      document.getElementById('ldist').textContent=`d = ${ptA.position.length().toFixed(2)}`;
-    }
-  }
+        // live distance update if hyp visible
+        if (hyp.visible) {
+          setAnimLine(hyp, V3(0, 0, 0), ptA.position, 1);
+          if (document.getElementById("ldist").classList.contains("on")) {
+            document.getElementById("ldist").textContent =
+              `d = ${ptA.position.length().toFixed(2)}`;
+          }
+        }
 
-  // gizmos always follow A
-  if(gizAx.visible)gizAx.position.copy(A);
-  if(gizAy.visible)gizAy.position.copy(A);
-  if(gizAz.visible)gizAz.position.copy(A);
+        // gizmos always follow A
+        if (gizAx.visible) gizAx.position.copy(A);
+        if (gizAy.visible) gizAy.position.copy(A);
+        if (gizAz.visible) gizAz.position.copy(A);
 
-  // triangle / quad live update if visible
-  if(triMesh.visible)updateTriGeo();
-  if(quadMesh.visible)updateQuadGeo();
-}
+        // triangle / quad live update if visible
+        if (triMesh.visible) updateTriGeo();
+        if (quadMesh.visible) updateQuadGeo();
+      }
 
-function animate(){
-  requestAnimationFrame(animate);
-  const dt=Math.min(clock.getDelta(),.05);
-  tickCam(dt);
-  tickAnims(dt);
-  updateGeo(dt);
-  updateLabels();
-  renderer.render(scene,camera);
-}
-animate();
+      function animate() {
+        requestAnimationFrame(animate);
+        const dt = Math.min(clock.getDelta(), 0.05);
+        tickCam(dt);
+        tickAnims(dt);
+        updateGeo(dt);
+        updateLabels();
+        renderer.render(scene, camera);
+      }
+      animate();
 
-window.addEventListener('resize',()=>{
-  camera.aspect=W()/H();
-  camera.updateProjectionMatrix();
-  renderer.setSize(W(),H());
-});
+      window.addEventListener("resize", () => {
+        camera.aspect = W() / H();
+        camera.updateProjectionMatrix();
+        renderer.setSize(W(), H());
+      });
 
-/* ═══════════════════
+      /* ═══════════════════
    BOOT
 ═══════════════════ */
-setCam('flat',true);
-setTimeout(()=>runBeat(0),300);
-</script>
-</body>
+      const dotsContainer = document.getElementById("prog-dots");
+      for (let i = 0; i < TOTAL_BEATS; i++) {
+        const d = document.createElement("div");
+        d.className = "prog-dot";
+        dotsContainer.appendChild(d);
+      }
+
+      // Make panel draggable
+      const pnl = document.getElementById("panel");
+      let pnlDrag = false;
+      let pnlStartX = 0,
+        pnlStartY = 0;
+      let pnlStartLeft = 0,
+        pnlStartTop = 0;
+
+      pnl.addEventListener("pointerdown", (e) => {
+        if (
+          e.target.tagName === "BUTTON" ||
+          e.target.closest("button") ||
+          e.target.tagName === "A"
+        )
+          return;
+        pnlDrag = true;
+        pnlStartX = e.clientX;
+        pnlStartY = e.clientY;
+        const rect = pnl.getBoundingClientRect();
+        pnlStartLeft = rect.left;
+        pnlStartTop = rect.top;
+        pnl.style.transform = "none"; // remove translateX
+        pnl.style.left = pnlStartLeft + "px";
+        pnl.style.top = pnlStartTop + "px";
+        pnl.style.bottom = "auto"; // ensure bottom doesn't conflict
+        pnl.setPointerCapture(e.pointerId);
+        pnl.style.cursor = "grabbing";
+      });
+      pnl.addEventListener("pointermove", (e) => {
+        if (!pnlDrag) return;
+        const dx = e.clientX - pnlStartX;
+        const dy = e.clientY - pnlStartY;
+        pnl.style.left = pnlStartLeft + dx + "px";
+        pnl.style.top = pnlStartTop + dy + "px";
+      });
+      pnl.addEventListener("pointerup", (e) => {
+        if (!pnlDrag) return;
+        pnlDrag = false;
+        pnl.releasePointerCapture(e.pointerId);
+        pnl.style.cursor = "grab";
+      });
+
+      setCam("flat", true);
+      setTimeout(() => runBeat(0), 300);
+    </script>
+  </body>
 </html>
