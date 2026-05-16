@@ -94,7 +94,7 @@
             pointer-events: none;
             opacity: 0;
             transition: opacity .4s ease, background .4s, color .4s;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
 
         #status-badge.on {
@@ -161,6 +161,7 @@
             pointer-events: auto;
             cursor: grab;
         }
+
         #panel * {
             pointer-events: auto;
         }
@@ -356,37 +357,62 @@
             display: flex;
             align-items: flex-start;
         }
-        #demo-cursor.on { opacity: 1; }
-        
+
+        #demo-cursor.on {
+            opacity: 1;
+        }
+
         #cursor-arrow {
             display: block;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
         }
-        #demo-cursor.scrolling #cursor-arrow { display: none; }
-        
+
+        #demo-cursor.scrolling #cursor-arrow {
+            display: none;
+        }
+
         #cursor-scroll {
             display: none;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
         }
-        #demo-cursor.scrolling #cursor-scroll { display: block; }
+
+        #demo-cursor.scrolling #cursor-scroll {
+            display: block;
+        }
+
         #demo-cursor.scrolling circle {
             animation: scroll-anim 1s infinite ease-in-out;
         }
+
         @keyframes scroll-anim {
-            0% { transform: translateY(0); opacity: 1; }
-            50% { transform: translateY(4px); opacity: 0; }
-            100% { transform: translateY(0); opacity: 1; }
+            0% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            50% {
+                transform: translateY(4px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         #cursor-ring {
             position: absolute;
-            top: 2px; left: 2px;
-            width: 20px; height: 20px;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             background: rgba(0, 170, 0, 0.4);
             transform: scale(0);
             transition: transform 0.2s;
         }
+
         #demo-cursor.down #cursor-ring {
             transform: scale(1.5);
         }
@@ -402,11 +428,12 @@
             backdrop-filter: blur(12px);
             padding: 6px;
             border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-            display: none; /* hidden by default */
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            display: none;
+            /* hidden by default */
             gap: 4px;
         }
-        
+
         .fp-btn {
             background: transparent;
             border: none;
@@ -419,12 +446,14 @@
             cursor: pointer;
             transition: all 0.2s;
         }
+
         .fp-btn.active {
             background: var(--orange);
             color: #fff;
         }
+
         .fp-btn:hover:not(.active) {
-            background: rgba(0,0,0,0.05);
+            background: rgba(0, 0, 0, 0.05);
         }
     </style>
 </head>
@@ -452,12 +481,13 @@
             <!-- demo cursor -->
             <div id="demo-cursor">
                 <svg id="cursor-arrow" width="24" height="24" viewBox="0 0 24 24">
-                    <path d="M4 4l15 6.5-6.5 2.5 2.5 6.5-3 3-3-7-4.5 4.5z" fill="#fff" stroke="#1a1a2e" stroke-width="1.5" stroke-linejoin="round"/>
+                    <path d="M4 4l15 6.5-6.5 2.5 2.5 6.5-3 3-3-7-4.5 4.5z" fill="#fff" stroke="#1a1a2e"
+                        stroke-width="1.5" stroke-linejoin="round" />
                 </svg>
                 <div id="cursor-ring"></div>
                 <!-- scroll icon -->
                 <svg id="cursor-scroll" width="24" height="24" viewBox="0 0 24 24">
-                    <rect x="7" y="4" width="10" height="16" rx="5" fill="#fff" stroke="#1a1a2e" stroke-width="2"/>
+                    <rect x="7" y="4" width="10" height="16" rx="5" fill="#fff" stroke="#1a1a2e" stroke-width="2" />
                     <circle cx="12" cy="8" r="1.5" fill="#1a1a2e" />
                 </svg>
             </div>
@@ -533,7 +563,7 @@
             curEl.style.transform = `translate(${px}px, ${py}px)`;
         }
         function updateDemoCursor3D(worldPos) {
-            if(!camera) return;
+            if (!camera) return;
             const p = worldPos.clone();
             p.project(camera);
             updateDemoCursor(p.x, p.y);
@@ -550,12 +580,12 @@
         }
         function setDemoCursorDown(down) {
             if (!curEl) return;
-            if(down) curEl.classList.add('down');
+            if (down) curEl.classList.add('down');
             else curEl.classList.remove('down');
         }
         function getArrowHeadPos(axisKey) {
-            if(typeof character === 'undefined' || !character) return V3();
-            const dir = axisKey === 'x' ? V3(1,0,0) : axisKey === 'y' ? V3(0,1,0) : V3(0,0,1);
+            if (typeof character === 'undefined' || !character) return V3();
+            const dir = axisKey === 'x' ? V3(1, 0, 0) : axisKey === 'y' ? V3(0, 1, 0) : V3(0, 0, 1);
             return character.position.clone().add(dir.multiplyScalar(1.325));
         }
 
@@ -824,7 +854,7 @@
            A simple white box above the character.
         ═══════════════════════════════════════════════ */
         const scaleHandle = new THREE.Group();
-        
+
         const sBox = new THREE.Mesh(
             new THREE.BoxGeometry(0.3, 0.3, 0.3),
             new THREE.MeshBasicMaterial({ color: 0x00cccc, depthWrite: false })
@@ -845,21 +875,21 @@
         const rMatX = new THREE.MeshBasicMaterial({ color: 0xc0453a, depthWrite: false, transparent: true, opacity: 0.85 });
         const rMatY = new THREE.MeshBasicMaterial({ color: 0x2e8b2e, depthWrite: false, transparent: true, opacity: 0.85 });
         const rMatZ = new THREE.MeshBasicMaterial({ color: 0x3a6fa8, depthWrite: false, transparent: true, opacity: 0.85 });
-        
+
         const rX = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.05, 16, 64), rMatX);
         rX.rotation.y = Math.PI / 2;
-        const hRX = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.25, 8, 32), new THREE.MeshBasicMaterial({visible: false}));
+        const hRX = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.25, 8, 32), new THREE.MeshBasicMaterial({ visible: false }));
         hRX._axis = 'x'; hRX._visMesh = rX; hRX._color = 0xc0453a;
         rX.add(hRX);
 
         const rY = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.05, 16, 64), rMatY);
         rY.rotation.x = Math.PI / 2;
-        const hRY = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.25, 8, 32), new THREE.MeshBasicMaterial({visible: false}));
+        const hRY = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.25, 8, 32), new THREE.MeshBasicMaterial({ visible: false }));
         hRY._axis = 'y'; hRY._visMesh = rY; hRY._color = 0x2e8b2e;
         rY.add(hRY);
 
         const rZ = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.05, 16, 64), rMatZ);
-        const hRZ = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.25, 8, 32), new THREE.MeshBasicMaterial({visible: false}));
+        const hRZ = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.25, 8, 32), new THREE.MeshBasicMaterial({ visible: false }));
         hRZ._axis = 'z'; hRZ._visMesh = rZ; hRZ._color = 0x3a6fa8;
         rZ.add(hRZ);
 
@@ -884,19 +914,19 @@
         }
 
         /* UI action for free play mode switch */
-        window.setFreePlayMode = function(mode) {
+        window.setFreePlayMode = function (mode) {
             hideAllArrows();
             scaleHandle.visible = false;
             rotateHandle.visible = false;
-            
+
             if (mode === 'move') showArrows(['x', 'y', 'z']);
             if (mode === 'scale') { scaleHandle.visible = true; updateScaleHandlePos(); }
             if (mode === 'rotate') { rotateHandle.visible = true; updateRotateHandlePos(); }
-            
+
             const btns = document.querySelectorAll('.fp-btn');
             btns.forEach(b => b.classList.remove('active'));
             const activeBtn = document.querySelector(".fp-btn[onclick*='" + mode + "']");
-            if(activeBtn) activeBtn.classList.add('active');
+            if (activeBtn) activeBtn.classList.add('active');
         };
 
         /* ═══════════════════════════════════════════════
@@ -948,7 +978,7 @@
                 camCurL.copy(look);
                 camera.position.copy(camCurP);
                 camera.lookAt(camCurL);
-                
+
                 if (beatIdx === 1) {
                     const cycle = (t * 3.5) % 1;
                     if (cycle < 0.1) setDemoCursorDown(false);
@@ -1076,7 +1106,7 @@
                     if (character) character.scale.setScalar(1);
 
                     setCaption('', 'Meet Gizmo',
-                        'This is a 3D object. It exists in three-dimensional space - it has a front, a back, a top, a bottom. You are about to learn how to move around it.');
+                        'This is a 3D object. It exists in three-dimensional space. You are about to learn how to move around it.');
 
                     setCam('front', true);
                     camLocked = false;
@@ -1089,7 +1119,7 @@
                 ───────────────────────────────────────── */
                 case 1:
                     orbitCtrl.enabled = false;
-                    setCaption(1, 'Orbit', 'Drag to look around Gizmo from any angle. Try to see the back of its head.');
+                    setCaption(1, 'Orbit', 'Drag to look around Gizmo from any angle.');
 
                     // demo: swing camera around the character
                     showWatch();
@@ -1108,9 +1138,11 @@
                             }
                         },
                         // step 2: pause
-                        { duration: 0.5, fn: t => {
-                            if(t===0) { toggleDemoCursor(true); updateDemoCursor(0.3, 0); }
-                        }},
+                        {
+                            duration: 0.5, fn: t => {
+                                if (t === 0) { toggleDemoCursor(true); updateDemoCursor(0.3, 0); }
+                            }
+                        },
                         // step 3: arc 270° around at radius 6, height 2.5
                     ], () => {
                         const startAngle = 0; // front
@@ -1123,7 +1155,7 @@
                             beatLocked = false;
                             orbitCtrl.enabled = true;
                             setHint(HINT_ORBIT);
-                            setCaption(1, 'Orbit', 'Drag to look around Gizmo from any angle. Try to see the back of its head.',
+                            setCaption(1, 'Orbit', 'Drag to look around Gizmo from any angle.',
                                 'orbit at least once around');
                         });
                     });
@@ -1220,26 +1252,30 @@
                                 orbitCtrl.target.copy(camCurL);
                             }
                         },
-                        { duration: 0.5, fn: t => {
-                            if(t===0) { toggleDemoCursor(true); setDemoCursorDown(false); }
-                            updateDemoCursor3D(getArrowHeadPos('x'));
-                        }},
+                        {
+                            duration: 0.5, fn: t => {
+                                if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); }
+                                updateDemoCursor3D(getArrowHeadPos('x'));
+                            }
+                        },
                         // slide right 2 units
                         {
                             duration: 1.2, fn: t => {
-                                if(t===0) setDemoCursorDown(true);
+                                if (t === 0) setDemoCursorDown(true);
                                 character.position.x = xOrigin.x + t * 2;
                                 updateDemoCursor3D(getArrowHeadPos('x'));
                             }
                         },
-                        { duration: 0.6, fn: t => { 
-                            if(t===0) setDemoCursorDown(false);
-                            pulseArrow(arrows.xPos); 
-                        }},
+                        {
+                            duration: 0.6, fn: t => {
+                                if (t === 0) setDemoCursorDown(false);
+                                pulseArrow(arrows.xPos);
+                            }
+                        },
                         // slide back
                         {
                             duration: 1.2, fn: t => {
-                                if(t===0) setDemoCursorDown(true);
+                                if (t === 0) setDemoCursorDown(true);
                                 character.position.x = xOrigin.x + 2 - t * 2;
                                 updateDemoCursor3D(getArrowHeadPos('x'));
                             }
@@ -1270,23 +1306,31 @@
                     const yOrigin = character.position.clone();
 
                     runSequence([
-                        { duration: 0.5, fn: t => {
-                            if(t===0) { toggleDemoCursor(true); setDemoCursorDown(false); }
-                            updateDemoCursor3D(getArrowHeadPos('y'));
-                        }},
-                        { duration: 1.2, fn: t => { 
-                            if(t===0) setDemoCursorDown(true);
-                            character.position.y = yOrigin.y + t * 1.5; 
-                            updateDemoCursor3D(getArrowHeadPos('y'));
-                        }},
-                        { duration: 0.7, fn: t => { 
-                            if(t===0) setDemoCursorDown(false);
-                        }},
-                        { duration: 1.2, fn: t => { 
-                            if(t===0) setDemoCursorDown(true);
-                            character.position.y = yOrigin.y + 1.5 - t * 1.5; 
-                            updateDemoCursor3D(getArrowHeadPos('y'));
-                        }},
+                        {
+                            duration: 0.5, fn: t => {
+                                if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); }
+                                updateDemoCursor3D(getArrowHeadPos('y'));
+                            }
+                        },
+                        {
+                            duration: 1.2, fn: t => {
+                                if (t === 0) setDemoCursorDown(true);
+                                character.position.y = yOrigin.y + t * 1.5;
+                                updateDemoCursor3D(getArrowHeadPos('y'));
+                            }
+                        },
+                        {
+                            duration: 0.7, fn: t => {
+                                if (t === 0) setDemoCursorDown(false);
+                            }
+                        },
+                        {
+                            duration: 1.2, fn: t => {
+                                if (t === 0) setDemoCursorDown(true);
+                                character.position.y = yOrigin.y + 1.5 - t * 1.5;
+                                updateDemoCursor3D(getArrowHeadPos('y'));
+                            }
+                        },
                     ], () => {
                         toggleDemoCursor(false);
                         character.position.y = yOrigin.y;
@@ -1312,23 +1356,31 @@
                     const zOrigin = character.position.clone();
 
                     runSequence([
-                        { duration: 0.5, fn: t => {
-                            if(t===0) { toggleDemoCursor(true); setDemoCursorDown(false); }
-                            updateDemoCursor3D(getArrowHeadPos('z'));
-                        }},
-                        { duration: 1.2, fn: t => { 
-                            if(t===0) setDemoCursorDown(true);
-                            character.position.z = zOrigin.z + t * 2; 
-                            updateDemoCursor3D(getArrowHeadPos('z'));
-                        }},
-                        { duration: 0.7, fn: t => { 
-                            if(t===0) setDemoCursorDown(false);
-                        }},
-                        { duration: 1.2, fn: t => { 
-                            if(t===0) setDemoCursorDown(true);
-                            character.position.z = zOrigin.z + 2 - t * 2; 
-                            updateDemoCursor3D(getArrowHeadPos('z'));
-                        }},
+                        {
+                            duration: 0.5, fn: t => {
+                                if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); }
+                                updateDemoCursor3D(getArrowHeadPos('z'));
+                            }
+                        },
+                        {
+                            duration: 1.2, fn: t => {
+                                if (t === 0) setDemoCursorDown(true);
+                                character.position.z = zOrigin.z + t * 2;
+                                updateDemoCursor3D(getArrowHeadPos('z'));
+                            }
+                        },
+                        {
+                            duration: 0.7, fn: t => {
+                                if (t === 0) setDemoCursorDown(false);
+                            }
+                        },
+                        {
+                            duration: 1.2, fn: t => {
+                                if (t === 0) setDemoCursorDown(true);
+                                character.position.z = zOrigin.z + 2 - t * 2;
+                                updateDemoCursor3D(getArrowHeadPos('z'));
+                            }
+                        },
                     ], () => {
                         toggleDemoCursor(false);
                         character.position.z = zOrigin.z;
@@ -1367,42 +1419,54 @@
                     beatLocked = true;
 
                     runSequence([
-                        { duration: 0.5, fn: t => { 
-                            if(t===0) { toggleDemoCursor(true); setDemoCursorDown(false); }
-                            updateScaleHandlePos();
-                            updateDemoCursor3D(scaleHandle.position);
-                        }},
+                        {
+                            duration: 0.5, fn: t => {
+                                if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); }
+                                updateScaleHandlePos();
+                                updateDemoCursor3D(scaleHandle.position);
+                            }
+                        },
                         // grow to 1.8
-                        { duration: 1.5, fn: t => { 
-                            if(t===0) setDemoCursorDown(true);
-                            if (character) character.scale.setScalar(lerp(1.0, 1.8, t)); 
-                            updateScaleHandlePos();
-                            updateDemoCursor3D(scaleHandle.position);
-                        }},
-                        { duration: 0.8, fn: t => { 
-                            if(t===0) setDemoCursorDown(false);
-                            updateScaleHandlePos();
-                            updateDemoCursor3D(scaleHandle.position);
-                        }},
+                        {
+                            duration: 1.5, fn: t => {
+                                if (t === 0) setDemoCursorDown(true);
+                                if (character) character.scale.setScalar(lerp(1.0, 1.8, t));
+                                updateScaleHandlePos();
+                                updateDemoCursor3D(scaleHandle.position);
+                            }
+                        },
+                        {
+                            duration: 0.8, fn: t => {
+                                if (t === 0) setDemoCursorDown(false);
+                                updateScaleHandlePos();
+                                updateDemoCursor3D(scaleHandle.position);
+                            }
+                        },
                         // shrink to 0.6
-                        { duration: 1.5, fn: t => { 
-                            if(t===0) setDemoCursorDown(true);
-                            if (character) character.scale.setScalar(lerp(1.8, 0.6, t)); 
-                            updateScaleHandlePos();
-                            updateDemoCursor3D(scaleHandle.position);
-                        }},
-                        { duration: 0.8, fn: t => { 
-                            if(t===0) setDemoCursorDown(false);
-                            updateScaleHandlePos();
-                            updateDemoCursor3D(scaleHandle.position);
-                        }},
+                        {
+                            duration: 1.5, fn: t => {
+                                if (t === 0) setDemoCursorDown(true);
+                                if (character) character.scale.setScalar(lerp(1.8, 0.6, t));
+                                updateScaleHandlePos();
+                                updateDemoCursor3D(scaleHandle.position);
+                            }
+                        },
+                        {
+                            duration: 0.8, fn: t => {
+                                if (t === 0) setDemoCursorDown(false);
+                                updateScaleHandlePos();
+                                updateDemoCursor3D(scaleHandle.position);
+                            }
+                        },
                         // back to 1.0
-                        { duration: 1.0, fn: t => { 
-                            if(t===0) setDemoCursorDown(true);
-                            if (character) character.scale.setScalar(lerp(0.6, 1.0, t)); 
-                            updateScaleHandlePos();
-                            updateDemoCursor3D(scaleHandle.position);
-                        }},
+                        {
+                            duration: 1.0, fn: t => {
+                                if (t === 0) setDemoCursorDown(true);
+                                if (character) character.scale.setScalar(lerp(0.6, 1.0, t));
+                                updateScaleHandlePos();
+                                updateDemoCursor3D(scaleHandle.position);
+                            }
+                        },
                     ], () => {
                         toggleDemoCursor(false);
                         if (character) character.scale.setScalar(1);
@@ -1419,7 +1483,7 @@
                     hideAllArrows();
                     scaleHandle.visible = false;
                     rotateHandle.visible = true;
-                    if (character) character.rotation.set(0,0,0);
+                    if (character) character.rotation.set(0, 0, 0);
                     updateRotateHandlePos();
 
                     setCaption(9, 'Rotate',
@@ -1429,43 +1493,51 @@
                     beatLocked = true;
 
                     runSequence([
-                        { duration: 0.5, fn: t => { 
-                            if(t===0) { toggleDemoCursor(true); setDemoCursorDown(false); }
-                            updateRotateHandlePos();
-                            const p = character.position.clone();
-                            p.y += characterHeight / 2;
-                            p.z += 1.2;
-                            updateDemoCursor3D(p);
-                        }},
+                        {
+                            duration: 0.5, fn: t => {
+                                if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); }
+                                updateRotateHandlePos();
+                                const p = character.position.clone();
+                                p.y += characterHeight / 2;
+                                p.z += 1.2;
+                                updateDemoCursor3D(p);
+                            }
+                        },
                         // rotate Y
-                        { duration: 1.5, fn: t => { 
-                            if(t===0) setDemoCursorDown(true);
-                            if (character) character.rotation.y = lerp(0, Math.PI, t); 
-                            updateRotateHandlePos();
-                            const p = character.position.clone();
-                            p.y += characterHeight / 2;
-                            p.z += Math.cos(Math.PI * t) * 1.2;
-                            p.x += Math.sin(Math.PI * t) * 1.2;
-                            updateDemoCursor3D(p);
-                        }},
-                        { duration: 0.8, fn: t => { 
-                            if(t===0) setDemoCursorDown(false);
-                            updateRotateHandlePos();
-                        }},
+                        {
+                            duration: 1.5, fn: t => {
+                                if (t === 0) setDemoCursorDown(true);
+                                if (character) character.rotation.y = lerp(0, Math.PI, t);
+                                updateRotateHandlePos();
+                                const p = character.position.clone();
+                                p.y += characterHeight / 2;
+                                p.z += Math.cos(Math.PI * t) * 1.2;
+                                p.x += Math.sin(Math.PI * t) * 1.2;
+                                updateDemoCursor3D(p);
+                            }
+                        },
+                        {
+                            duration: 0.8, fn: t => {
+                                if (t === 0) setDemoCursorDown(false);
+                                updateRotateHandlePos();
+                            }
+                        },
                         // rotate back
-                        { duration: 1.5, fn: t => { 
-                            if(t===0) setDemoCursorDown(true);
-                            if (character) character.rotation.y = lerp(Math.PI, 0, t); 
-                            updateRotateHandlePos();
-                            const p = character.position.clone();
-                            p.y += characterHeight / 2;
-                            p.z += Math.cos(Math.PI * (1-t)) * 1.2;
-                            p.x += Math.sin(Math.PI * (1-t)) * 1.2;
-                            updateDemoCursor3D(p);
-                        }},
+                        {
+                            duration: 1.5, fn: t => {
+                                if (t === 0) setDemoCursorDown(true);
+                                if (character) character.rotation.y = lerp(Math.PI, 0, t);
+                                updateRotateHandlePos();
+                                const p = character.position.clone();
+                                p.y += characterHeight / 2;
+                                p.z += Math.cos(Math.PI * (1 - t)) * 1.2;
+                                p.x += Math.sin(Math.PI * (1 - t)) * 1.2;
+                                updateDemoCursor3D(p);
+                            }
+                        },
                     ], () => {
                         toggleDemoCursor(false);
-                        if (character) character.rotation.set(0,0,0);
+                        if (character) character.rotation.set(0, 0, 0);
                         hideWatch();
                         beatLocked = false;
                     });
@@ -1482,7 +1554,7 @@
                     setMode('interact');
                     setCaption('', 'You can navigate 3D space',
                         'Orbit to look from any angle. Zoom to get close. Move on <span class="cx">X</span>, <span class="cy">Y</span>, and <span class="cz">Z</span>. Scale to resize. And rotate to turn. These are the fundamental tools in every 3D software.');
-                    
+
                     document.getElementById('free-play-widget').style.display = 'flex';
                     window.setFreePlayMode('move');
                     break;
@@ -1540,7 +1612,7 @@
                     sBox.material.color.setHex(0xffffff); // highlight
                     scaleDragStartY = e.clientY;
                     charScaleStart = character ? character.scale.x : 1;
-                    
+
                     camCurP.copy(camera.position);
                     camTgtP.copy(camera.position);
                     camCurL.copy(orbitCtrl.target);
@@ -1560,7 +1632,7 @@
                     dragRotate = validHit.object._axis;
                     dragRotateMesh = validHit.object._visMesh;
                     dragRotateMesh.material.color.setHex(0xffffff); // highlight
-                    
+
                     camCurP.copy(camera.position);
                     camTgtP.copy(camera.position);
                     camCurL.copy(orbitCtrl.target);
@@ -1586,7 +1658,7 @@
                 if (found) {
                     dragArrow = found.arrow;
                     dragArrow._meshes.forEach(m => m.material.color.setHex(0xffffff)); // highlight
-                    
+
                     camCurP.copy(camera.position);
                     camTgtP.copy(camera.position);
                     camCurL.copy(orbitCtrl.target);
@@ -1626,7 +1698,7 @@
             if (dragRotate && character) {
                 const dx = e.clientX - rotateDragStartX;
                 const dy = e.clientY - rotateDragStartY;
-                
+
                 if (dragRotate === 'y') {
                     character.rotation.y = charRotStart.y + dx * 0.01;
                 } else if (dragRotate === 'x') {
@@ -1634,7 +1706,7 @@
                 } else if (dragRotate === 'z') {
                     character.rotation.z = charRotStart.z - dx * 0.01;
                 }
-                
+
                 if (Math.abs(dx) > 20 || Math.abs(dy) > 20) {
                     rotatedAxis.add(dragRotate);
                     checkBeatComplete();
@@ -1724,7 +1796,7 @@
                 if (dragArrow) restoreColor(dragArrow);
                 if (dragScale) restoreColor(scaleHandle);
                 if (dragRotateMesh) restoreColor(dragRotateMesh);
-                
+
                 dragArrow = null;
                 dragScale = false;
                 dragRotate = null;
