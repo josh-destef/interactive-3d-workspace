@@ -144,7 +144,7 @@
             bottom: 60px;
             left: 50%;
             transform: translateX(-50%);
-            width: min(92%, 440px);
+            width: min(92%, 520px);
             background: rgba(255, 255, 255, 0.96);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
@@ -153,10 +153,10 @@
             box-shadow:
                 0 12px 32px rgba(0, 0, 0, 0.06),
                 0 4px 12px rgba(0, 0, 0, 0.03);
-            padding: 24px 28px;
+            padding: 32px 36px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
             z-index: 50;
             pointer-events: auto;
             cursor: grab;
@@ -202,7 +202,7 @@
         }
 
         #cap-step {
-            font-size: 9px;
+            font-size: 11px;
             font-weight: 500;
             letter-spacing: .12em;
             text-transform: uppercase;
@@ -218,7 +218,7 @@
         }
 
         #cap-title {
-            font-size: 15px;
+            font-size: 19px;
             font-weight: 500;
             color: #111;
             line-height: 1.25;
@@ -229,7 +229,7 @@
         }
 
         #cap-body {
-            font-size: 12px;
+            font-size: 15px;
             font-weight: 300;
             color: #555;
             line-height: 1.72;
@@ -298,7 +298,7 @@
 
         #cap-prompt {
             font-family: var(--mono);
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 300;
             color: var(--green);
             letter-spacing: .04em;
@@ -317,12 +317,12 @@
             display: inline-flex;
             align-items: center;
             gap: 7px;
-            padding: 10px 20px;
+            padding: 12px 24px;
             background: var(--orange);
             border: none;
             border-radius: 7px;
             font-family: var(--font);
-            font-size: 13px;
+            font-size: 15px;
             font-weight: 500;
             color: #fff;
             cursor: pointer;
@@ -455,6 +455,18 @@
         .fp-btn:hover:not(.active) {
             background: rgba(0, 0, 0, 0.05);
         }
+
+        .logo-top-right {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 1000;
+            height: 32px;
+            width: auto;
+            object-fit: contain;
+            pointer-events: none;
+            opacity: 0.9;
+        }
     </style>
 </head>
 
@@ -467,6 +479,8 @@
             </svg>
             <span>Home</span>
         </a>
+
+        <img src="LogoWText.png" alt="CreateAccess Logo" class="logo-top-right">
 
         <!-- canvas window -->
         <div id="canvas-wrap">
@@ -671,7 +685,7 @@
         const orbitCtrl = new OrbitControls(camera, cv);
         orbitCtrl.enableDamping = true;
         orbitCtrl.dampingFactor = 0.08;
-        orbitCtrl.enablePan = false;   // pan disabled — not needed for this lesson
+        orbitCtrl.enablePan = true;
         orbitCtrl.minDistance = 3;
         orbitCtrl.maxDistance = 14;
         orbitCtrl.minPolarAngle = 0.2;                  // can't go below floor
@@ -997,11 +1011,12 @@
         ═══════════════════════════════════════════════ */
         let beatIdx = 0;
         let beatLocked = false;
-        const TOTAL_BEATS = 11; // beats 0-10
+        const TOTAL_BEATS = 12; // beats 0-11
 
         /* per-beat interaction tracking — reset each beat */
         let orbitAccum = 0;     // accumulated orbit degrees (beat 1)
         let zoomMin = 999;   // closest zoom reached (beat 2)
+        let panAccum = 0;    // accumulated pan distance (beat 3)
         let axisDrag = { x: 0, y: 0, z: 0 }; // per-axis drag distance (beats 4-6)
         let axesUsed = new Set();          // which axes dragged (beat 7)
         let scaledUp = false;              // scale > 1.2 achieved (beat 8)
@@ -1012,6 +1027,7 @@
         const isTouch = navigator.maxTouchPoints > 0;
         const HINT_ORBIT = isTouch ? 'two fingers to orbit' : 'click and drag to orbit';
         const HINT_ZOOM = isTouch ? 'pinch to zoom' : 'scroll to zoom';
+        const HINT_PAN = isTouch ? 'two fingers to pan' : 'right-click or Shift+drag to pan';
 
         /* ═══════════════════════════════════════════════
            UI HELPERS
@@ -1086,7 +1102,7 @@
             runningAnims.length = 0; // clear any leftover animations
 
             // reset interaction tracking
-            orbitAccum = 0; zoomMin = 999;
+            orbitAccum = 0; zoomMin = 999; panAccum = 0;
             axisDrag = { x: 0, y: 0, z: 0 };
             axesUsed = new Set();
             scaledUp = false; scaledDown = false;
@@ -1120,13 +1136,9 @@
                 case 1:
                     orbitCtrl.enabled = false;
                     setCaption(1, 'Orbit', 'Drag to look around Gizmo from any angle.');
-
-                    // demo: swing camera around the character
                     showWatch();
                     beatLocked = true;
                     camLocked = true;
-
-                    // step 1: lerp to front preset
                     const b1StartP = camera.position.clone();
                     const b1StartL = orbitCtrl.target.clone();
                     runSequence([
@@ -1137,53 +1149,34 @@
                                 camera.position.copy(camCurP); camera.lookAt(camCurL);
                             }
                         },
-                        // step 2: pause
-                        {
-                            duration: 0.5, fn: t => {
-                                if (t === 0) { toggleDemoCursor(true); updateDemoCursor(0.3, 0); }
-                            }
-                        },
-                        // step 3: arc 270° around at radius 6, height 2.5
+                        { duration: 0.5, fn: t => { if (t === 0) { toggleDemoCursor(true); updateDemoCursor(0.3, 0); } } }
                     ], () => {
-                        const startAngle = 0; // front
-                        arcCamera(startAngle, startAngle + Math.PI * 1.5, 6, 2.5, V3(0, 1, 0), 3.5, () => {
+                        arcCamera(0, Math.PI * 1.5, 6, 2.5, V3(0, 1, 0), 3.5, () => {
                             toggleDemoCursor(false);
                             camLocked = false;
-                            // sync orbitCtrl to where camera ended up
                             orbitCtrl.target.copy(V3(0, 1, 0));
                             hideWatch();
                             beatLocked = false;
                             orbitCtrl.enabled = true;
                             setHint(HINT_ORBIT);
-                            setCaption(1, 'Orbit', 'Drag to look around Gizmo from any angle.',
-                                'orbit at least once around');
+                            setCaption(1, 'Orbit', 'Drag to look around Gizmo from any angle.', 'orbit at least once around');
                         });
                     });
                     break;
 
-                /* ─────────────────────────────────────────
-                   BEAT 2: demo zoom, then student zooms
-                ───────────────────────────────────────── */
                 case 2:
                     orbitCtrl.enabled = true;
                     setCaption(2, 'Zoom', 'Scroll to zoom in and out. Get close enough to see Gizmo\'s face clearly.', 'zoom in close');
                     setHint(HINT_ZOOM);
-
-                    // demo: scripted zoom in and back out
                     showWatch();
                     beatLocked = true;
                     camLocked = true;
-
                     toggleDemoCursor(true, 'scroll');
                     updateDemoCursor(0.5, 0.5, false);
-
-                    // get current camera distance from look target
                     const zStart = camera.position.clone();
                     const zLook = V3(0, 1, 0);
                     const dir2 = zStart.clone().sub(zLook).normalize();
-
                     runSequence([
-                        // zoom in to distance 3.5
                         {
                             duration: 1.5, fn: t => {
                                 const d = lerp(7, 3.5, t);
@@ -1193,7 +1186,6 @@
                             }
                         },
                         { duration: 0.8, fn: () => { } },
-                        // zoom back out to 6
                         {
                             duration: 1.5, fn: t => {
                                 const d = lerp(3.5, 6, t);
@@ -1211,39 +1203,64 @@
                     });
                     break;
 
-                /* ─────────────────────────────────────────
-                   BEAT 3: free explore — orbit + zoom freely
-                ───────────────────────────────────────── */
                 case 3:
                     orbitCtrl.enabled = true;
-                    clearHint();
-                    setMode('interact');
-                    setCaption(3, 'Look around',
-                        'Take a moment. Orbit all the way around. Look from above. This is your camera — you control where you look from.');
-                    showContinue(); // no required action, student decides when ready
-                    break;
-
-                /* ─────────────────────────────────────────
-                   BEAT 4: demo X axis, then student moves X
-                ───────────────────────────────────────── */
-                case 4:
-                    orbitCtrl.enabled = true;
-                    showArrows(['x']);
-                    setCaption(4, 'Move - Red Arrow',
-                        'The <span class="cx">red arrow</span> controls left and right. This is the <b>X axis</b>. Drag it to slide Gizmo sideways.', 'drag the red arrow');
-
-                    // demo: lerp to iso, then slide character on X
+                    setCaption(3, 'Pan', 'Slide the camera sideways or up and down to shift your view.', 'pan the camera');
+                    setHint(HINT_PAN);
                     showWatch();
                     beatLocked = true;
                     camLocked = true;
-                    orbitCtrl.enabled = false;
+                    const pStartP = camera.position.clone();
+                    const pStartT = orbitCtrl.target.clone();
+                    const sideDir = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion).setY(0).normalize();
+                    runSequence([
+                        { duration: 0.8, fn: t => { if (t === 0) toggleDemoCursor(true); updateDemoCursor(0.5, 0.5, false); } },
+                        {
+                            duration: 1.5, fn: t => {
+                                if (t === 0) setDemoCursorDown(true);
+                                const dist = t * 2;
+                                camera.position.copy(pStartP.clone().add(sideDir.clone().multiplyScalar(dist)));
+                                orbitCtrl.target.copy(pStartT.clone().add(sideDir.clone().multiplyScalar(dist)));
+                                updateDemoCursor(0.5 - t * 0.3, 0.5, false);
+                            }
+                        },
+                        { duration: 0.5, fn: () => { } },
+                        {
+                            duration: 1.5, fn: t => {
+                                const dist = 2 - t * 2;
+                                camera.position.copy(pStartP.clone().add(sideDir.clone().multiplyScalar(dist)));
+                                orbitCtrl.target.copy(pStartT.clone().add(sideDir.clone().multiplyScalar(dist)));
+                                updateDemoCursor(0.2 + t * 0.3, 0.5, false);
+                            }
+                        }
+                    ], () => {
+                        toggleDemoCursor(false);
+                        camLocked = false;
+                        orbitCtrl.update();
+                        hideWatch();
+                        beatLocked = false;
+                    });
+                    break;
 
+                case 4:
+                    orbitCtrl.enabled = true;
+                    clearHint();
+                    setMode('interact');
+                    setCaption(4, 'Look around', 'Take a moment. Orbit, zoom, and pan around. This is your camera. You control exactly how you view the world.');
+                    showContinue();
+                    break;
+
+                case 5:
+                    orbitCtrl.enabled = true;
+                    showArrows(['x']);
+                    setCaption(5, 'Move - Red Arrow', 'The <span class="cx">red arrow</span> controls left and right. This is the <b>X axis</b>. Drag it to slide Gizmo sideways.', 'drag the red arrow');
+                    showWatch();
+                    beatLocked = true;
+                    camLocked = true;
                     const xOrigin = character.position.clone();
                     const b4StartP = camera.position.clone();
                     const b4StartL = orbitCtrl.target.clone();
-
                     runSequence([
-                        // camera to iso
                         {
                             duration: 1.5, fn: t => {
                                 camCurP.lerpVectors(b4StartP, CAMS.iso.pos, t);
@@ -1252,13 +1269,7 @@
                                 orbitCtrl.target.copy(camCurL);
                             }
                         },
-                        {
-                            duration: 0.5, fn: t => {
-                                if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); }
-                                updateDemoCursor3D(getArrowHeadPos('x'));
-                            }
-                        },
-                        // slide right 2 units
+                        { duration: 0.5, fn: t => { if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); } updateDemoCursor3D(getArrowHeadPos('x')); } },
                         {
                             duration: 1.2, fn: t => {
                                 if (t === 0) setDemoCursorDown(true);
@@ -1266,13 +1277,7 @@
                                 updateDemoCursor3D(getArrowHeadPos('x'));
                             }
                         },
-                        {
-                            duration: 0.6, fn: t => {
-                                if (t === 0) setDemoCursorDown(false);
-                                pulseArrow(arrows.xPos);
-                            }
-                        },
-                        // slide back
+                        { duration: 0.6, fn: t => { if (t === 0) setDemoCursorDown(false); pulseArrow(arrows.xPos); } },
                         {
                             duration: 1.2, fn: t => {
                                 if (t === 0) setDemoCursorDown(true);
@@ -1290,28 +1295,16 @@
                     });
                     break;
 
-                /* ─────────────────────────────────────────
-                   BEAT 5: demo Y axis, then student moves Y
-                ───────────────────────────────────────── */
-                case 5:
+                case 6:
                     orbitCtrl.enabled = true;
                     showArrows(['x', 'y']);
-                    setCaption(5, 'Move - Green Arrow',
-                        'The <span class="cy">green arrow</span> controls up and down. This is the <b>Y axis</b>. Drag it to lift Gizmo off the ground.', 'drag the green arrow');
-
+                    setCaption(6, 'Move - Green Arrow', 'The <span class="cy">green arrow</span> controls up and down. This is the <b>Y axis</b>. Drag it to lift Gizmo off the ground.', 'drag the green arrow');
                     showWatch();
                     beatLocked = true;
                     camLocked = true;
-
                     const yOrigin = character.position.clone();
-
                     runSequence([
-                        {
-                            duration: 0.5, fn: t => {
-                                if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); }
-                                updateDemoCursor3D(getArrowHeadPos('y'));
-                            }
-                        },
+                        { duration: 0.5, fn: t => { if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); } updateDemoCursor3D(getArrowHeadPos('y')); } },
                         {
                             duration: 1.2, fn: t => {
                                 if (t === 0) setDemoCursorDown(true);
@@ -1319,11 +1312,7 @@
                                 updateDemoCursor3D(getArrowHeadPos('y'));
                             }
                         },
-                        {
-                            duration: 0.7, fn: t => {
-                                if (t === 0) setDemoCursorDown(false);
-                            }
-                        },
+                        { duration: 0.7, fn: t => { if (t === 0) setDemoCursorDown(false); } },
                         {
                             duration: 1.2, fn: t => {
                                 if (t === 0) setDemoCursorDown(true);
@@ -1340,28 +1329,16 @@
                     });
                     break;
 
-                /* ─────────────────────────────────────────
-                   BEAT 6: demo Z axis, then student moves Z
-                ───────────────────────────────────────── */
-                case 6:
+                case 7:
                     orbitCtrl.enabled = true;
                     showArrows(['x', 'y', 'z']);
-                    setCaption(6, 'Move - Blue Arrow',
-                        'The <span class="cz">blue arrow</span> controls forward and backward. This is the <b>Z axis</b> - the direction that goes through the screen. Drag it toward you.', 'drag the blue arrow');
-
+                    setCaption(7, 'Move - Blue Arrow', 'The <span class="cz">blue arrow</span> controls forward and backward. This is the <b>Z axis</b>. Drag it toward you.', 'drag the blue arrow');
                     showWatch();
                     beatLocked = true;
                     camLocked = true;
-
                     const zOrigin = character.position.clone();
-
                     runSequence([
-                        {
-                            duration: 0.5, fn: t => {
-                                if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); }
-                                updateDemoCursor3D(getArrowHeadPos('z'));
-                            }
-                        },
+                        { duration: 0.5, fn: t => { if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); } updateDemoCursor3D(getArrowHeadPos('z')); } },
                         {
                             duration: 1.2, fn: t => {
                                 if (t === 0) setDemoCursorDown(true);
@@ -1369,11 +1346,7 @@
                                 updateDemoCursor3D(getArrowHeadPos('z'));
                             }
                         },
-                        {
-                            duration: 0.7, fn: t => {
-                                if (t === 0) setDemoCursorDown(false);
-                            }
-                        },
+                        { duration: 0.7, fn: t => { if (t === 0) setDemoCursorDown(false); } },
                         {
                             duration: 1.2, fn: t => {
                                 if (t === 0) setDemoCursorDown(true);
@@ -1390,43 +1363,25 @@
                     });
                     break;
 
-                /* ─────────────────────────────────────────
-                   BEAT 7: free move with all three axes
-                ───────────────────────────────────────── */
-                case 7:
+                case 8:
                     orbitCtrl.enabled = true;
                     showArrows(['x', 'y', 'z']);
                     clearHint();
                     setMode('interact');
-                    setCaption(7, 'Move Gizmo anywhere',
-                        'Use any arrow to move it. Orbit around to see where it ends up. This is what you do in every 3D application.', 'use at least 2 different axes');
+                    setCaption(8, 'Move Gizmo anywhere', 'Use any arrow to move it. Orbit around to see where it ends up.', 'use at least 2 different axes');
                     break;
 
-                /* ─────────────────────────────────────────
-                   BEAT 8: demo scale, then student scales
-                ───────────────────────────────────────── */
-                case 8:
+                case 9:
                     orbitCtrl.enabled = true;
                     hideAllArrows();
                     if (character) character.scale.setScalar(1);
                     scaleHandle.visible = true;
                     updateScaleHandlePos();
-
-                    setCaption(8, 'Scale',
-                        'The <span class="co">scale tool</span> controls size. Drag it up to grow, drag down to shrink. Scale changes how big an object is without moving it.', 'drag the scale tool up and down');
-
+                    setCaption(9, 'Scale', 'The <span class="co">scale tool</span> controls size. Drag it up to grow, drag down to shrink.', 'drag the scale tool up and down');
                     showWatch();
                     beatLocked = true;
-
                     runSequence([
-                        {
-                            duration: 0.5, fn: t => {
-                                if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); }
-                                updateScaleHandlePos();
-                                updateDemoCursor3D(scaleHandle.position);
-                            }
-                        },
-                        // grow to 1.8
+                        { duration: 0.5, fn: t => { if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); } updateScaleHandlePos(); updateDemoCursor3D(scaleHandle.position); } },
                         {
                             duration: 1.5, fn: t => {
                                 if (t === 0) setDemoCursorDown(true);
@@ -1435,14 +1390,7 @@
                                 updateDemoCursor3D(scaleHandle.position);
                             }
                         },
-                        {
-                            duration: 0.8, fn: t => {
-                                if (t === 0) setDemoCursorDown(false);
-                                updateScaleHandlePos();
-                                updateDemoCursor3D(scaleHandle.position);
-                            }
-                        },
-                        // shrink to 0.6
+                        { duration: 0.8, fn: t => { if (t === 0) setDemoCursorDown(false); updateScaleHandlePos(); updateDemoCursor3D(scaleHandle.position); } },
                         {
                             duration: 1.5, fn: t => {
                                 if (t === 0) setDemoCursorDown(true);
@@ -1451,14 +1399,7 @@
                                 updateDemoCursor3D(scaleHandle.position);
                             }
                         },
-                        {
-                            duration: 0.8, fn: t => {
-                                if (t === 0) setDemoCursorDown(false);
-                                updateScaleHandlePos();
-                                updateDemoCursor3D(scaleHandle.position);
-                            }
-                        },
-                        // back to 1.0
+                        { duration: 0.8, fn: t => { if (t === 0) setDemoCursorDown(false); updateScaleHandlePos(); updateDemoCursor3D(scaleHandle.position); } },
                         {
                             duration: 1.0, fn: t => {
                                 if (t === 0) setDemoCursorDown(true);
@@ -1475,64 +1416,33 @@
                     });
                     break;
 
-                /* ─────────────────────────────────────────
-                   BEAT 9: demo rotate, then student rotates
-                ───────────────────────────────────────── */
-                case 9:
+                case 10:
                     orbitCtrl.enabled = true;
                     hideAllArrows();
                     scaleHandle.visible = false;
                     rotateHandle.visible = true;
                     if (character) character.rotation.set(0, 0, 0);
                     updateRotateHandlePos();
-
-                    setCaption(9, 'Rotate',
-                        'The <span class="co">rotate tool</span> controls orientation. Drag any of the three rings to spin Gizmo.', 'spin gizmo using the rotation rings');
-
+                    setCaption(10, 'Rotate', 'The <span class="co">rotate tool</span> controls orientation. Drag any of the three rings to spin Gizmo.', 'spin gizmo using the rotation rings');
                     showWatch();
                     beatLocked = true;
-
                     runSequence([
-                        {
-                            duration: 0.5, fn: t => {
-                                if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); }
-                                updateRotateHandlePos();
-                                const p = character.position.clone();
-                                p.y += characterHeight / 2;
-                                p.z += 1.2;
-                                updateDemoCursor3D(p);
-                            }
-                        },
-                        // rotate Y
+                        { duration: 0.5, fn: t => { if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); } updateRotateHandlePos(); const p = character.position.clone(); p.y += characterHeight / 2; p.z += 1.2; updateDemoCursor3D(p); } },
                         {
                             duration: 1.5, fn: t => {
                                 if (t === 0) setDemoCursorDown(true);
                                 if (character) character.rotation.y = lerp(0, Math.PI, t);
                                 updateRotateHandlePos();
-                                const p = character.position.clone();
-                                p.y += characterHeight / 2;
-                                p.z += Math.cos(Math.PI * t) * 1.2;
-                                p.x += Math.sin(Math.PI * t) * 1.2;
-                                updateDemoCursor3D(p);
+                                const p = character.position.clone(); p.y += characterHeight / 2; p.z += Math.cos(Math.PI * t) * 1.2; p.x += Math.sin(Math.PI * t) * 1.2; updateDemoCursor3D(p);
                             }
                         },
-                        {
-                            duration: 0.8, fn: t => {
-                                if (t === 0) setDemoCursorDown(false);
-                                updateRotateHandlePos();
-                            }
-                        },
-                        // rotate back
+                        { duration: 0.8, fn: t => { if (t === 0) setDemoCursorDown(false); updateRotateHandlePos(); } },
                         {
                             duration: 1.5, fn: t => {
                                 if (t === 0) setDemoCursorDown(true);
                                 if (character) character.rotation.y = lerp(Math.PI, 0, t);
                                 updateRotateHandlePos();
-                                const p = character.position.clone();
-                                p.y += characterHeight / 2;
-                                p.z += Math.cos(Math.PI * (1 - t)) * 1.2;
-                                p.x += Math.sin(Math.PI * (1 - t)) * 1.2;
-                                updateDemoCursor3D(p);
+                                const p = character.position.clone(); p.y += characterHeight / 2; p.z += Math.cos(Math.PI * (1 - t)) * 1.2; p.x += Math.sin(Math.PI * (1 - t)) * 1.2; updateDemoCursor3D(p);
                             }
                         },
                     ], () => {
@@ -1543,18 +1453,13 @@
                     });
                     break;
 
-                /* ─────────────────────────────────────────
-                   BEAT 10: completion — all controls, free play
-                ───────────────────────────────────────── */
-                case 10:
+                case 11:
                     orbitCtrl.enabled = true;
                     orbitCtrl.target.copy(camTgtL);
                     orbitCtrl.update();
                     clearHint();
                     setMode('interact');
-                    setCaption('', 'You can navigate 3D space',
-                        'Orbit to look from any angle. Zoom to get close. Move on <span class="cx">X</span>, <span class="cy">Y</span>, and <span class="cz">Z</span>. Scale to resize. And rotate to turn. These are the fundamental tools in every 3D software.');
-
+                    setCaption('', 'You can navigate 3D space', 'Orbit to look around. Zoom to get close. Pan to shift your view. Move on X, Y, and Z. Scale to resize. And rotate to turn. These are the fundamental tools in every 3D software.');
                     document.getElementById('free-play-widget').style.display = 'flex';
                     window.setFreePlayMode('move');
                     break;
@@ -1576,11 +1481,15 @@
         let rotateDragStartX = 0;
         let rotateDragStartY = 0;
         let charRotStart = new THREE.Euler();
+        let charQuatStart = new THREE.Quaternion();
         let dragStart = new THREE.Vector3(); // world-space hit point at drag start
         let charPosStart = new THREE.Vector3(); // character position at drag start
         let charScaleStart = 1;
         let scaleDragStartY = 0;
         let hoverObj = null;
+
+        const _tmpQ = new THREE.Quaternion();
+        const _tmpV = new THREE.Vector3();
 
         function restoreColor(obj) {
             if (!obj) return;
@@ -1643,6 +1552,7 @@
                     rotateDragStartX = e.clientX;
                     rotateDragStartY = e.clientY;
                     charRotStart.copy(character.rotation);
+                    charQuatStart.copy(character.quaternion);
                     return;
                 }
             }
@@ -1698,14 +1608,11 @@
             if (dragRotate && character) {
                 const dx = e.clientX - rotateDragStartX;
                 const dy = e.clientY - rotateDragStartY;
+                const angle = (dragRotate === 'x' ? dy : (dragRotate === 'y' ? dx : -dx)) * 0.01;
 
-                if (dragRotate === 'y') {
-                    character.rotation.y = charRotStart.y + dx * 0.01;
-                } else if (dragRotate === 'x') {
-                    character.rotation.x = charRotStart.x + dy * 0.01;
-                } else if (dragRotate === 'z') {
-                    character.rotation.z = charRotStart.z - dx * 0.01;
-                }
+                _tmpV.set(dragRotate === 'x' ? 1 : 0, dragRotate === 'y' ? 1 : 0, dragRotate === 'z' ? 1 : 0);
+                _tmpQ.setFromAxisAngle(_tmpV, angle);
+                character.quaternion.copy(_tmpQ.multiply(charQuatStart));
 
                 if (Math.abs(dx) > 20 || Math.abs(dy) > 20) {
                     rotatedAxis.add(dragRotate);
@@ -1789,6 +1696,12 @@
                 orbitAccum += Math.abs(e.movementX || 0) * 0.5;
                 checkBeatComplete();
             }
+
+            // pan tracking for beat 3
+            if (beatIdx === 3 && orbitCtrl.enabled) {
+                panAccum += (Math.abs(e.movementX || 0) + Math.abs(e.movementY || 0)) * 0.5;
+                checkBeatComplete();
+            }
         }, { passive: true });
 
         window.addEventListener('pointerup', () => {
@@ -1802,10 +1715,8 @@
                 dragRotate = null;
                 dragRotateMesh = null;
                 cv.style.cursor = '';
-                if (beatIdx !== 3) {
-                    // restore orbit based on beat
-                    orbitCtrl.enabled = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(beatIdx);
-                }
+                // restore orbit based on beat
+                orbitCtrl.enabled = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(beatIdx);
             }
         });
 
@@ -1828,12 +1739,13 @@
             switch (beatIdx) {
                 case 1: if (orbitAccum > 120) { clearHint(); showContinue(); } break;
                 case 2: if (zoomMin < 4) { clearHint(); showContinue(); } break;
-                case 4: if (axisDrag.x > 1.0) { showContinue(); } break;
-                case 5: if (axisDrag.y > 1.0) { showContinue(); } break;
-                case 6: if (axisDrag.z > 1.0) { showContinue(); } break;
-                case 7: if (axesUsed.size >= 2) { showContinue(); } break;
-                case 8: if (scaledUp && scaledDown) { showContinue(); } break;
-                case 9: if (rotatedAxis.size > 0) { showContinue(); } break;
+                case 3: if (panAccum > 50) { clearHint(); showContinue(); } break;
+                case 5: if (axisDrag.x > 1.0) { showContinue(); } break;
+                case 6: if (axisDrag.y > 1.0) { showContinue(); } break;
+                case 7: if (axisDrag.z > 1.0) { showContinue(); } break;
+                case 8: if (axesUsed.size >= 2) { showContinue(); } break;
+                case 9: if (scaledUp && scaledDown) { showContinue(); } break;
+                case 10: if (rotatedAxis.size > 0) { showContinue(); } break;
             }
         }
 
