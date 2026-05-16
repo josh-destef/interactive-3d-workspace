@@ -467,6 +467,59 @@
             pointer-events: none;
             opacity: 0.9;
         }
+
+        /* utility bar */
+        #util-bar {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            transform: translateY(10px);
+        }
+
+        #util-bar.on {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        .util-btn {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-family: var(--font);
+            font-size: 12px;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+            white-space: nowrap;
+        }
+
+        .util-btn:hover {
+            background: #fff;
+            border-color: var(--orange);
+            color: var(--orange);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .util-btn svg {
+            opacity: 0.7;
+        }
     </style>
 </head>
 
@@ -481,6 +534,25 @@
         </a>
 
         <img src="LogoWText.png" alt="CreateAccess Logo" class="logo-top-right">
+
+        <div id="util-bar">
+            <button class="util-btn" onclick="resetCamera()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                </svg>
+                Reset View
+            </button>
+            <button class="util-btn" onclick="resetGizmo()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7" />
+                    <path d="m16 20 2 2 4-4" />
+                </svg>
+                Reset Gizmo
+            </button>
+        </div>
 
         <!-- canvas window -->
         <div id="canvas-wrap">
@@ -692,6 +764,12 @@
         orbitCtrl.maxPolarAngle = Math.PI * 0.55;       // can't go fully overhead
         orbitCtrl.enabled = false;
         orbitCtrl.target.set(0, 1, 0);
+
+        orbitCtrl.addEventListener('change', () => {
+            orbitCtrl.target.x = clamp(orbitCtrl.target.x, -10, 10);
+            orbitCtrl.target.y = clamp(orbitCtrl.target.y, 0, 5);
+            orbitCtrl.target.z = clamp(orbitCtrl.target.z, -10, 10);
+        });
 
         /* ═══════════════════════════════════════════════
            FLOOR GRID & SHADOW PLANE
@@ -943,6 +1021,49 @@
             if (activeBtn) activeBtn.classList.add('active');
         };
 
+        window.resetCamera = function () {
+            if (beatLocked) return;
+            const startP = camera.position.clone();
+            const startT = orbitCtrl.target.clone();
+            const endP = CAMS.iso.pos.clone();
+            const endT = CAMS.iso.look.clone();
+
+            orbitCtrl.enabled = false;
+            camLocked = true;
+            beatLocked = true; // prevent other interactions during reset
+
+            animate01(0.8, t => {
+                camera.position.lerpVectors(startP, endP, t);
+                orbitCtrl.target.lerpVectors(startT, endT, t);
+                camera.lookAt(orbitCtrl.target);
+            }, () => {
+                orbitCtrl.enabled = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(beatIdx);
+                camLocked = false;
+                beatLocked = false;
+                orbitCtrl.update();
+            });
+        };
+
+        window.resetGizmo = function () {
+            if (beatLocked || !character) return;
+
+            const startP = character.position.clone();
+            const startS = character.scale.x;
+            const startQ = character.quaternion.clone();
+
+            beatLocked = true;
+            animate01(0.6, t => {
+                character.position.lerpVectors(startP, V3(0, 0, 0), t);
+                character.scale.setScalar(lerp(startS, 1, t));
+                character.quaternion.slerp(new THREE.Quaternion(), t);
+                updateArrowPositions();
+                if (scaleHandle.visible) updateScaleHandlePos();
+                if (rotateHandle.visible) updateRotateHandlePos();
+            }, () => {
+                beatLocked = false;
+            });
+        };
+
         /* ═══════════════════════════════════════════════
            ANIMATION SYSTEM
            animate01: run fn(t) for t in [0,1] over duration seconds.
@@ -1070,12 +1191,16 @@
 
         function setMode(mode) {
             const badge = document.getElementById('status-badge');
+            const util = document.getElementById('util-bar');
             if (!mode) {
                 badge.classList.remove('on');
+                if (util) util.classList.remove('on');
                 return;
             }
             badge.textContent = mode === 'watch' ? 'WATCHING' : 'YOUR TURN';
             badge.className = mode === 'watch' ? 'watching on' : 'interacting on';
+
+            if (util) util.classList.toggle('on', mode === 'interact');
         }
 
         function showWatch() { setMode('watch'); }
