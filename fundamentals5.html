@@ -789,13 +789,13 @@
 
         /* ═══════════════════════════════════════════════
            CHARACTER (GLB)
-           Loaded from gizmo2.glb. Centered on origin, sitting on floor.
+           Loaded from gizmo.glb. Centered on origin, sitting on floor.
         ═══════════════════════════════════════════════ */
         let character = null;
         let characterHeight = 2.0; // updated after load
 
         const loader = new GLTFLoader();
-        loader.load('./gizmo2.glb', (gltf) => {
+        loader.load('./gizmo.glb', (gltf) => {
             const model = gltf.scene;
 
             // correct material styling and enable shadows
@@ -816,10 +816,17 @@
             const size = box.getSize(new THREE.Vector3());
             model.position.sub(center);
             model.position.y += size.y / 2;
-            characterHeight = size.y;
+            characterHeight = size.y * 0.6;
 
-            scene.add(model);
-            character = model;
+            // Rotate model so it faces forward (towards the camera) and scale to 60%
+            model.rotation.y = Math.PI;
+            model.scale.setScalar(0.6);
+
+            const wrapper = new THREE.Group();
+            wrapper.add(model);
+
+            scene.add(wrapper);
+            character = wrapper;
 
             // fade out loading overlay and start lesson
             const loadEl = document.getElementById('loading');
