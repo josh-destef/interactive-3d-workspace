@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Raycasting Workshop - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <link rel="stylesheet" href="advanced-lab.css">
+</head>
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+      <header>
+        <p class="eyebrow">Production pipeline 04</p>
+        <h1>Raycast Workshop</h1>
+        <p class="lede">A screen pointer becomes a ray in world space. Intersections are sorted by distance, then filters decide which objects can receive interaction.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Ray query</h2>
+        <div class="control">
+          <div class="control-head"><span>Maximum distance</span><span id="distanceValue" class="value">12 m</span></div>
+          <input id="distance" type="range" min="3" max="20" value="12">
+        </div>
+        <div class="button-grid" style="margin-top:12px">
+          <button id="layers" class="tool-btn">All layers</button>
+          <button id="through" class="tool-btn">Nearest hit</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Pointer to world</h2>
+        <div class="readout-grid">
+          <div class="readout"><strong id="ndcReadout">0.00, 0.00</strong><span>normalized screen</span></div>
+          <div class="readout"><strong id="hitReadout">none</strong><span>first accepted hit</span></div>
+          <div class="readout"><strong id="hitDistance">0.00 m</strong><span>hit distance</span></div>
+          <div class="readout"><strong id="selectedReadout">0 / 3</strong><span>targets selected</span></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Query stages</h2>
+        <div class="step-list">
+          <div class="step active"><b>1</b><span>Convert pixels into normalized device coordinates from -1 to +1.</span></div>
+          <div class="step active"><b>2</b><span>Project a world-space ray through the camera.</span></div>
+          <div class="step"><b>3</b><span>Test object bounds and triangles, then sort hits by distance.</span></div>
+          <div class="step"><b>4</b><span>Apply distance, layer, and interaction-policy filters.</span></div>
+        </div>
+      </section>
+
+      <div class="inline-row">
+        <button id="selectNext" class="wide-btn">Select next target</button>
+        <button id="reset" class="wide-btn danger">Reset selections</button>
+      </div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Interaction challenge</div>
+        <h2 class="challenge-title">Select three valid targets</h2>
+        <p class="challenge-copy">Enable the target interaction layer, keep the ray under 14 m, and click three orange objects.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">Enable target-only layers</span></div>
+      </section>
+    </aside>
+
+    <section class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="viewport-label"><strong>Live ray</strong>Move across the viewport. Cyan shows the camera ray; the white marker shows the accepted intersection.</div>
+      <div class="hud"><span class="hud-pill">orange = targets</span><span class="hud-pill">gray = blockers</span></div>
+      <div class="help">Move to aim &#183; click to select &#183; drag empty space to orbit</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}
+  </script>
+  <script type="module">
+    import { THREE, createLab, startLoop, bindRange, bindToggle, setChallenge, lineBetween } from "./advanced-lab-core.js";
+
+    const lab = createLab({ cameraPosition: [7, 5, 9], target: [0, 1.5, 0] });
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    const interactive = [];
+    const selected = new Set();
+    const state = { targetsOnly: false, through: false, far: 12 };
+    let hovered = null;
+
+    const targetMaterial = new THREE.MeshStandardMaterial({ color: 0xff9022, roughness: 0.45 });
+    const blockerMaterial = new THREE.MeshStandardMaterial({ color: 0xaeb5bf, roughness: 0.72, transparent: true, opacity: 0.82 });
+    const positions = [
+      [-2.8, 0.65, 0.4], [-0.8, 1.1, -1.8], [1.4, 0.75, 0.5],
+      [3.1, 1.45, -1.4], [-1.9, 1.8, -3.1], [1.1, 2.25, -3.7]
+    ];
+    positions.forEach((position, index) => {
+      const geometry = index % 2
+        ? new THREE.SphereGeometry(0.48, 22, 14)
+        : new THREE.BoxGeometry(0.9, 0.9, 0.9);
+      const mesh = new THREE.Mesh(geometry, targetMaterial.clone());
+      mesh.position.fromArray(position);
+      mesh.castShadow = true;
+      mesh.userData.kind = "target";
+      mesh.userData.label = `target ${index + 1}`;
+      mesh.layers.set(1);
+      lab.scene.add(mesh);
+      interactive.push(mesh);
+    });
+
+    [
+      [-1.2, 1.15, 1.3, 1.4, 2.3, 0.35],
+      [2.1, 1.4, 1.7, 1.8, 2.8, 0.35],
+      [0.3, 1.2, -0.6, 1.5, 2.4, 0.3]
+    ].forEach(([x, y, z, w, h, d], index) => {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), blockerMaterial.clone());
+      mesh.position.set(x, y, z);
+      mesh.userData.kind = "blocker";
+      mesh.userData.label = `blocker ${index + 1}`;
+      mesh.layers.set(0);
+      mesh.castShadow = true;
+      lab.scene.add(mesh);
+      interactive.push(mesh);
+    });
+
+    const rayLine = lineBetween(new THREE.Vector3(), new THREE.Vector3(0, 0, -1), 0x13b8a6);
+    rayLine.frustumCulled = false;
+    lab.scene.add(rayLine);
+    const hitMarker = new THREE.Mesh(
+      new THREE.SphereGeometry(0.09, 14, 10),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false })
+    );
+    hitMarker.renderOrder = 8;
+    hitMarker.visible = false;
+    lab.scene.add(hitMarker);
+
+    function updateRay() {
+      raycaster.far = state.far;
+      raycaster.layers.disableAll();
+      if (state.targetsOnly) raycaster.layers.enable(1);
+      else {
+        raycaster.layers.enable(0);
+        raycaster.layers.enable(1);
+      }
+      raycaster.setFromCamera(pointer, lab.camera);
+      const end = raycaster.ray.origin.clone().addScaledVector(raycaster.ray.direction, state.far);
+      rayLine.geometry.setFromPoints([raycaster.ray.origin, end]);
+      const hits = raycaster.intersectObjects(interactive, false);
+      let hit = hits[0] || null;
+      if (state.through) hit = hits.find(item => item.object.userData.kind === "target") || hit;
+      if (hovered && !selected.has(hovered)) hovered.material.emissive?.setHex(0x000000);
+      hovered = hit?.object || null;
+      if (hovered && !selected.has(hovered)) hovered.material.emissive?.setHex(0x4a2705);
+      hitMarker.visible = Boolean(hit);
+      if (hit) hitMarker.position.copy(hit.point);
+      document.getElementById("hitReadout").textContent = hit?.object.userData.label || "none";
+      document.getElementById("hitDistance").textContent = hit ? `${hit.distance.toFixed(2)} m` : "0.00 m";
+      document.querySelectorAll(".step").forEach((step, index) => step.classList.toggle("active", index < (hit ? 4 : 2)));
+      return hit;
+    }
+
+    lab.canvas.addEventListener("pointermove", event => {
+      const rect = lab.canvas.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      document.getElementById("ndcReadout").textContent = `${pointer.x.toFixed(2)}, ${pointer.y.toFixed(2)}`;
+      updateRay();
+    });
+
+    lab.canvas.addEventListener("click", event => {
+      const hit = updateRay();
+      if (!hit || hit.object.userData.kind !== "target") return;
+      selectTarget(hit.object);
+    });
+
+    function updateStatus() {
+      document.getElementById("selectedReadout").textContent = `${selected.size} / 3`;
+      const complete = selected.size >= 3 && state.targetsOnly && state.far <= 14;
+      setChallenge(complete, complete ? "Three filtered targets selected" : !state.targetsOnly ? "Enable target-only layers" : selected.size < 3 ? `Select ${3 - selected.size} more target${3 - selected.size === 1 ? "" : "s"}` : "Reduce maximum distance to 14 m");
+    }
+
+    function selectTarget(mesh) {
+      selected.add(mesh);
+      mesh.material.emissive.setHex(0x0c4937);
+      mesh.material.color.setHex(0x13b8a6);
+      updateStatus();
+    }
+
+    bindRange("distance", value => `${value} m`, value => {
+      state.far = value;
+      updateRay();
+      updateStatus();
+    });
+    bindToggle("layers", value => {
+      state.targetsOnly = value;
+      updateRay();
+      updateStatus();
+    }, "Targets only", "All layers");
+    bindToggle("through", value => {
+      state.through = value;
+      updateRay();
+    }, "Find target", "Nearest hit");
+
+    document.getElementById("reset").addEventListener("click", () => {
+      selected.forEach(mesh => {
+        mesh.material.color.setHex(0xff9022);
+        mesh.material.emissive.setHex(0x000000);
+      });
+      selected.clear();
+      updateStatus();
+    });
+    document.getElementById("selectNext").addEventListener("click", () => {
+      const next = interactive.find(mesh => mesh.userData.kind === "target" && !selected.has(mesh));
+      if (next) selectTarget(next);
+    });
+
+    startLoop(lab, () => updateRay());
+    updateStatus();
+  </script>
+</body>
+</html>

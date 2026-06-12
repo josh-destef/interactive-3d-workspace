@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rendering Pipeline Lab - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <link rel="stylesheet" href="advanced-lab.css">
+  <style>
+    .render-noise { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0; mix-blend-mode:multiply; background-image:repeating-radial-gradient(circle at 30% 40%, rgba(23,32,51,.28) 0 1px, transparent 1px 4px); background-size:11px 13px; transition:opacity .2s ease; }
+    .blooming { filter:drop-shadow(0 0 16px rgba(255,144,34,.58)); }
+  </style>
+</head>
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+      <header>
+        <p class="eyebrow">Rendering systems 01</p>
+        <h1>Rendering Detective</h1>
+        <p class="lede">Rasterization projects triangles quickly. Path tracing estimates light transport through repeated samples. Both still pass through color management and image-space finishing.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Renderer</h2>
+        <div class="mode-row">
+          <button class="mode-btn active" data-mode="raster">Raster</button>
+          <button class="mode-btn" data-mode="path">Path trace</button>
+          <button class="mode-btn" data-mode="compare">Compare</button>
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Samples per pixel</span><span id="samplesValue" class="value">16</span></div>
+          <input id="samples" type="range" min="0" max="8" value="4">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Light bounces</span><span id="bouncesValue" class="value">3</span></div>
+          <input id="bounces" type="range" min="1" max="8" value="3">
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Image finishing</h2>
+        <div class="button-grid">
+          <button id="denoise" class="tool-btn">Denoise off</button>
+          <button id="reflections" class="tool-btn active">Reflections on</button>
+          <button id="bloom" class="tool-btn">Bloom off</button>
+          <button id="tone" class="tool-btn active">Filmic tone map</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Render diagnosis</h2>
+        <div class="readout-grid">
+          <div class="readout"><strong id="timeReadout">5 ms</strong><span>estimated render</span></div>
+          <div class="readout"><strong id="noiseReadout">0%</strong><span>remaining noise</span></div>
+          <div class="readout"><strong id="lightReadout">direct</strong><span>light transport</span></div>
+          <div class="readout"><strong id="pipelineReadout">geometry</strong><span>dominant cost</span></div>
+        </div>
+        <div class="step-list" style="margin-top:11px">
+          <div class="step active"><b>1</b><span>Geometry and materials describe the scene.</span></div>
+          <div class="step active"><b>2</b><span>Visibility and lighting produce HDR pixel values.</span></div>
+          <div class="step active"><b>3</b><span>Tone mapping converts HDR light for the display.</span></div>
+          <div class="step"><b>4</b><span>Post-processing adds image-space effects.</span></div>
+        </div>
+      </section>
+
+      <div class="concept-note">More samples reduce random noise but increase render time. More bounces add indirect light, reflections, and color transfer, with diminishing visual returns.</div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Rendering challenge</div>
+        <h2 class="challenge-title">Author a clean preview render</h2>
+        <p class="challenge-copy">Use path tracing, 64-128 samples, no more than four bounces, denoising, and an estimated render below 160 ms.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">Choose a rendering strategy</span></div>
+      </section>
+    </aside>
+
+    <section class="viewport">
+      <canvas class="webgl"></canvas>
+      <div id="noiseOverlay" class="render-noise"></div>
+      <div class="viewport-label"><strong>Conceptual preview</strong>Noise and timing are modeled to expose the tradeoff; this browser scene remains rasterized by Three.js.</div>
+      <div class="hud"><span class="hud-pill">HDR scene</span><span class="hud-pill">display transform</span></div>
+      <div class="help">Watch dark corners and reflective surfaces as bounces and samples change.</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}
+  </script>
+  <script type="module">
+    import { THREE, createLab, startLoop, bindRange, bindToggle, setChallenge, standardMaterial } from "./advanced-lab-core.js";
+
+    const lab = createLab({ cameraPosition: [7.5, 4.8, 8.5], target: [0, 1.4, 0] });
+    const state = { mode: "raster", samples: 16, bounces: 3, denoise: false, reflections: true, bloom: false, tone: true };
+    const stage = new THREE.Group();
+    lab.scene.add(stage);
+
+    const backdrop = new THREE.Mesh(
+      new THREE.BoxGeometry(7, 4, 0.3),
+      standardMaterial(0xdedfd9, { roughness: 0.86 })
+    );
+    backdrop.position.set(0, 2, -2.6);
+    backdrop.receiveShadow = true;
+    stage.add(backdrop);
+
+    const chrome = new THREE.Mesh(
+      new THREE.SphereGeometry(1.05, 48, 32),
+      standardMaterial(0xbac3ce, { roughness: 0.08, metalness: 1 })
+    );
+    chrome.position.set(-1.4, 1.1, 0);
+    chrome.castShadow = true;
+    stage.add(chrome);
+
+    const glass = new THREE.Mesh(
+      new THREE.TorusKnotGeometry(0.75, 0.24, 150, 24),
+      standardMaterial(0xff9022, { roughness: 0.22, metalness: 0.35, emissive: 0x321701, emissiveIntensity: 0.1 })
+    );
+    glass.position.set(1.4, 1.25, 0);
+    glass.castShadow = true;
+    stage.add(glass);
+
+    const coloredWall = new THREE.Mesh(new THREE.BoxGeometry(0.25, 3, 4), standardMaterial(0xe63462, { roughness: 0.78 }));
+    coloredWall.position.set(-3.2, 1.5, -0.6);
+    stage.add(coloredWall);
+
+    function updateModel() {
+      const pathMode = state.mode === "path" || state.mode === "compare";
+      const baseNoise = pathMode ? Math.min(1, 1 / Math.sqrt(state.samples / 2)) : 0;
+      const remainingNoise = state.denoise ? baseNoise * 0.22 : baseNoise;
+      const time = pathMode
+        ? 14 + state.samples * (0.72 + state.bounces * 0.11) + state.bounces * 4
+        : 4.5 + (state.reflections ? 1.8 : 0) + (state.bloom ? 1.2 : 0);
+      document.getElementById("timeReadout").textContent = `${time.toFixed(0)} ms`;
+      document.getElementById("noiseReadout").textContent = `${Math.round(remainingNoise * 100)}%`;
+      document.getElementById("lightReadout").textContent = pathMode ? `${state.bounces} bounce${state.bounces === 1 ? "" : "s"}` : "direct + probes";
+      document.getElementById("pipelineReadout").textContent = pathMode ? "sampling" : state.bloom ? "post FX" : "geometry";
+      document.getElementById("noiseOverlay").style.opacity = state.mode === "raster" ? 0 : Math.min(0.52, remainingNoise * 0.55);
+      chrome.material.metalness = state.reflections ? 1 : 0.05;
+      chrome.material.roughness = state.reflections ? 0.08 : 0.7;
+      glass.material.emissiveIntensity = state.bloom ? 1.4 : 0.1;
+      lab.canvas.classList.toggle("blooming", state.bloom);
+      lab.renderer.toneMapping = state.tone ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping;
+      document.querySelectorAll(".step").forEach((step, index) => step.classList.toggle("active", index < (state.bloom ? 4 : 3)));
+      const complete = state.mode === "path" && state.samples >= 64 && state.samples <= 128 && state.bounces <= 4 && state.denoise && time < 160;
+      setChallenge(complete, complete ? "Clean preview fits the render budget" : "Tune sampling, bounces, and denoising");
+    }
+
+    bindRange("samples", value => String(2 ** value), value => { state.samples = 2 ** value; updateModel(); });
+    bindRange("bounces", value => String(value), value => { state.bounces = value; updateModel(); });
+    bindToggle("denoise", value => { state.denoise = value; updateModel(); }, "Denoise on", "Denoise off");
+    bindToggle("reflections", value => { state.reflections = value; updateModel(); }, "Reflections on", "Reflections off", true);
+    bindToggle("bloom", value => { state.bloom = value; updateModel(); }, "Bloom on", "Bloom off");
+    bindToggle("tone", value => { state.tone = value; updateModel(); }, "Filmic tone map", "Linear display", true);
+    document.querySelectorAll("[data-mode]").forEach(button => button.addEventListener("click", () => {
+      document.querySelectorAll("[data-mode]").forEach(item => item.classList.remove("active"));
+      button.classList.add("active");
+      state.mode = button.dataset.mode;
+      updateModel();
+    }));
+
+    startLoop(lab, (dt, time) => {
+      glass.rotation.x = time * 0.2;
+      glass.rotation.y = time * 0.28;
+    });
+  </script>
+</body>
+</html>

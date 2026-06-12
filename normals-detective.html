@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Normals Detective - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <style>
+    .diagnostic-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 7px;
+    }
+
+    .diagnostic-grid .tool-btn {
+      min-height: 48px;
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .face-readout {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 7px 12px;
+      padding: 12px;
+      color: var(--muted);
+      background: #f7f8f6;
+      border-radius: 9px;
+      font-size: 10px;
+    }
+
+    .face-readout strong {
+      color: var(--ink);
+      font-family: var(--mono);
+      font-weight: 500;
+    }
+
+    .concept {
+      padding: 13px;
+      color: #5a3130;
+      background: #fff0ee;
+      border-left: 3px solid var(--red);
+      border-radius: 0 10px 10px 0;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .normal-legend {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      z-index: 4;
+      display: grid;
+      gap: 6px;
+      padding: 10px 12px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(23, 32, 51, 0.08);
+      border-radius: 10px;
+      backdrop-filter: blur(10px);
+      font-family: var(--mono);
+      font-size: 9px;
+    }
+
+    .legend-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      margin-right: 6px;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+
+      <header>
+        <p class="eyebrow">Mesh repair lab</p>
+        <h1>Normals Detective</h1>
+        <p class="lede">Every triangle has a front and a back. Vertex order decides the face direction, and the normal tells lighting and culling which way is outward.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Diagnostic views</h2>
+        <div class="diagnostic-grid">
+          <button id="cullToggle" class="tool-btn active">Backface culling on</button>
+          <button id="normalToggle" class="tool-btn">Normal arrows off</button>
+          <button id="heatToggle" class="tool-btn">Defect colors off</button>
+          <button id="wireToggle" class="tool-btn active">Triangle wire on</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Selected triangle</h2>
+        <div class="face-readout">
+          <span>Face index</span><strong id="faceIndex">none</strong>
+          <span>Direction</span><strong id="faceDirection">click a face</strong>
+          <span>Normal</span><strong id="normalVector">-</strong>
+        </div>
+        <button id="flipSelected" class="wide-btn primary" style="margin-top:10px" disabled>Flip selected face</button>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Mesh health</h2>
+        <div class="stats">
+          <div class="stat"><strong>12</strong><span>triangles</span></div>
+          <div class="stat"><strong id="correctCount">8</strong><span>outward</span></div>
+          <div class="stat"><strong id="flippedCount">4</strong><span>inward</span></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Repair tools</h2>
+        <div class="inline-row">
+          <button id="newCase" class="wide-btn">New damaged mesh</button>
+          <button id="undo" class="wide-btn" disabled>Undo</button>
+        </div>
+      </section>
+
+      <div id="concept" class="concept">Backface culling hides the back side of each triangle. A hole may not mean missing geometry; the triangle can exist but face the wrong way.</div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Repair challenge</div>
+        <h2 class="challenge-title">Make every face point outward</h2>
+        <p class="challenge-copy">Use culling, arrows, or defect colors to find inward triangles. Click a triangle, then flip it.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">4 inward triangles remain</span></div>
+      </section>
+    </aside>
+
+    <section id="viewport" class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="hud">
+        <span class="hud-pill">click a triangle</span>
+        <span class="hud-pill">drag empty space to orbit</span>
+      </div>
+      <div class="normal-legend">
+        <span><i class="legend-dot" style="background:#42d17f"></i>outward normal</span>
+        <span><i class="legend-dot" style="background:#ff5a52"></i>inward normal</span>
+        <span><i class="legend-dot" style="background:#ffda22"></i>selected face</span>
+      </div>
+      <div class="help">A normal arrow should point away from the center of the object.</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{
+      "three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",
+      "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"
+    }}
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    const viewport = document.getElementById("viewport");
+    const canvas = viewport.querySelector("canvas");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf1f1ec);
+
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 100);
+    camera.position.set(5.5, 4.3, 6.5);
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
+    const orbit = new OrbitControls(camera, canvas);
+    orbit.enableDamping = true;
+    orbit.target.set(0, 1.6, 0);
+    orbit.minDistance = 3.5;
+    orbit.maxDistance = 12;
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x515c72, 2));
+    const key = new THREE.DirectionalLight(0xffffff, 3.6);
+    key.position.set(5, 8, 6);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    scene.add(key);
+    const rim = new THREE.DirectionalLight(0x7799ff, 1.8);
+    rim.position.set(-5, 3, -5);
+    scene.add(rim);
+
+    const floor = new THREE.Mesh(
+      new THREE.CircleGeometry(5, 64),
+      new THREE.MeshStandardMaterial({ color: 0xe1e2dc, roughness: 0.95 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    const root = new THREE.Group();
+    root.position.y = 1.65;
+    root.rotation.set(-0.15, 0.4, 0.05);
+    scene.add(root);
+
+    const sourceGeometry = new THREE.BoxGeometry(3, 3, 3).toNonIndexed();
+    const originalPositions = Array.from(sourceGeometry.attributes.position.array);
+    sourceGeometry.dispose();
+    const triangleCount = originalPositions.length / 9;
+
+    const visibleGeometry = new THREE.BufferGeometry();
+    const hitGeometry = new THREE.BufferGeometry();
+    const visibleMaterial = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.42,
+      metalness: 0.03,
+      side: THREE.FrontSide,
+      polygonOffset: true,
+      polygonOffsetFactor: 1,
+      polygonOffsetUnits: 1
+    });
+    const hitMaterial = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    const mesh = new THREE.Mesh(visibleGeometry, visibleMaterial);
+    const hitMesh = new THREE.Mesh(hitGeometry, hitMaterial);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    root.add(mesh, hitMesh);
+
+    let wire = null;
+    let arrows = [];
+    let flipped = new Set();
+    let selectedFace = null;
+    let culling = true;
+    let showNormals = false;
+    let showHeat = false;
+    let showWire = true;
+    const history = [];
+    let pointerStart = null;
+
+    function swapTriangleWinding(array, triangle) {
+      const start = triangle * 9;
+      for (let component = 0; component < 3; component++) {
+        const temp = array[start + 3 + component];
+        array[start + 3 + component] = array[start + 6 + component];
+        array[start + 6 + component] = temp;
+      }
+    }
+
+    function triangleNormal(positions, triangle) {
+      const start = triangle * 9;
+      const a = new THREE.Vector3(positions[start], positions[start + 1], positions[start + 2]);
+      const b = new THREE.Vector3(positions[start + 3], positions[start + 4], positions[start + 5]);
+      const c = new THREE.Vector3(positions[start + 6], positions[start + 7], positions[start + 8]);
+      return new THREE.Vector3().crossVectors(b.clone().sub(a), c.clone().sub(a)).normalize();
+    }
+
+    function triangleCenter(positions, triangle) {
+      const start = triangle * 9;
+      return new THREE.Vector3(
+        (positions[start] + positions[start + 3] + positions[start + 6]) / 3,
+        (positions[start + 1] + positions[start + 4] + positions[start + 7]) / 3,
+        (positions[start + 2] + positions[start + 5] + positions[start + 8]) / 3
+      );
+    }
+
+    function rebuildGeometry() {
+      const positions = originalPositions.slice();
+      flipped.forEach(triangle => swapTriangleWinding(positions, triangle));
+      const colors = new Float32Array((positions.length / 3) * 3);
+
+      for (let triangle = 0; triangle < triangleCount; triangle++) {
+        let color = new THREE.Color(0xff9022);
+        if (showHeat) color = new THREE.Color(flipped.has(triangle) ? 0xff5a52 : 0x42d17f);
+        if (triangle === selectedFace) color = new THREE.Color(0xffda22);
+        for (let corner = 0; corner < 3; corner++) {
+          const index = triangle * 9 + corner * 3;
+          colors[index] = color.r;
+          colors[index + 1] = color.g;
+          colors[index + 2] = color.b;
+        }
+      }
+
+      visibleGeometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+      visibleGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+      visibleGeometry.computeVertexNormals();
+      visibleGeometry.computeBoundingSphere();
+      hitGeometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+      hitGeometry.computeBoundingSphere();
+
+      if (wire) {
+        root.remove(wire);
+        wire.geometry.dispose();
+      }
+      wire = new THREE.LineSegments(
+        new THREE.WireframeGeometry(visibleGeometry),
+        new THREE.LineBasicMaterial({ color: 0x172033, transparent: true, opacity: 0.58 })
+      );
+      wire.visible = showWire;
+      root.add(wire);
+      rebuildArrows(positions);
+      updateUI();
+    }
+
+    function rebuildArrows(positions) {
+      arrows.forEach(arrow => root.remove(arrow));
+      arrows = [];
+      for (let triangle = 0; triangle < triangleCount; triangle++) {
+        const normal = triangleNormal(positions, triangle);
+        const center = triangleCenter(positions, triangle);
+        const color = flipped.has(triangle) ? 0xff5a52 : 0x42d17f;
+        const arrow = new THREE.ArrowHelper(normal, center, 0.7, color, 0.2, 0.1);
+        arrow.visible = showNormals;
+        arrows.push(arrow);
+        root.add(arrow);
+      }
+    }
+
+    function selectFace(face) {
+      selectedFace = face;
+      document.getElementById("flipSelected").disabled = selectedFace === null;
+      rebuildGeometry();
+      if (selectedFace === null) {
+        document.getElementById("faceIndex").textContent = "none";
+        document.getElementById("faceDirection").textContent = "click a face";
+        document.getElementById("normalVector").textContent = "-";
+        return;
+      }
+      const positions = Array.from(visibleGeometry.attributes.position.array);
+      const normal = triangleNormal(positions, selectedFace);
+      document.getElementById("faceIndex").textContent = selectedFace;
+      document.getElementById("faceDirection").textContent = flipped.has(selectedFace) ? "inward" : "outward";
+      document.getElementById("normalVector").textContent = `${normal.x.toFixed(1)}, ${normal.y.toFixed(1)}, ${normal.z.toFixed(1)}`;
+    }
+
+    function flipFace(face) {
+      if (face === null) return;
+      history.push(new Set(flipped));
+      if (flipped.has(face)) flipped.delete(face);
+      else flipped.add(face);
+      document.getElementById("undo").disabled = false;
+      rebuildGeometry();
+      selectFace(face);
+      evaluateChallenge();
+    }
+
+    function newCase() {
+      flipped = new Set();
+      const candidates = Array.from({ length: triangleCount }, (_, index) => index);
+      while (flipped.size < 4) {
+        const index = Math.floor(Math.random() * candidates.length);
+        flipped.add(candidates[index]);
+      }
+      history.length = 0;
+      document.getElementById("undo").disabled = true;
+      selectedFace = null;
+      rebuildGeometry();
+      selectFace(null);
+      evaluateChallenge();
+    }
+
+    function undo() {
+      if (!history.length) return;
+      flipped = history.pop();
+      document.getElementById("undo").disabled = history.length === 0;
+      rebuildGeometry();
+      selectFace(selectedFace);
+      evaluateChallenge();
+    }
+
+    function updateUI() {
+      visibleMaterial.side = culling ? THREE.FrontSide : THREE.DoubleSide;
+      visibleMaterial.needsUpdate = true;
+      document.getElementById("correctCount").textContent = triangleCount - flipped.size;
+      document.getElementById("flippedCount").textContent = flipped.size;
+    }
+
+    function evaluateChallenge() {
+      const complete = flipped.size === 0;
+      document.getElementById("challenge").classList.toggle("complete", complete);
+      document.getElementById("challengeStatus").textContent = complete
+        ? "Mesh repaired"
+        : `${flipped.size} inward triangle${flipped.size === 1 ? "" : "s"} remain`;
+    }
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    canvas.addEventListener("pointerdown", event => {
+      pointerStart = { x: event.clientX, y: event.clientY };
+    });
+    canvas.addEventListener("pointerup", event => {
+      if (!pointerStart || Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) > 5) return;
+      const rect = canvas.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      const hit = raycaster.intersectObject(hitMesh, false)[0];
+      selectFace(hit ? hit.faceIndex : null);
+    });
+
+    document.getElementById("flipSelected").addEventListener("click", () => flipFace(selectedFace));
+    document.getElementById("newCase").addEventListener("click", newCase);
+    document.getElementById("undo").addEventListener("click", undo);
+    document.getElementById("cullToggle").addEventListener("click", event => {
+      culling = !culling;
+      event.currentTarget.classList.toggle("active", culling);
+      event.currentTarget.textContent = culling ? "Backface culling on" : "Backface culling off";
+      updateUI();
+      document.getElementById("concept").textContent = culling
+        ? "Backface culling hides the back side of each triangle. A hole may be geometry facing inward."
+        : "With culling off, both sides render. The mesh looks closed again, but its inward normals still produce incorrect lighting and export behavior.";
+    });
+    document.getElementById("normalToggle").addEventListener("click", event => {
+      showNormals = !showNormals;
+      arrows.forEach(arrow => arrow.visible = showNormals);
+      event.currentTarget.classList.toggle("active", showNormals);
+      event.currentTarget.textContent = showNormals ? "Normal arrows on" : "Normal arrows off";
+    });
+    document.getElementById("heatToggle").addEventListener("click", event => {
+      showHeat = !showHeat;
+      event.currentTarget.classList.toggle("active", showHeat);
+      event.currentTarget.textContent = showHeat ? "Defect colors on" : "Defect colors off";
+      rebuildGeometry();
+    });
+    document.getElementById("wireToggle").addEventListener("click", event => {
+      showWire = !showWire;
+      wire.visible = showWire;
+      event.currentTarget.classList.toggle("active", showWire);
+      event.currentTarget.textContent = showWire ? "Triangle wire on" : "Triangle wire off";
+    });
+
+    function resize() {
+      const width = viewport.clientWidth;
+      const height = viewport.clientHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener("resize", resize);
+    resize();
+    newCase();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      orbit.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+
+</html>

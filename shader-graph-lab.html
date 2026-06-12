@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shader Graph Lab - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <link rel="stylesheet" href="advanced-lab.css">
+  <style>
+    .node-chain { display:flex; align-items:center; gap:5px; overflow-x:auto; padding-bottom:4px; }
+    .node { min-width:64px; padding:8px 7px; text-align:center; color:var(--muted); background:#f7f8f6; border:1px solid var(--line); border-radius:8px; font-size:9px; }
+    .node.active { color:#fff; background:var(--ink); border-color:var(--ink); }
+    .wire-arrow { color:var(--orange); font-family:var(--mono); font-size:12px; }
+  </style>
+</head>
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+      <header>
+        <p class="eyebrow">Procedural systems 01</p>
+        <h1>Shader Graph Lab</h1>
+        <p class="lede">A material graph passes numbers from node to node. Coordinates become patterns, math reshapes them, masks select regions, and color ramps turn values into appearance.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Coordinate node</h2>
+        <div class="split-button-row">
+          <button class="tool-btn active" data-coordinate="0">UV</button>
+          <button class="tool-btn" data-coordinate="1">World</button>
+          <button class="tool-btn" data-coordinate="2">Normal</button>
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Pattern scale</span><span id="scaleValue" class="value">5.0</span></div>
+          <input id="scale" type="range" min="5" max="140" value="50">
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Math and mask</h2>
+        <div class="control">
+          <div class="control-head"><span>Noise mix</span><span id="noiseValue" class="value">0.25</span></div>
+          <input id="noise" type="range" min="0" max="100" value="25">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Mask threshold</span><span id="thresholdValue" class="value">0.50</span></div>
+          <input id="threshold" type="range" min="5" max="95" value="50">
+        </div>
+        <div class="inline-row" style="margin-top:12px">
+          <input id="colorA" type="color" value="#ff9022" aria-label="First ramp color">
+          <input id="colorB" type="color" value="#3a6fa8" aria-label="Second ramp color">
+        </div>
+        <button id="emission" class="wide-btn" style="margin-top:8px">Emission off</button>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Live node chain</h2>
+        <div class="node-chain">
+          <span class="node active" id="nodeCoordinate">UV</span><span class="wire-arrow">&#8594;</span>
+          <span class="node active">Scale</span><span class="wire-arrow">&#8594;</span>
+          <span class="node" id="nodeNoise">Noise</span><span class="wire-arrow">&#8594;</span>
+          <span class="node active">Mask</span><span class="wire-arrow">&#8594;</span>
+          <span class="node active">Ramp</span><span class="wire-arrow">&#8594;</span>
+          <span class="node" id="nodeEmission">Emit</span>
+        </div>
+        <div class="readout-grid" style="margin-top:10px">
+          <div class="readout"><strong id="nodeReadout">4</strong><span>active nodes</span></div>
+          <div class="readout"><strong id="compileReadout">ready</strong><span>shader state</span></div>
+        </div>
+      </section>
+
+      <div class="concept-note">Procedural materials are resolution independent because the pattern is evaluated from coordinates at render time rather than read from a fixed image.</div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Shader challenge</div>
+        <h2 class="challenge-title">Build an energized stripe material</h2>
+        <p class="challenge-copy">Use UV coordinates, scale between 5 and 9, noise above 0.3, a threshold from 0.4-0.65, and emission.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">Connect the required nodes</span></div>
+      </section>
+    </aside>
+
+    <section class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="viewport-label"><strong>One graph, every pixel</strong>The fragment shader evaluates the node chain independently across the visible surface.</div>
+      <div class="hud"><span class="hud-pill">procedural material</span><span class="hud-pill">live GLSL</span></div>
+      <div class="help">Switch coordinate sources to see whether the pattern follows the surface or the world.</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}
+  </script>
+  <script type="module">
+    import { THREE, createLab, startLoop, bindRange, bindToggle, setChallenge } from "./advanced-lab-core.js";
+
+    const lab = createLab({ cameraPosition: [6.2, 4.4, 7.5], target: [0, 1.5, 0] });
+    const state = { coordinate: 0, scale: 5, noise: 0.25, threshold: 0.5, emission: false };
+    const uniforms = {
+      uTime: { value: 0 },
+      uCoordinate: { value: 0 },
+      uScale: { value: 5 },
+      uNoise: { value: 0.25 },
+      uThreshold: { value: 0.5 },
+      uColorA: { value: new THREE.Color("#ff9022") },
+      uColorB: { value: new THREE.Color("#3a6fa8") },
+      uEmission: { value: 0 }
+    };
+    const material = new THREE.ShaderMaterial({
+      uniforms,
+      vertexShader: `
+        varying vec2 vUv;
+        varying vec3 vWorld;
+        varying vec3 vNormalWorld;
+        void main() {
+          vUv = uv;
+          vec4 world = modelMatrix * vec4(position, 1.0);
+          vWorld = world.xyz;
+          vNormalWorld = normalize(mat3(modelMatrix) * normal);
+          gl_Position = projectionMatrix * viewMatrix * world;
+        }
+      `,
+      fragmentShader: `
+        uniform float uTime;
+        uniform int uCoordinate;
+        uniform float uScale;
+        uniform float uNoise;
+        uniform float uThreshold;
+        uniform vec3 uColorA;
+        uniform vec3 uColorB;
+        uniform float uEmission;
+        varying vec2 vUv;
+        varying vec3 vWorld;
+        varying vec3 vNormalWorld;
+
+        float hash(vec2 p) {
+          return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+        }
+
+        float valueNoise(vec2 p) {
+          vec2 i = floor(p);
+          vec2 f = fract(p);
+          f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+                     mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+        }
+
+        void main() {
+          vec2 coordinate = vUv;
+          if (uCoordinate == 1) coordinate = vWorld.xz * 0.22;
+          if (uCoordinate == 2) coordinate = vNormalWorld.xy * 0.5 + 0.5;
+          vec2 p = coordinate * uScale;
+          float stripe = sin((p.x + p.y * 0.22) * 6.28318 + uTime * uEmission * 1.8) * 0.5 + 0.5;
+          float noisy = mix(stripe, valueNoise(p * 0.8 + uTime * 0.08), uNoise);
+          float mask = smoothstep(uThreshold - 0.08, uThreshold + 0.08, noisy);
+          vec3 color = mix(uColorA, uColorB, mask);
+          float rim = pow(1.0 - abs(dot(normalize(vNormalWorld), normalize(cameraPosition - vWorld))), 2.0);
+          color += rim * 0.18 + color * uEmission * mask * 0.5;
+          gl_FragColor = vec4(color, 1.0);
+        }
+      `
+    });
+
+    const mesh = new THREE.Mesh(new THREE.TorusKnotGeometry(1.15, 0.42, 220, 32), material);
+    mesh.position.y = 1.65;
+    mesh.castShadow = true;
+    lab.scene.add(mesh);
+
+    function updateStatus() {
+      const activeNodes = 4 + (state.noise > 0.01 ? 1 : 0) + (state.emission ? 1 : 0);
+      document.getElementById("nodeReadout").textContent = activeNodes;
+      document.getElementById("nodeNoise").classList.toggle("active", state.noise > 0.01);
+      document.getElementById("nodeEmission").classList.toggle("active", state.emission);
+      const complete = state.coordinate === 0 && state.scale >= 5 && state.scale <= 9 && state.noise >= 0.3 && state.threshold >= 0.4 && state.threshold <= 0.65 && state.emission;
+      setChallenge(complete, complete ? "Energized stripe graph complete" : "Connect and tune the required nodes");
+      document.getElementById("compileReadout").textContent = "ready";
+    }
+
+    bindRange("scale", value => (value / 10).toFixed(1), value => {
+      state.scale = value / 10;
+      uniforms.uScale.value = state.scale;
+      updateStatus();
+    });
+    bindRange("noise", value => (value / 100).toFixed(2), value => {
+      state.noise = value / 100;
+      uniforms.uNoise.value = state.noise;
+      updateStatus();
+    });
+    bindRange("threshold", value => (value / 100).toFixed(2), value => {
+      state.threshold = value / 100;
+      uniforms.uThreshold.value = state.threshold;
+      updateStatus();
+    });
+    bindToggle("emission", value => {
+      state.emission = value;
+      uniforms.uEmission.value = value ? 1 : 0;
+      updateStatus();
+    }, "Emission on", "Emission off");
+
+    document.querySelectorAll("[data-coordinate]").forEach(button => button.addEventListener("click", () => {
+      document.querySelectorAll("[data-coordinate]").forEach(item => item.classList.remove("active"));
+      button.classList.add("active");
+      state.coordinate = Number(button.dataset.coordinate);
+      uniforms.uCoordinate.value = state.coordinate;
+      document.getElementById("nodeCoordinate").textContent = button.textContent;
+      updateStatus();
+    }));
+    ["colorA", "colorB"].forEach((id, index) => document.getElementById(id).addEventListener("input", event => {
+      uniforms[index ? "uColorB" : "uColorA"].value.set(event.target.value);
+    }));
+
+    startLoop(lab, (dt, time) => {
+      uniforms.uTime.value = time;
+      mesh.rotation.y = time * 0.16;
+      mesh.rotation.x = Math.sin(time * 0.23) * 0.2;
+    });
+  </script>
+</body>
+</html>

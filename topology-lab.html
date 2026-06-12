@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Topology Lab - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <style>
+    .shape-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+    }
+
+    .shape-tabs .tool-btn {
+      min-height: 52px;
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .shape-tabs strong {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--orange);
+      font-size: 17px;
+    }
+
+    .toggle-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+
+    .insight {
+      padding: 13px;
+      color: #4e5c70;
+      background: #eef4fb;
+      border-left: 3px solid var(--blue);
+      border-radius: 0 9px 9px 0;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .budget-meter {
+      height: 7px;
+      overflow: hidden;
+      background: #eceeea;
+      border-radius: 999px;
+    }
+
+    .budget-fill {
+      width: 0;
+      height: 100%;
+      background: var(--green);
+      border-radius: inherit;
+      transition: width 0.25s ease, background 0.25s ease;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+
+      <header>
+        <p class="eyebrow">Modeling lab 02</p>
+        <h1>Topology Lab</h1>
+        <p class="lede">A mesh is a connected structure of vertices, edges, and faces. Reveal the structure, change its density, and learn when extra geometry helps.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Base mesh</h2>
+        <div class="shape-tabs">
+          <button class="tool-btn active" data-shape="sphere"><strong>&#9679;</strong>Sphere</button>
+          <button class="tool-btn" data-shape="box"><strong>&#9632;</strong>Cube</button>
+          <button class="tool-btn" data-shape="cylinder"><strong>&#9646;</strong>Cylinder</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Mesh density</h2>
+        <div class="control">
+          <div class="control-head"><span>Resolution</span><span id="resolutionValue" class="value">8</span></div>
+          <input id="resolution" type="range" min="1" max="12" step="1" value="8">
+        </div>
+        <div class="stats" style="margin-top:14px">
+          <div class="stat"><strong id="vertexCount">0</strong><span>vertices</span></div>
+          <div class="stat"><strong id="edgeCount">0</strong><span>edges</span></div>
+          <div class="stat"><strong id="faceCount">0</strong><span>triangles</span></div>
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Geometry budget</span><span id="budgetLabel" class="value">light</span></div>
+          <div class="budget-meter"><div id="budgetFill" class="budget-fill"></div></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">See the structure</h2>
+        <div class="toggle-row">
+          <button id="wireToggle" class="tool-btn active">Edges on</button>
+          <button id="vertexToggle" class="tool-btn">Vertices off</button>
+          <button id="shadeToggle" class="tool-btn active">Smooth shade</button>
+          <button id="spinToggle" class="tool-btn active">Auto rotate</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Deform the mesh</h2>
+        <p class="panel-note">Modifiers change many vertices by a rule instead of moving them one at a time.</p>
+        <div class="control">
+          <div class="control-head"><span>Twist</span><span id="twistValue" class="value">0°</span></div>
+          <input id="twist" type="range" min="-180" max="180" step="1" value="0">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Taper</span><span id="taperValue" class="value">0.00</span></div>
+          <input id="taper" type="range" min="-70" max="70" step="1" value="0">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Bulge</span><span id="bulgeValue" class="value">0.00</span></div>
+          <input id="bulge" type="range" min="-50" max="70" step="1" value="0">
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Quick experiments</h2>
+        <div class="button-grid">
+          <button class="tool-btn" data-preset="faceted">Faceted gem</button>
+          <button class="tool-btn" data-preset="smooth">Smooth form</button>
+          <button class="tool-btn" data-preset="tower">Twisted tower</button>
+          <button class="tool-btn" data-preset="vase">Simple vase</button>
+        </div>
+      </section>
+
+      <div id="insight" class="insight">Turn smooth shading off. The polygon count stays the same, but the surface looks faceted. Shading changes how light is blended across faces.</div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Topology challenge</div>
+        <h2 class="challenge-title">Same silhouette, fewer faces</h2>
+        <p class="challenge-copy">Make a smooth-looking sphere using fewer than 700 triangles.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">Adjust resolution and shading</span></div>
+      </section>
+    </aside>
+
+    <section id="viewport" class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="hud">
+        <span class="hud-pill">orange = surface</span>
+        <span class="hud-pill">dark = topology</span>
+      </div>
+      <div class="help">Orbit close to the silhouette. That is where mesh density is easiest to see.</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{
+      "three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",
+      "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"
+    }}
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    const viewport = document.getElementById("viewport");
+    const canvas = viewport.querySelector("canvas");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf4f4ef);
+
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 100);
+    camera.position.set(5.2, 3.5, 6.5);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
+    const orbit = new OrbitControls(camera, canvas);
+    orbit.enableDamping = true;
+    orbit.target.set(0, 1.35, 0);
+    orbit.minDistance = 3.5;
+    orbit.maxDistance = 12;
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x69758b, 2.5));
+    const key = new THREE.DirectionalLight(0xffffff, 3.5);
+    key.position.set(5, 8, 5);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    scene.add(key);
+    const rim = new THREE.DirectionalLight(0x7da0ff, 2);
+    rim.position.set(-4, 3, -4);
+    scene.add(rim);
+
+    const floor = new THREE.Mesh(
+      new THREE.CircleGeometry(6, 64),
+      new THREE.MeshStandardMaterial({ color: 0xe8e8e2, roughness: 0.95 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    const modelRoot = new THREE.Group();
+    modelRoot.position.y = 1.4;
+    scene.add(modelRoot);
+
+    let mesh;
+    let wire;
+    let points;
+    let shape = "sphere";
+    let smooth = true;
+    let showWire = true;
+    let showVertices = false;
+    let autoRotate = true;
+    let currentTriangles = 0;
+
+    const material = new THREE.MeshStandardMaterial({
+      color: 0xff9022,
+      roughness: 0.42,
+      metalness: 0.03,
+      flatShading: false,
+      polygonOffset: true,
+      polygonOffsetFactor: 1,
+      polygonOffsetUnits: 1
+    });
+
+    function resolutionForShape() {
+      const level = Number(document.getElementById("resolution").value);
+      if (shape === "sphere") return 4 + level * 4;
+      if (shape === "cylinder") return 4 + level * 4;
+      return level;
+    }
+
+    function makeBaseGeometry() {
+      const resolution = resolutionForShape();
+      if (shape === "sphere") {
+        return new THREE.SphereGeometry(1.55, resolution, Math.max(3, Math.round(resolution * 0.55)));
+      }
+      if (shape === "cylinder") {
+        return new THREE.CylinderGeometry(1.25, 1.25, 3, resolution, Math.max(1, Math.round(resolution / 8)), false);
+      }
+      return new THREE.BoxGeometry(2.55, 2.55, 2.55, resolution, resolution, resolution);
+    }
+
+    function deformGeometry(geometry) {
+      geometry.computeBoundingBox();
+      const position = geometry.attributes.position;
+      const minY = geometry.boundingBox.min.y;
+      const height = geometry.boundingBox.max.y - minY || 1;
+      const twist = THREE.MathUtils.degToRad(Number(document.getElementById("twist").value));
+      const taper = Number(document.getElementById("taper").value) / 100;
+      const bulge = Number(document.getElementById("bulge").value) / 100;
+
+      for (let i = 0; i < position.count; i++) {
+        let x = position.getX(i);
+        const y = position.getY(i);
+        let z = position.getZ(i);
+        const t = (y - minY) / height;
+        const middle = Math.sin(t * Math.PI);
+        const radialScale = Math.max(0.18, 1 + taper * (t - 0.5) + bulge * middle);
+        x *= radialScale;
+        z *= radialScale;
+        const angle = twist * (t - 0.5);
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        position.setXYZ(i, x * cos - z * sin, y, x * sin + z * cos);
+      }
+      position.needsUpdate = true;
+      geometry.computeVertexNormals();
+      geometry.computeBoundingBox();
+      const center = geometry.boundingBox.getCenter(new THREE.Vector3());
+      geometry.translate(-center.x, -center.y, -center.z);
+      return geometry;
+    }
+
+    function disposeObject(object) {
+      if (!object) return;
+      modelRoot.remove(object);
+      object.geometry.dispose();
+      if (object.material !== material) object.material.dispose();
+    }
+
+    function rebuild() {
+      disposeObject(mesh);
+      disposeObject(wire);
+      disposeObject(points);
+
+      const geometry = deformGeometry(makeBaseGeometry());
+      material.flatShading = !smooth;
+      material.needsUpdate = true;
+
+      mesh = new THREE.Mesh(geometry, material);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      modelRoot.add(mesh);
+
+      const wireGeometry = new THREE.WireframeGeometry(geometry);
+      wire = new THREE.LineSegments(
+        wireGeometry,
+        new THREE.LineBasicMaterial({ color: 0x172033, transparent: true, opacity: 0.52, depthTest: true })
+      );
+      wire.visible = showWire;
+      modelRoot.add(wire);
+
+      points = new THREE.Points(
+        geometry,
+        new THREE.PointsMaterial({ color: 0xffffff, size: 0.055, sizeAttenuation: true, depthTest: false })
+      );
+      points.visible = showVertices;
+      points.renderOrder = 5;
+      modelRoot.add(points);
+
+      const positionCount = geometry.attributes.position.count;
+      const triangles = geometry.index ? geometry.index.count / 3 : positionCount / 3;
+      const edgeCount = wireGeometry.attributes.position.count / 2;
+      currentTriangles = Math.round(triangles);
+      document.getElementById("vertexCount").textContent = positionCount.toLocaleString();
+      document.getElementById("edgeCount").textContent = Math.round(edgeCount).toLocaleString();
+      document.getElementById("faceCount").textContent = currentTriangles.toLocaleString();
+      document.getElementById("resolutionValue").textContent = resolutionForShape();
+
+      const budgetRatio = Math.min(currentTriangles / 5000, 1);
+      const fill = document.getElementById("budgetFill");
+      fill.style.width = `${Math.max(4, budgetRatio * 100)}%`;
+      fill.style.background = budgetRatio < 0.25 ? "#00aa00" : budgetRatio < 0.65 ? "#ff9022" : "#c0453a";
+      document.getElementById("budgetLabel").textContent = budgetRatio < 0.25 ? "light" : budgetRatio < 0.65 ? "moderate" : "dense";
+
+      updateLabels();
+      updateInsight();
+      evaluateChallenge();
+    }
+
+    function updateLabels() {
+      document.getElementById("twistValue").textContent = `${document.getElementById("twist").value}°`;
+      document.getElementById("taperValue").textContent = (Number(document.getElementById("taper").value) / 100).toFixed(2);
+      document.getElementById("bulgeValue").textContent = (Number(document.getElementById("bulge").value) / 100).toFixed(2);
+    }
+
+    function updateInsight() {
+      let text;
+      if (!smooth) {
+        text = "Flat shading reveals every face. Notice that changing shading does not add or remove geometry.";
+      } else if (!showWire) {
+        text = "With the topology hidden, judge the silhouette. Add resolution only when the outline looks too angular.";
+      } else if (Number(document.getElementById("twist").value) !== 0) {
+        text = "Twist changes each vertex according to its height. Dense topology gives the deformation more places to bend.";
+      } else {
+        text = "A good mesh uses enough faces to hold its silhouette and deformation, but not more than the job needs.";
+      }
+      document.getElementById("insight").textContent = text;
+    }
+
+    function evaluateChallenge() {
+      const complete = shape === "sphere" && smooth && currentTriangles > 150 && currentTriangles < 700;
+      document.getElementById("challenge").classList.toggle("complete", complete);
+      document.getElementById("challengeStatus").textContent = complete
+        ? `Complete at ${currentTriangles} triangles`
+        : `${currentTriangles} triangles - target is 150 to 699`;
+    }
+
+    document.querySelectorAll("[data-shape]").forEach(button => {
+      button.addEventListener("click", () => {
+        shape = button.dataset.shape;
+        document.querySelectorAll("[data-shape]").forEach(item => item.classList.toggle("active", item === button));
+        rebuild();
+      });
+    });
+
+    ["resolution", "twist", "taper", "bulge"].forEach(id => {
+      document.getElementById(id).addEventListener("input", rebuild);
+    });
+
+    document.getElementById("wireToggle").addEventListener("click", event => {
+      showWire = !showWire;
+      event.currentTarget.classList.toggle("active", showWire);
+      event.currentTarget.textContent = showWire ? "Edges on" : "Edges off";
+      if (wire) wire.visible = showWire;
+      updateInsight();
+    });
+
+    document.getElementById("vertexToggle").addEventListener("click", event => {
+      showVertices = !showVertices;
+      event.currentTarget.classList.toggle("active", showVertices);
+      event.currentTarget.textContent = showVertices ? "Vertices on" : "Vertices off";
+      if (points) points.visible = showVertices;
+    });
+
+    document.getElementById("shadeToggle").addEventListener("click", event => {
+      smooth = !smooth;
+      event.currentTarget.classList.toggle("active", smooth);
+      event.currentTarget.textContent = smooth ? "Smooth shade" : "Flat shade";
+      rebuild();
+    });
+
+    document.getElementById("spinToggle").addEventListener("click", event => {
+      autoRotate = !autoRotate;
+      event.currentTarget.classList.toggle("active", autoRotate);
+      event.currentTarget.textContent = autoRotate ? "Auto rotate" : "Rotation paused";
+    });
+
+    const presets = {
+      faceted: { shape: "sphere", resolution: 1, twist: 0, taper: 0, bulge: 0, smooth: false },
+      smooth: { shape: "sphere", resolution: 7, twist: 0, taper: 0, bulge: 0, smooth: true },
+      tower: { shape: "box", resolution: 8, twist: 145, taper: -18, bulge: 0, smooth: true },
+      vase: { shape: "cylinder", resolution: 8, twist: 0, taper: 28, bulge: 42, smooth: true }
+    };
+
+    document.querySelectorAll("[data-preset]").forEach(button => {
+      button.addEventListener("click", () => {
+        const preset = presets[button.dataset.preset];
+        shape = preset.shape;
+        smooth = preset.smooth;
+        document.getElementById("resolution").value = preset.resolution;
+        document.getElementById("twist").value = preset.twist;
+        document.getElementById("taper").value = preset.taper;
+        document.getElementById("bulge").value = preset.bulge;
+        document.querySelectorAll("[data-shape]").forEach(item => item.classList.toggle("active", item.dataset.shape === shape));
+        const shadeButton = document.getElementById("shadeToggle");
+        shadeButton.classList.toggle("active", smooth);
+        shadeButton.textContent = smooth ? "Smooth shade" : "Flat shade";
+        rebuild();
+      });
+    });
+
+    function resize() {
+      const width = viewport.clientWidth;
+      const height = viewport.clientHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener("resize", resize);
+    resize();
+    rebuild();
+
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = Math.min(clock.getDelta(), 0.04);
+      if (autoRotate) modelRoot.rotation.y += delta * 0.28;
+      orbit.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sculpting and Retopology Lab - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <link rel="stylesheet" href="advanced-lab.css">
+</head>
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+      <header>
+        <p class="eyebrow">Organic modeling 01</p>
+        <h1>Sculpt + Retopology</h1>
+        <p class="lede">Sculpting changes a dense surface like clay. Retopology builds a cleaner mesh over that form so deformation, UVs, and real-time rendering remain manageable.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Sculpt brush</h2>
+        <div class="split-button-row">
+          <button class="tool-btn active" data-brush="push">Push</button>
+          <button class="tool-btn" data-brush="smooth">Smooth</button>
+          <button class="tool-btn" data-brush="flatten">Flatten</button>
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Brush radius</span><span id="radiusValue" class="value">0.45 m</span></div>
+          <input id="radius" type="range" min="15" max="90" value="45">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Strength</span><span id="strengthValue" class="value">0.10</span></div>
+          <input id="strength" type="range" min="2" max="24" value="10">
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Retopology cage</h2>
+        <div class="control">
+          <div class="control-head"><span>Cage resolution</span><span id="cageValue" class="value">12</span></div>
+          <input id="cage" type="range" min="5" max="24" value="12">
+        </div>
+        <div class="button-grid" style="margin-top:10px">
+          <button id="cageToggle" class="tool-btn active">Cage visible</button>
+          <button id="sampleStroke" class="tool-btn">Apply sample stroke</button>
+          <button id="reset" class="wide-btn danger">Reset clay</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Mesh comparison</h2>
+        <div class="readout-grid">
+          <div class="readout"><strong id="sculptFaces">0</strong><span>sculpt triangles</span></div>
+          <div class="readout"><strong id="cageFaces">0</strong><span>cage triangles</span></div>
+          <div class="readout"><strong id="strokeReadout">0</strong><span>brush strokes</span></div>
+          <div class="readout"><strong id="smoothReadout">0</strong><span>smooth strokes</span></div>
+        </div>
+      </section>
+
+      <div class="warning-note">A low-poly cage should follow silhouette and deformation flow. It is not useful merely because it contains fewer polygons.</div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Sculpting challenge</div>
+        <h2 class="challenge-title">Shape and clean the form</h2>
+        <p class="challenge-copy">Make at least eight brush strokes, include two smoothing strokes, and keep the retopology cage below 800 triangles.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">Shift-drag on the clay</span></div>
+      </section>
+    </aside>
+
+    <section class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="viewport-label"><strong>Two meshes, two jobs</strong>The orange sculpt stores form detail. The dark wire cage represents a cleaner production mesh.</div>
+      <div class="hud"><span class="hud-pill">Shift-drag = sculpt</span><span class="hud-pill">drag = orbit</span></div>
+      <div class="help">Hold Shift and drag across the surface to apply the selected brush.</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}
+  </script>
+  <script type="module">
+    import { THREE, createLab, startLoop, bindRange, bindToggle, setChallenge, disposeObject } from "./advanced-lab-core.js";
+
+    const lab = createLab({ cameraPosition: [5.8, 4.3, 7], target: [0, 1.65, 0] });
+    const geometry = new THREE.SphereGeometry(1.55, 72, 48);
+    const original = geometry.getAttribute("position").array.slice();
+    const sculpt = new THREE.Mesh(
+      geometry,
+      new THREE.MeshStandardMaterial({ color: 0xff9022, roughness: 0.68, metalness: 0.01 })
+    );
+    sculpt.position.y = 1.65;
+    sculpt.castShadow = true;
+    sculpt.receiveShadow = true;
+    lab.scene.add(sculpt);
+
+    let cage;
+    let cageVisible = true;
+    const state = { brush: "push", radius: 0.45, strength: 0.1, cage: 12, strokes: 0, smooth: 0 };
+    const brushMarker = new THREE.Mesh(
+      new THREE.RingGeometry(0.92, 1, 40),
+      new THREE.MeshBasicMaterial({ color: 0x13b8a6, side: THREE.DoubleSide, transparent: true, opacity: 0.8, depthTest: false })
+    );
+    brushMarker.visible = false;
+    brushMarker.renderOrder = 8;
+    lab.scene.add(brushMarker);
+
+    function buildCage() {
+      if (cage) disposeObject(cage);
+      const cageGeometry = new THREE.SphereGeometry(1.59, state.cage, Math.max(4, Math.round(state.cage * 0.67)));
+      cage = new THREE.LineSegments(
+        new THREE.WireframeGeometry(cageGeometry),
+        new THREE.LineBasicMaterial({ color: 0x172033, transparent: true, opacity: 0.72 })
+      );
+      cageGeometry.dispose();
+      cage.position.copy(sculpt.position);
+      cage.visible = cageVisible;
+      lab.scene.add(cage);
+      const triangles = Math.round(state.cage * Math.max(4, Math.round(state.cage * 0.67)) * 2);
+      document.getElementById("cageFaces").textContent = triangles;
+      updateChallenge();
+    }
+
+    function applyBrush(worldPoint) {
+      const point = sculpt.worldToLocal(worldPoint.clone());
+      const position = geometry.getAttribute("position");
+      const normal = geometry.getAttribute("normal");
+      let neighborhoodRadius = 0;
+      let neighborhoodCount = 0;
+      for (let index = 0; index < position.count; index++) {
+        const vertex = new THREE.Vector3(position.getX(index), position.getY(index), position.getZ(index));
+        const distance = vertex.distanceTo(point);
+        if (distance <= state.radius) {
+          neighborhoodRadius += vertex.length();
+          neighborhoodCount++;
+        }
+      }
+      const averageRadius = neighborhoodCount ? neighborhoodRadius / neighborhoodCount : 1.55;
+      for (let index = 0; index < position.count; index++) {
+        const vertex = new THREE.Vector3(position.getX(index), position.getY(index), position.getZ(index));
+        const distance = vertex.distanceTo(point);
+        if (distance > state.radius) continue;
+        const falloff = Math.cos(distance / state.radius * Math.PI * 0.5) ** 2;
+        if (state.brush === "push") {
+          const direction = new THREE.Vector3(normal.getX(index), normal.getY(index), normal.getZ(index));
+          vertex.addScaledVector(direction, state.strength * falloff);
+        } else if (state.brush === "smooth") {
+          vertex.setLength(THREE.MathUtils.lerp(vertex.length(), averageRadius, state.strength * 5 * falloff));
+        } else {
+          vertex.y = THREE.MathUtils.lerp(vertex.y, point.y, state.strength * 4 * falloff);
+        }
+        position.setXYZ(index, vertex.x, vertex.y, vertex.z);
+      }
+      position.needsUpdate = true;
+      geometry.computeVertexNormals();
+      geometry.computeBoundingSphere();
+    }
+
+    function updateChallenge() {
+      const cageFaces = Number(document.getElementById("cageFaces").textContent || 0);
+      document.getElementById("strokeReadout").textContent = state.strokes;
+      document.getElementById("smoothReadout").textContent = state.smooth;
+      const complete = state.strokes >= 8 && state.smooth >= 2 && cageFaces < 800;
+      setChallenge(complete, complete ? "Sculpt and production cage are balanced" : state.strokes < 8 ? `${8 - state.strokes} more brush strokes needed` : state.smooth < 2 ? "Add smoothing strokes" : "Reduce cage resolution");
+    }
+
+    bindRange("radius", value => `${(value / 100).toFixed(2)} m`, value => {
+      state.radius = value / 100;
+      brushMarker.scale.setScalar(state.radius);
+    });
+    bindRange("strength", value => (value / 100).toFixed(2), value => { state.strength = value / 100; });
+    bindRange("cage", value => String(value), value => { state.cage = value; buildCage(); });
+    bindToggle("cageToggle", value => {
+      cageVisible = value;
+      if (cage) cage.visible = value;
+    }, "Cage visible", "Cage hidden", true);
+
+    document.querySelectorAll("[data-brush]").forEach(button => button.addEventListener("click", () => {
+      document.querySelectorAll("[data-brush]").forEach(item => item.classList.remove("active"));
+      button.classList.add("active");
+      state.brush = button.dataset.brush;
+    }));
+
+    document.getElementById("reset").addEventListener("click", () => {
+      geometry.getAttribute("position").array.set(original);
+      geometry.getAttribute("position").needsUpdate = true;
+      geometry.computeVertexNormals();
+      state.strokes = 0;
+      state.smooth = 0;
+      updateChallenge();
+    });
+    document.getElementById("sampleStroke").addEventListener("click", () => {
+      const angle = state.strokes * 0.85;
+      const point = new THREE.Vector3(Math.cos(angle) * 1.5, Math.sin(angle * 0.6) * 0.8, Math.sin(angle) * 1.5);
+      state.strokes++;
+      if (state.brush === "smooth") state.smooth++;
+      applyBrush(sculpt.localToWorld(point));
+      updateChallenge();
+    });
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let sculpting = false;
+    function hitFromEvent(event) {
+      const rect = lab.canvas.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, lab.camera);
+      return raycaster.intersectObject(sculpt, false)[0];
+    }
+    function updateMarker(hit) {
+      brushMarker.visible = Boolean(hit);
+      if (!hit) return;
+      brushMarker.position.copy(hit.point).addScaledVector(hit.face.normal.clone().transformDirection(sculpt.matrixWorld), 0.015);
+      brushMarker.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), hit.face.normal.clone().transformDirection(sculpt.matrixWorld));
+    }
+
+    lab.canvas.addEventListener("pointermove", event => {
+      const hit = hitFromEvent(event);
+      updateMarker(hit);
+      if (sculpting && hit) applyBrush(hit.point);
+    });
+    lab.canvas.addEventListener("pointerdown", event => {
+      if (!event.shiftKey) return;
+      const hit = hitFromEvent(event);
+      if (!hit) return;
+      sculpting = true;
+      lab.orbit.enabled = false;
+      state.strokes++;
+      if (state.brush === "smooth") state.smooth++;
+      applyBrush(hit.point);
+      updateChallenge();
+    });
+    addEventListener("pointerup", () => {
+      sculpting = false;
+      lab.orbit.enabled = true;
+    });
+
+    document.getElementById("sculptFaces").textContent = geometry.index.count / 3;
+    buildCage();
+    startLoop(lab);
+  </script>
+</body>
+</html>

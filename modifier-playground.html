@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modifier Playground - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <style>
+    .stack { display:grid; gap:7px; }
+    .stack-row { display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:7px; padding:8px; background:#f7f8f6; border:1px solid transparent; border-radius:9px; }
+    .stack-row.enabled { background:#fff7ed; border-color:rgba(255,144,34,.28); }
+    .stack-row input { accent-color:var(--orange); }
+    .stack-name { font-size:11px; font-weight:700; }
+    .move-btn { width:27px; height:27px; padding:0; background:#fff; border:1px solid var(--line); border-radius:7px; cursor:pointer; }
+    .order-note { margin:8px 0 0; color:var(--muted); font-size:10px; line-height:1.5; }
+    .before-after { position:absolute; left:18px; top:18px; z-index:3; display:flex; gap:7px; }
+    .ghost-label { position:absolute; bottom:18px; left:18px; z-index:3; padding:8px 10px; color:var(--muted); background:rgba(255,255,255,.86); border-radius:9px; font-family:var(--mono); font-size:9px; }
+  </style>
+</head>
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+      <header>
+        <p class="eyebrow">Non-destructive modeling</p>
+        <h1>Modifier Playground</h1>
+        <p class="lede">A modifier changes geometry without replacing the original. Stack operations, reorder them, and see why sequence matters.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Modifier stack <span id="activeCount" class="value">0 active</span></h2>
+        <div id="stack" class="stack"></div>
+        <p class="order-note">Modifiers evaluate from top to bottom. Twist-then-bend is not the same shape as bend-then-twist.</p>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Active settings</h2>
+        <div class="control">
+          <div class="control-head"><span>Taper</span><span id="taperValue" class="value">45%</span></div>
+          <input id="taper" type="range" min="-70" max="100" value="45">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Twist</span><span id="twistValue" class="value">120&#176;</span></div>
+          <input id="twist" type="range" min="-270" max="270" value="120">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Bend</span><span id="bendValue" class="value">55&#176;</span></div>
+          <input id="bend" type="range" min="-120" max="120" value="55">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Wave</span><span id="waveValue" class="value">0.25</span></div>
+          <input id="wave" type="range" min="0" max="70" value="25">
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Object duplication</h2>
+        <div class="control">
+          <div class="control-head"><span>Array count</span><span id="arrayValue" class="value">1</span></div>
+          <input id="arrayCount" type="range" min="1" max="7" value="1">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Spacing</span><span id="spacingValue" class="value">2.0</span></div>
+          <input id="spacing" type="range" min="14" max="34" value="20">
+        </div>
+        <button id="mirror" class="wide-btn" style="margin-top:12px">Mirror off</button>
+      </section>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Stack challenge</div>
+        <h2 class="challenge-title">Design an ordered pattern</h2>
+        <p class="challenge-copy">Enable taper, twist, and bend. Put twist before bend, then create an array of at least three.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">Enable three modifiers</span></div>
+      </section>
+
+      <button id="reset" class="wide-btn danger">Reset stack</button>
+    </aside>
+
+    <section class="viewport">
+      <div class="before-after">
+        <button id="showBase" class="chip active">Show base</button>
+        <button id="wireframe" class="chip">Wireframe off</button>
+      </div>
+      <canvas class="webgl"></canvas>
+      <div class="ghost-label">White ghost = unchanged source mesh</div>
+      <div class="help">Drag to orbit · scroll to zoom</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    const canvas = document.querySelector("canvas");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf4f4ef);
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+    camera.position.set(7.5, 5.2, 9);
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    const orbit = new OrbitControls(camera, canvas);
+    orbit.target.set(0, 1.4, 0);
+    orbit.enableDamping = true;
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x6b7180, 2.2));
+    const sun = new THREE.DirectionalLight(0xffffff, 3);
+    sun.position.set(5, 8, 4);
+    sun.castShadow = true;
+    scene.add(sun);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: 0xe7e7e1, roughness: 1 }));
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+    const grid = new THREE.GridHelper(30, 30, 0xb7bbb5, 0xd5d8d2);
+    grid.position.y = 0.002;
+    scene.add(grid);
+
+    const group = new THREE.Group();
+    scene.add(group);
+    const baseGeometry = new THREE.BoxGeometry(1.35, 3.2, 1.35, 8, 24, 8);
+    baseGeometry.translate(0, 1.6, 0);
+    const basePositions = baseGeometry.attributes.position.array.slice();
+    const material = new THREE.MeshStandardMaterial({ color: 0xff9022, roughness: 0.36, metalness: 0.05 });
+    const ghostMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.18, wireframe: true, depthWrite: false });
+    const ghost = new THREE.Mesh(baseGeometry.clone(), ghostMaterial);
+    scene.add(ghost);
+
+    const definitions = {
+      taper: { name: "Taper", enabled: false },
+      twist: { name: "Twist", enabled: false },
+      bend: { name: "Bend", enabled: false },
+      wave: { name: "Wave", enabled: false }
+    };
+    let order = ["taper", "twist", "bend", "wave"];
+    let mirror = false;
+    let showBase = true;
+    let wireframe = false;
+
+    const stack = document.getElementById("stack");
+    function renderStack() {
+      stack.innerHTML = "";
+      order.forEach((key, index) => {
+        const row = document.createElement("div");
+        row.className = `stack-row${definitions[key].enabled ? " enabled" : ""}`;
+        row.dataset.key = key;
+        row.innerHTML = `
+          <input type="checkbox" ${definitions[key].enabled ? "checked" : ""} aria-label="Enable ${definitions[key].name}">
+          <span class="stack-name">${index + 1}. ${definitions[key].name}</span>
+          <button class="move-btn" data-move="-1" aria-label="Move ${definitions[key].name} up">&#8593;</button>
+          <button class="move-btn" data-move="1" aria-label="Move ${definitions[key].name} down">&#8595;</button>`;
+        row.querySelector("input").addEventListener("change", event => {
+          definitions[key].enabled = event.target.checked;
+          renderStack();
+          rebuild();
+        });
+        row.querySelectorAll("[data-move]").forEach(button => button.addEventListener("click", () => {
+          const next = index + Number(button.dataset.move);
+          if (next < 0 || next >= order.length) return;
+          [order[index], order[next]] = [order[next], order[index]];
+          renderStack();
+          rebuild();
+        }));
+        stack.append(row);
+      });
+    }
+
+    function applyModifier(key, vector) {
+      const normalizedY = THREE.MathUtils.clamp((vector.y - 1.6) / 1.6, -1, 1);
+      if (key === "taper") {
+        const amount = Number(document.getElementById("taper").value) / 100;
+        const scale = Math.max(0.12, 1 + amount * normalizedY);
+        vector.x *= scale;
+        vector.z *= scale;
+      } else if (key === "twist") {
+        const angle = THREE.MathUtils.degToRad(Number(document.getElementById("twist").value)) * normalizedY;
+        const x = vector.x;
+        vector.x = x * Math.cos(angle) - vector.z * Math.sin(angle);
+        vector.z = x * Math.sin(angle) + vector.z * Math.cos(angle);
+      } else if (key === "bend") {
+        const radians = THREE.MathUtils.degToRad(Number(document.getElementById("bend").value));
+        if (Math.abs(radians) > 0.001) {
+          const localY = vector.y - 1.6;
+          const radius = 3.2 / radians;
+          const theta = localY / radius;
+          const centerX = radius * (1 - Math.cos(theta));
+          const centerY = radius * Math.sin(theta);
+          vector.x += centerX;
+          vector.y = centerY + 1.6;
+        }
+      } else if (key === "wave") {
+        const amount = Number(document.getElementById("wave").value) / 100;
+        vector.x += Math.sin(vector.y * 4.2) * amount;
+      }
+    }
+
+    function rebuild() {
+      while (group.children.length) {
+        const child = group.children[group.children.length - 1];
+        group.remove(child);
+        child.geometry.dispose();
+      }
+      const geometry = baseGeometry.clone();
+      const positions = geometry.attributes.position;
+      for (let index = 0; index < positions.count; index++) {
+        const vector = new THREE.Vector3(
+          basePositions[index * 3],
+          basePositions[index * 3 + 1],
+          basePositions[index * 3 + 2]
+        );
+        order.forEach(key => {
+          if (definitions[key].enabled) applyModifier(key, vector);
+        });
+        positions.setXYZ(index, vector.x, vector.y, vector.z);
+      }
+      positions.needsUpdate = true;
+      geometry.computeVertexNormals();
+      const count = Number(document.getElementById("arrayCount").value);
+      const spacing = Number(document.getElementById("spacing").value) / 10;
+      for (let index = 0; index < count; index++) {
+        const mesh = new THREE.Mesh(geometry.clone(), material);
+        mesh.position.x = (index - (count - 1) / 2) * spacing;
+        mesh.castShadow = true;
+        group.add(mesh);
+        if (mirror) {
+          const mirrored = new THREE.Mesh(geometry.clone(), material);
+          mirrored.position.set(mesh.position.x, 0, -2.3);
+          mirrored.scale.z = -1;
+          mirrored.castShadow = true;
+          group.add(mirrored);
+        }
+      }
+      material.wireframe = wireframe;
+      ghost.visible = showBase && count === 1;
+      document.getElementById("activeCount").textContent = `${Object.values(definitions).filter(item => item.enabled).length} active`;
+      updateChallenge();
+    }
+
+    function updateChallenge() {
+      const active = Object.entries(definitions).filter(([, item]) => item.enabled).map(([key]) => key);
+      const required = ["taper", "twist", "bend"];
+      const allRequired = required.every(key => active.includes(key));
+      const ordered = order.indexOf("twist") < order.indexOf("bend");
+      const arrayReady = Number(document.getElementById("arrayCount").value) >= 3;
+      const challenge = document.getElementById("challenge");
+      let copy = "Enable taper, twist, and bend";
+      if (allRequired && !ordered) copy = "Move twist above bend";
+      if (allRequired && ordered && !arrayReady) copy = "Increase the array to at least 3";
+      if (allRequired && ordered && arrayReady) copy = "Ordered pattern complete";
+      challenge.classList.toggle("complete", allRequired && ordered && arrayReady);
+      document.getElementById("challengeStatus").textContent = copy;
+    }
+
+    const valueBindings = {
+      taper: value => `${value}%`,
+      twist: value => `${value}\u00b0`,
+      bend: value => `${value}\u00b0`,
+      wave: value => (value / 100).toFixed(2),
+      arrayCount: value => value,
+      spacing: value => (value / 10).toFixed(1)
+    };
+    Object.entries(valueBindings).forEach(([id, format]) => {
+      document.getElementById(id).addEventListener("input", event => {
+        document.getElementById(`${id === "arrayCount" ? "array" : id}Value`).textContent = format(Number(event.target.value));
+        rebuild();
+      });
+    });
+    document.getElementById("mirror").addEventListener("click", event => {
+      mirror = !mirror;
+      event.currentTarget.textContent = `Mirror ${mirror ? "on" : "off"}`;
+      event.currentTarget.classList.toggle("active", mirror);
+      rebuild();
+    });
+    document.getElementById("showBase").addEventListener("click", event => {
+      showBase = !showBase;
+      event.currentTarget.classList.toggle("active", showBase);
+      ghost.visible = showBase;
+    });
+    document.getElementById("wireframe").addEventListener("click", event => {
+      wireframe = !wireframe;
+      event.currentTarget.textContent = `Wireframe ${wireframe ? "on" : "off"}`;
+      event.currentTarget.classList.toggle("active", wireframe);
+      rebuild();
+    });
+    document.getElementById("reset").addEventListener("click", () => {
+      Object.values(definitions).forEach(item => { item.enabled = false; });
+      order = ["taper", "twist", "bend", "wave"];
+      mirror = false;
+      document.getElementById("arrayCount").value = 1;
+      document.getElementById("arrayValue").textContent = "1";
+      document.getElementById("mirror").textContent = "Mirror off";
+      renderStack();
+      rebuild();
+    });
+
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      renderer.setSize(rect.width, rect.height, false);
+      camera.aspect = rect.width / rect.height;
+      camera.updateProjectionMatrix();
+    }
+    addEventListener("resize", resize);
+    renderStack();
+    rebuild();
+    resize();
+    renderer.setAnimationLoop(() => {
+      orbit.update();
+      renderer.render(scene, camera);
+    });
+  </script>
+</body>
+</html>

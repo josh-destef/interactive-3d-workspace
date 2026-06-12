@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coordinate Spaces Lab - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <style>
+    .space-choice {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .space-btn {
+      min-height: 62px;
+      padding: 9px;
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .axis-mini {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin-bottom: 6px;
+      font-family: var(--mono);
+      font-size: 10px;
+    }
+
+    .x {
+      color: var(--red);
+    }
+
+    .y {
+      color: var(--green);
+    }
+
+    .z {
+      color: var(--blue);
+    }
+
+    .nudge-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+    }
+
+    .nudge-column {
+      display: grid;
+      gap: 5px;
+    }
+
+    .nudge-label {
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .nudge-btn {
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .nudge-btn:hover {
+      color: #fff;
+      background: var(--ink);
+    }
+
+    .coordinate-readout {
+      display: grid;
+      grid-template-columns: auto repeat(3, 1fr);
+      gap: 6px;
+      align-items: center;
+      font-family: var(--mono);
+      font-size: 9px;
+    }
+
+    .coordinate-readout span {
+      padding: 7px 5px;
+      text-align: center;
+      background: #f6f7f4;
+      border-radius: 6px;
+    }
+
+    .coordinate-readout .row-label {
+      color: var(--muted);
+      background: transparent;
+      text-align: left;
+    }
+
+    .concept {
+      padding: 13px;
+      color: #3f4b61;
+      background: #eef4ff;
+      border-left: 3px solid var(--blue);
+      border-radius: 0 10px 10px 0;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .axis-key {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      z-index: 4;
+      display: grid;
+      gap: 5px;
+      padding: 10px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid rgba(23, 32, 51, 0.08);
+      border-radius: 10px;
+      backdrop-filter: blur(10px);
+      font-family: var(--mono);
+      font-size: 9px;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+
+      <header>
+        <p class="eyebrow">Transforms lab</p>
+        <h1>Which Way Is Forward?</h1>
+        <p class="lede">World axes stay fixed. Local axes belong to the object and rotate with it. Both coordinate systems are correct; they answer different questions.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Active orientation</h2>
+        <div class="space-choice">
+          <button class="tool-btn space-btn active" data-space="world">
+            <span class="axis-mini"><b class="x">X</b><b class="y">Y</b><b class="z">Z</b></span>
+            World space
+          </button>
+          <button class="tool-btn space-btn" data-space="local">
+            <span class="axis-mini"><b class="x">X</b><b class="y">Y</b><b class="z">Z</b></span>
+            Local space
+          </button>
+        </div>
+        <p id="spaceCopy" class="panel-note" style="margin-top:10px;margin-bottom:0">The gizmo points along the scene's permanent grid axes.</p>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Rotate the ship</h2>
+        <div class="control">
+          <div class="control-head"><span>Heading</span><span id="headingValue" class="value">0°</span></div>
+          <input id="heading" type="range" min="-180" max="180" value="0">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Bank</span><span id="bankValue" class="value">0°</span></div>
+          <input id="bank" type="range" min="-90" max="90" value="0">
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Move 0.5 units</h2>
+        <div class="nudge-grid">
+          <div class="nudge-column">
+            <span class="nudge-label x">X</span>
+            <button class="nudge-btn" data-axis="x" data-sign="1">+ X</button>
+            <button class="nudge-btn" data-axis="x" data-sign="-1">- X</button>
+          </div>
+          <div class="nudge-column">
+            <span class="nudge-label y">Y</span>
+            <button class="nudge-btn" data-axis="y" data-sign="1">+ Y</button>
+            <button class="nudge-btn" data-axis="y" data-sign="-1">- Y</button>
+          </div>
+          <div class="nudge-column">
+            <span class="nudge-label z">Z</span>
+            <button class="nudge-btn" data-axis="z" data-sign="1">+ Z</button>
+            <button class="nudge-btn" data-axis="z" data-sign="-1">- Z</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Position readout</h2>
+        <div class="coordinate-readout">
+          <span></span><span class="x">X</span><span class="y">Y</span><span class="z">Z</span>
+          <span class="row-label">World</span><span id="worldX">0.0</span><span id="worldY">0.0</span><span id="worldZ">0.0</span>
+          <span class="row-label">Last move</span><span id="moveX">0.0</span><span id="moveY">0.0</span><span id="moveZ">0.0</span>
+        </div>
+      </section>
+
+      <div id="concept" class="concept">With no rotation, local and world axes overlap. Turn the ship and they separate: world Z still follows the blue grid, while local Z follows the ship's nose.</div>
+
+      <section class="panel">
+        <h2 class="panel-title">Scene controls</h2>
+        <div class="inline-row">
+          <button id="clearTrail" class="wide-btn">Clear trail</button>
+          <button id="reset" class="wide-btn">Reset</button>
+        </div>
+      </section>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Coordinate challenge</div>
+        <h2 class="challenge-title">Fly through the ring</h2>
+        <p class="challenge-copy">Set heading near 45°, switch to local space, then use +Z to move through the target.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">Ring is 4.0 units away</span></div>
+      </section>
+    </aside>
+
+    <section id="viewport" class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="hud">
+        <span id="spaceHud" class="hud-pill">world axes active</span>
+        <span class="hud-pill">drag empty space to orbit</span>
+      </div>
+      <div class="axis-key">
+        <span><b class="x">Red X</b> left / right</span>
+        <span><b class="y">Green Y</b> up / down</span>
+        <span><b class="z">Blue Z</b> forward / back</span>
+      </div>
+      <div class="help">The large axes belong to the world. The small axes travel with the ship.</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{
+      "three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",
+      "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"
+    }}
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { TransformControls } from "three/addons/controls/TransformControls.js";
+
+    const viewport = document.getElementById("viewport");
+    const canvas = viewport.querySelector("canvas");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf2f2ed);
+    scene.fog = new THREE.Fog(0xf2f2ed, 18, 34);
+
+    const camera = new THREE.PerspectiveCamera(43, 1, 0.05, 100);
+    camera.position.set(8, 6, 9);
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
+    const orbit = new OrbitControls(camera, canvas);
+    orbit.enableDamping = true;
+    orbit.target.set(1.4, 1, 1.4);
+    orbit.minDistance = 5;
+    orbit.maxDistance = 18;
+    orbit.maxPolarAngle = Math.PI * 0.49;
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x566176, 2.3));
+    const key = new THREE.DirectionalLight(0xffffff, 3.3);
+    key.position.set(6, 10, 7);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    scene.add(key);
+
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(24, 24),
+      new THREE.MeshStandardMaterial({ color: 0xe4e5df, roughness: 0.95 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    const grid = new THREE.GridHelper(24, 24, 0x5f6b80, 0x5f6b80);
+    grid.material.opacity = 0.14;
+    grid.material.transparent = true;
+    scene.add(grid);
+
+    const worldAxes = new THREE.AxesHelper(4);
+    worldAxes.position.y = 0.02;
+    scene.add(worldAxes);
+
+    function mat(color, roughness = 0.45) {
+      return new THREE.MeshStandardMaterial({ color, roughness, metalness: 0.04 });
+    }
+
+    const ship = new THREE.Group();
+    ship.position.set(0, 0.8, 0);
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.45, 1.6, 8, 18), mat(0xf1f1ec, 0.32));
+    body.rotation.x = Math.PI / 2;
+    body.position.z = 0.15;
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.46, 1, 28), mat(0xff9022, 0.36));
+    nose.rotation.x = Math.PI / 2;
+    nose.position.z = 1.48;
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.12, 0.72), mat(0x3a6fa8, 0.42));
+    wing.position.z = -0.15;
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.85, 0.75), mat(0xc0453a, 0.5));
+    tail.position.set(0, 0.38, -0.75);
+    ship.add(body, nose, wing, tail);
+    ship.traverse(child => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    scene.add(ship);
+
+    const localAxes = new THREE.AxesHelper(2.4);
+    ship.add(localAxes);
+
+    const transform = new TransformControls(camera, canvas);
+    transform.attach(ship);
+    transform.setMode("translate");
+    transform.setSpace("world");
+    transform.setSize(0.8);
+    transform.addEventListener("dragging-changed", event => {
+      orbit.enabled = !event.value;
+      if (!event.value) addTrailPoint();
+    });
+    transform.addEventListener("objectChange", updateReadout);
+    scene.add(transform);
+
+    const targetDirection = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), THREE.MathUtils.degToRad(45));
+    const targetPosition = new THREE.Vector3().copy(ship.position).addScaledVector(targetDirection, 4);
+    const target = new THREE.Mesh(
+      new THREE.TorusGeometry(0.82, 0.11, 18, 64),
+      new THREE.MeshStandardMaterial({ color: 0xffda22, emissive: 0x5c4900, emissiveIntensity: 0.8, roughness: 0.35 })
+    );
+    target.position.copy(targetPosition);
+    target.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), targetDirection);
+    target.castShadow = true;
+    scene.add(target);
+
+    const targetGlow = new THREE.PointLight(0xffda22, 2, 4);
+    targetGlow.position.copy(targetPosition);
+    scene.add(targetGlow);
+
+    let space = "world";
+    const trailPoints = [ship.position.clone()];
+    const trailGeometry = new THREE.BufferGeometry().setFromPoints(trailPoints);
+    const trail = new THREE.Line(
+      trailGeometry,
+      new THREE.LineBasicMaterial({ color: 0xff9022, transparent: true, opacity: 0.8 })
+    );
+    scene.add(trail);
+
+    function addTrailPoint() {
+      trailPoints.push(ship.position.clone());
+      trail.geometry.dispose();
+      trail.geometry = new THREE.BufferGeometry().setFromPoints(trailPoints);
+    }
+
+    function setSpace(value) {
+      space = value;
+      transform.setSpace(space);
+      document.querySelectorAll("[data-space]").forEach(button => {
+        button.classList.toggle("active", button.dataset.space === space);
+      });
+      document.getElementById("spaceCopy").textContent = space === "world"
+        ? "The gizmo points along the scene's permanent grid axes."
+        : "The gizmo rotates with the ship, so its blue Z axis always means the ship's own forward direction.";
+      document.getElementById("spaceHud").textContent = `${space} axes active`;
+      document.getElementById("concept").textContent = space === "world"
+        ? "World movement ignores the ship's rotation. +Z always follows the blue grid direction."
+        : "Local movement uses the ship's rotated frame. +Z follows the nose, even when that path is diagonal in world space.";
+      evaluateChallenge();
+    }
+
+    function setRotation() {
+      ship.rotation.y = THREE.MathUtils.degToRad(Number(document.getElementById("heading").value));
+      ship.rotation.z = THREE.MathUtils.degToRad(Number(document.getElementById("bank").value));
+      document.getElementById("headingValue").textContent = `${document.getElementById("heading").value}°`;
+      document.getElementById("bankValue").textContent = `${document.getElementById("bank").value}°`;
+      updateReadout();
+      evaluateChallenge();
+    }
+
+    function move(axisName, sign) {
+      const axis = axisName === "x"
+        ? new THREE.Vector3(1, 0, 0)
+        : axisName === "y"
+          ? new THREE.Vector3(0, 1, 0)
+          : new THREE.Vector3(0, 0, 1);
+      if (space === "local") axis.applyQuaternion(ship.quaternion);
+      axis.normalize().multiplyScalar(0.5 * sign);
+      ship.position.add(axis);
+      ship.position.y = Math.max(0.3, ship.position.y);
+      document.getElementById("moveX").textContent = axis.x.toFixed(1);
+      document.getElementById("moveY").textContent = axis.y.toFixed(1);
+      document.getElementById("moveZ").textContent = axis.z.toFixed(1);
+      addTrailPoint();
+      updateReadout();
+      evaluateChallenge();
+    }
+
+    function updateReadout() {
+      document.getElementById("worldX").textContent = ship.position.x.toFixed(1);
+      document.getElementById("worldY").textContent = ship.position.y.toFixed(1);
+      document.getElementById("worldZ").textContent = ship.position.z.toFixed(1);
+    }
+
+    function evaluateChallenge() {
+      const distance = ship.position.distanceTo(targetPosition);
+      const heading = Math.abs(Number(document.getElementById("heading").value) - 45);
+      const complete = space === "local" && heading <= 10 && distance < 0.72;
+      document.getElementById("challenge").classList.toggle("complete", complete);
+      document.getElementById("challengeStatus").textContent = complete
+        ? "Target reached in local space"
+        : `Ring is ${distance.toFixed(1)} units away`;
+    }
+
+    function resetScene() {
+      ship.position.set(0, 0.8, 0);
+      document.getElementById("heading").value = 0;
+      document.getElementById("bank").value = 0;
+      setRotation();
+      setSpace("world");
+      clearTrail();
+      document.getElementById("moveX").textContent = "0.0";
+      document.getElementById("moveY").textContent = "0.0";
+      document.getElementById("moveZ").textContent = "0.0";
+      updateReadout();
+    }
+
+    function clearTrail() {
+      trailPoints.length = 0;
+      trailPoints.push(ship.position.clone());
+      trail.geometry.dispose();
+      trail.geometry = new THREE.BufferGeometry().setFromPoints(trailPoints);
+    }
+
+    document.querySelectorAll("[data-space]").forEach(button => {
+      button.addEventListener("click", () => setSpace(button.dataset.space));
+    });
+    document.querySelectorAll("[data-axis]").forEach(button => {
+      button.addEventListener("click", () => move(button.dataset.axis, Number(button.dataset.sign)));
+    });
+    document.getElementById("heading").addEventListener("input", setRotation);
+    document.getElementById("bank").addEventListener("input", setRotation);
+    document.getElementById("clearTrail").addEventListener("click", clearTrail);
+    document.getElementById("reset").addEventListener("click", resetScene);
+
+    function resize() {
+      const width = viewport.clientWidth;
+      const height = viewport.clientHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener("resize", resize);
+    resize();
+    updateReadout();
+    evaluateChallenge();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      target.rotation.z += 0.005;
+      orbit.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+
+</html>

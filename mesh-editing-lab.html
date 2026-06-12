@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mesh Editing Lab - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <link rel="stylesheet" href="advanced-lab.css">
+</head>
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+      <header>
+        <p class="eyebrow">Production pipeline 01</p>
+        <h1>Mesh Editing Lab</h1>
+        <p class="lede">Primitive modeling starts the form. Edit operations change its topology: extrude creates volume, inset creates a border, bevel softens an edge, and loop cuts add control.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Edit the top face</h2>
+        <div class="control">
+          <div class="control-head"><span>Extrude height</span><span id="extrudeValue" class="value">0.8 m</span></div>
+          <input id="extrude" type="range" min="0" max="24" value="8">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Inset scale</span><span id="insetValue" class="value">0.80</span></div>
+          <input id="inset" type="range" min="35" max="100" value="80">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Bevel width</span><span id="bevelValue" class="value">0.08 m</span></div>
+          <input id="bevel" type="range" min="0" max="24" value="8">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Loop cuts</span><span id="loopsValue" class="value">2</span></div>
+          <input id="loops" type="range" min="0" max="6" value="2">
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Inspection</h2>
+        <div class="button-grid">
+          <button id="wire" class="tool-btn">Wireframe off</button>
+          <button id="vertices" class="tool-btn">Vertices off</button>
+          <button class="tool-btn" data-preset="tower">Tower</button>
+          <button class="tool-btn" data-preset="control">Control loops</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Topology result</h2>
+        <div class="readout-grid">
+          <div class="readout"><strong id="vertexCount">0</strong><span>vertices</span></div>
+          <div class="readout"><strong id="faceCount">0</strong><span>triangles</span></div>
+          <div class="readout"><strong id="heightReadout">0</strong><span>total height</span></div>
+          <div class="readout"><strong id="topReadout">0</strong><span>top width</span></div>
+        </div>
+      </section>
+
+      <div class="concept-note">A loop cut does not change the silhouette by itself. It adds vertices and edges that give later edits more local control.</div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Modeling challenge</div>
+        <h2 class="challenge-title">Create a controlled tower</h2>
+        <p class="challenge-copy">Extrude above 1.2 m, inset below 0.7, bevel the rim, and add at least three loop cuts.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">Four conditions remain</span></div>
+      </section>
+    </aside>
+
+    <section class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="viewport-label"><strong>Operation order</strong>Base face &#8594; loop cuts &#8594; inset rim &#8594; extrusion &#8594; bevel rings</div>
+      <div class="hud"><span class="hud-pill">orange = edited mesh</span><span class="hud-pill">cyan = selected face</span></div>
+      <div class="help">Orbit close to the top rim to inspect the new edge loops.</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}
+  </script>
+  <script type="module">
+    import { THREE, createLab, startLoop, bindRange, bindToggle, setChallenge, disposeObject } from "./advanced-lab-core.js";
+
+    const lab = createLab({ cameraPosition: [6, 4.8, 7], target: [0, 1.5, 0] });
+    const root = new THREE.Group();
+    root.position.y = 0.02;
+    lab.scene.add(root);
+    let mesh;
+    let wire;
+    let points;
+    let showWire = false;
+    let showVertices = false;
+    const state = { extrude: 0.8, inset: 0.8, bevel: 0.08, loops: 2 };
+
+    function addRing(vertices, y, half) {
+      vertices.push(
+        -half, y, -half,
+         half, y, -half,
+         half, y,  half,
+        -half, y,  half
+      );
+    }
+
+    function buildGeometry() {
+      const vertices = [];
+      const indices = [];
+      const levels = [];
+      const baseHeight = 1;
+      const cutCount = state.loops;
+      for (let index = 0; index <= cutCount + 1; index++) {
+        levels.push({ y: baseHeight * index / (cutCount + 1), half: 1.35 });
+      }
+      const topY = baseHeight + state.extrude;
+      const bevel = Math.min(state.bevel, state.extrude * 0.22, 0.22);
+      if (state.extrude > 0.01) {
+        levels.push({ y: baseHeight + bevel, half: 1.35 - (1.35 - 1.35 * state.inset) * 0.55 });
+        levels.push({ y: Math.max(baseHeight + bevel, topY - bevel), half: 1.35 * state.inset + bevel * 0.45 });
+        levels.push({ y: topY, half: 1.35 * state.inset });
+      }
+      levels.forEach(level => addRing(vertices, level.y, level.half));
+      for (let ring = 0; ring < levels.length - 1; ring++) {
+        for (let side = 0; side < 4; side++) {
+          const next = (side + 1) % 4;
+          const a = ring * 4 + side;
+          const b = ring * 4 + next;
+          const c = (ring + 1) * 4 + next;
+          const d = (ring + 1) * 4 + side;
+          indices.push(a, b, d, b, c, d);
+        }
+      }
+      indices.push(0, 3, 1, 1, 3, 2);
+      const top = (levels.length - 1) * 4;
+      indices.push(top, top + 1, top + 3, top + 1, top + 2, top + 3);
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+      geometry.setIndex(indices);
+      geometry.computeVertexNormals();
+      return geometry;
+    }
+
+    function rebuild() {
+      if (mesh) {
+        disposeObject(mesh);
+        disposeObject(wire);
+        disposeObject(points);
+      }
+      const geometry = buildGeometry();
+      mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
+        color: 0xff9022,
+        roughness: 0.42,
+        metalness: 0.04,
+        polygonOffset: true,
+        polygonOffsetFactor: 1
+      }));
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      root.add(mesh);
+
+      wire = new THREE.LineSegments(
+        new THREE.EdgesGeometry(geometry, 1),
+        new THREE.LineBasicMaterial({ color: 0x172033, transparent: true, opacity: 0.72 })
+      );
+      wire.visible = showWire;
+      root.add(wire);
+
+      points = new THREE.Points(
+        geometry,
+        new THREE.PointsMaterial({ color: 0x13b8a6, size: 0.075, sizeAttenuation: true, depthTest: false })
+      );
+      points.visible = showVertices;
+      points.renderOrder = 4;
+      root.add(points);
+
+      const positions = geometry.getAttribute("position").count;
+      document.getElementById("vertexCount").textContent = positions;
+      document.getElementById("faceCount").textContent = geometry.index.count / 3;
+      document.getElementById("heightReadout").textContent = `${(1 + state.extrude).toFixed(1)} m`;
+      document.getElementById("topReadout").textContent = `${(2.7 * state.inset).toFixed(2)} m`;
+      const checks = [
+        state.extrude >= 1.2,
+        state.inset <= 0.7,
+        state.bevel >= 0.12,
+        state.loops >= 3
+      ];
+      const remaining = checks.filter(value => !value).length;
+      setChallenge(remaining === 0, remaining ? `${remaining} condition${remaining === 1 ? "" : "s"} remain` : "Controlled topology complete");
+    }
+
+    bindRange("extrude", value => `${(value / 10).toFixed(1)} m`, value => { state.extrude = value / 10; rebuild(); });
+    bindRange("inset", value => (value / 100).toFixed(2), value => { state.inset = value / 100; rebuild(); });
+    bindRange("bevel", value => `${(value / 100).toFixed(2)} m`, value => { state.bevel = value / 100; rebuild(); });
+    bindRange("loops", value => String(value), value => { state.loops = value; rebuild(); });
+    bindToggle("wire", value => { showWire = value; if (wire) wire.visible = value; }, "Wireframe on", "Wireframe off");
+    bindToggle("vertices", value => { showVertices = value; if (points) points.visible = value; }, "Vertices on", "Vertices off");
+
+    document.querySelectorAll("[data-preset]").forEach(button => button.addEventListener("click", () => {
+      const values = button.dataset.preset === "tower"
+        ? { extrude: 18, inset: 58, bevel: 16, loops: 3 }
+        : { extrude: 8, inset: 86, bevel: 8, loops: 6 };
+      Object.entries(values).forEach(([id, value]) => {
+        const input = document.getElementById(id);
+        input.value = value;
+        input.dispatchEvent(new Event("input"));
+      });
+    }));
+
+    startLoop(lab, (dt, time) => {
+      root.rotation.y = Math.sin(time * 0.22) * 0.12;
+    });
+  </script>
+</body>
+</html>

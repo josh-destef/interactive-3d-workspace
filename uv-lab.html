@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UV Mapping Lab - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <style>
+    .viewport canvas.webgl {
+      position: absolute;
+      inset: 0 34% 0 0;
+      width: 66%;
+      height: 100%;
+    }
+
+    .uv-panel {
+      position: absolute;
+      inset: 0 0 0 66%;
+      z-index: 2;
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      gap: 10px;
+      padding: 18px;
+      background: #172033;
+      border-left: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .uv-panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #fff;
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    #uvCanvas {
+      display: block;
+      width: 100%;
+      min-height: 0;
+      flex: 1;
+      background: #222d43;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+
+    .uv-legend {
+      color: rgba(255, 255, 255, 0.56);
+      font-size: 10px;
+      line-height: 1.45;
+    }
+
+    .projection-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 7px;
+    }
+
+    .mapping-icon {
+      display: block;
+      margin-bottom: 3px;
+      color: var(--orange);
+      font-size: 16px;
+    }
+
+    .distortion-meter {
+      position: relative;
+      height: 9px;
+      overflow: hidden;
+      background: linear-gradient(90deg, #35c66f, #ffda22 52%, #c0453a);
+      border-radius: 999px;
+    }
+
+    .distortion-marker {
+      position: absolute;
+      top: -3px;
+      width: 3px;
+      height: 15px;
+      background: #172033;
+      box-shadow: 0 0 0 1px #fff;
+      transform: translateX(-50%);
+      transition: left 0.2s ease;
+    }
+
+    .concept {
+      padding: 13px;
+      color: #44506a;
+      background: #eef4ff;
+      border-left: 3px solid var(--blue);
+      border-radius: 0 10px 10px 0;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 820px) {
+      .viewport canvas.webgl {
+        inset: 0 0 42% 0;
+        width: 100%;
+        height: 58%;
+      }
+
+      .uv-panel {
+        inset: 58% 0 0 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+        border-left: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+
+      <header>
+        <p class="eyebrow">Texture coordinates lab</p>
+        <h1>Unwrap the Surface</h1>
+        <p class="lede">UV coordinates tell every surface point where it belongs on a flat image. The challenge is flattening without unwanted cuts or stretching.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Object</h2>
+        <div class="mode-row">
+          <button class="mode-btn active" data-object="sphere">Sphere</button>
+          <button class="mode-btn" data-object="cylinder">Cylinder</button>
+          <button class="mode-btn" data-object="box">Cube</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Projection method</h2>
+        <div class="projection-grid">
+          <button class="tool-btn" data-mapping="spherical"><span class="mapping-icon">&#9673;</span>Spherical</button>
+          <button class="tool-btn" data-mapping="cylindrical"><span class="mapping-icon">&#9646;</span>Cylindrical</button>
+          <button class="tool-btn" data-mapping="box"><span class="mapping-icon">&#9633;</span>Box</button>
+          <button class="tool-btn active" data-mapping="planar"><span class="mapping-icon">&#9645;</span>Planar</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Arrange the UVs</h2>
+        <div class="control">
+          <div class="control-head"><span>U scale</span><span id="uScaleValue" class="value">1.00</span></div>
+          <input id="uScale" type="range" min="25" max="300" value="100">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>V scale</span><span id="vScaleValue" class="value">1.00</span></div>
+          <input id="vScale" type="range" min="25" max="300" value="100">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Rotation</span><span id="rotationValue" class="value">0°</span></div>
+          <input id="uvRotation" type="range" min="-180" max="180" value="0">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Checker size</span><span id="checkerValue" class="value">6</span></div>
+          <input id="checkerSize" type="range" min="2" max="16" value="6">
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Display</h2>
+        <div class="mode-row">
+          <button id="wireToggle" class="mode-btn active">Wire on</button>
+          <button id="spinToggle" class="mode-btn active">Spin on</button>
+          <button id="resetUV" class="mode-btn">Reset UVs</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">UV health</h2>
+        <div class="stats">
+          <div class="stat"><strong id="distortionValue">8%</strong><span>distortion</span></div>
+          <div class="stat"><strong id="seamValue">1</strong><span>seams</span></div>
+          <div class="stat"><strong id="islandValue">1</strong><span>islands</span></div>
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Low distortion</span><span>High distortion</span></div>
+          <div class="distortion-meter"><span id="distortionMarker" class="distortion-marker"></span></div>
+        </div>
+      </section>
+
+      <div id="concept" class="concept">A sphere cannot become a rectangle without a cut. Spherical mapping places one main seam around the back and compresses the poles.</div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">UV challenge <span id="challengeNumber">1 / 3</span></div>
+        <h2 id="challengeTitle" class="challenge-title">Wrap the sphere</h2>
+        <p id="challengeCopy" class="challenge-copy">Choose a mapping with less than 20% distortion and keep U and V scale nearly equal.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">Distortion 8%</span></div>
+        <button id="nextChallenge" class="wide-btn" style="position:relative;z-index:1;margin-top:12px;background:transparent;color:#fff;border-color:rgba(255,255,255,.2)">Next object</button>
+      </section>
+    </aside>
+
+    <section id="viewport" class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="uv-panel">
+        <div class="uv-panel-head"><span>2D UV space</span><span>U &#8594; &nbsp; V &#8593;</span></div>
+        <canvas id="uvCanvas" width="420" height="620"></canvas>
+        <div class="uv-legend">White lines are flattened triangles. The same checker image appears here and on the 3D surface.</div>
+      </div>
+      <div class="hud" style="right:36%">
+        <span class="hud-pill">drag to orbit</span>
+      </div>
+      <div class="help" style="left:33%">Square checks mean even texture scale. Rectangles reveal stretching.</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{
+      "three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",
+      "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"
+    }}
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    const viewport = document.getElementById("viewport");
+    const canvas = viewport.querySelector("canvas.webgl");
+    const uvCanvas = document.getElementById("uvCanvas");
+    const uvContext = uvCanvas.getContext("2d");
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf1f1ec);
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 100);
+    camera.position.set(4.8, 3.2, 6.2);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
+    const orbit = new OrbitControls(camera, canvas);
+    orbit.enableDamping = true;
+    orbit.target.set(0, 1.55, 0);
+    orbit.minDistance = 3;
+    orbit.maxDistance = 11;
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x596273, 2.3));
+    const key = new THREE.DirectionalLight(0xffffff, 3.4);
+    key.position.set(5, 8, 5);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    scene.add(key);
+
+    const floor = new THREE.Mesh(
+      new THREE.CircleGeometry(5, 64),
+      new THREE.MeshStandardMaterial({ color: 0xe1e2dc, roughness: 0.94 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    function makeCheckerTexture(size) {
+      const textureCanvas = document.createElement("canvas");
+      textureCanvas.width = 512;
+      textureCanvas.height = 512;
+      const context = textureCanvas.getContext("2d");
+      const cells = size;
+      const cell = textureCanvas.width / cells;
+      const palette = ["#ff9022", "#f7f7f3", "#3a6fa8", "#fff0d8"];
+      context.textAlign = "center";
+      context.textBaseline = "middle";
+      context.font = `${Math.max(10, cell * 0.24)}px DM Mono, monospace`;
+      for (let y = 0; y < cells; y++) {
+        for (let x = 0; x < cells; x++) {
+          context.fillStyle = palette[(x + y * 3) % palette.length];
+          context.fillRect(x * cell, y * cell, cell, cell);
+          context.fillStyle = (x + y) % 2 ? "rgba(23,32,51,.65)" : "rgba(255,255,255,.75)";
+          context.fillText(`${x},${y}`, (x + 0.5) * cell, (y + 0.5) * cell);
+        }
+      }
+      const texture = new THREE.CanvasTexture(textureCanvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      return { texture, canvas: textureCanvas };
+    }
+
+    let checker = makeCheckerTexture(6);
+    const material = new THREE.MeshStandardMaterial({
+      map: checker.texture,
+      roughness: 0.48,
+      metalness: 0.02,
+      side: THREE.DoubleSide,
+      polygonOffset: true,
+      polygonOffsetFactor: 1,
+      polygonOffsetUnits: 1
+    });
+    const wireMaterial = new THREE.LineBasicMaterial({ color: 0x172033, transparent: true, opacity: 0.38 });
+
+    let objectType = "sphere";
+    let mapping = "planar";
+    let mesh;
+    let wire;
+    let baseUVs = [];
+    let showWire = true;
+    let autoSpin = true;
+    let distortion = 0.08;
+
+    function makeGeometry(type) {
+      if (type === "cylinder") return new THREE.CylinderGeometry(1.25, 1.25, 3, 36, 8, false).toNonIndexed();
+      if (type === "box") return new THREE.BoxGeometry(2.7, 2.7, 2.7, 5, 5, 5).toNonIndexed();
+      return new THREE.SphereGeometry(1.5, 36, 22).toNonIndexed();
+    }
+
+    function normalized(value, min, max) {
+      return (value - min) / Math.max(max - min, 0.0001);
+    }
+
+    function createBaseUVs(geometry, method) {
+      geometry.computeBoundingBox();
+      const box = geometry.boundingBox;
+      const position = geometry.attributes.position;
+      const uvs = new Float32Array(position.count * 2);
+      const tempA = new THREE.Vector3();
+      const tempB = new THREE.Vector3();
+      const tempC = new THREE.Vector3();
+      const normal = new THREE.Vector3();
+
+      for (let triangle = 0; triangle < position.count; triangle += 3) {
+        tempA.fromBufferAttribute(position, triangle);
+        tempB.fromBufferAttribute(position, triangle + 1);
+        tempC.fromBufferAttribute(position, triangle + 2);
+        normal.crossVectors(tempB.clone().sub(tempA), tempC.clone().sub(tempA)).normalize();
+        const triangleUVs = [];
+
+        for (let corner = 0; corner < 3; corner++) {
+          const index = triangle + corner;
+          const x = position.getX(index);
+          const y = position.getY(index);
+          const z = position.getZ(index);
+          let u;
+          let v;
+
+          if (method === "planar") {
+            u = normalized(x, box.min.x, box.max.x);
+            v = normalized(y, box.min.y, box.max.y);
+          } else if (method === "cylindrical") {
+            u = Math.atan2(z, x) / (Math.PI * 2) + 0.5;
+            v = normalized(y, box.min.y, box.max.y);
+          } else if (method === "spherical") {
+            const radius = Math.max(Math.sqrt(x * x + y * y + z * z), 0.0001);
+            u = Math.atan2(z, x) / (Math.PI * 2) + 0.5;
+            v = Math.asin(THREE.MathUtils.clamp(y / radius, -1, 1)) / Math.PI + 0.5;
+          } else {
+            const ax = Math.abs(normal.x);
+            const ay = Math.abs(normal.y);
+            const az = Math.abs(normal.z);
+            if (ax >= ay && ax >= az) {
+              u = normalized(z, box.min.z, box.max.z);
+              v = normalized(y, box.min.y, box.max.y);
+            } else if (ay >= ax && ay >= az) {
+              u = normalized(x, box.min.x, box.max.x);
+              v = normalized(z, box.min.z, box.max.z);
+            } else {
+              u = normalized(x, box.min.x, box.max.x);
+              v = normalized(y, box.min.y, box.max.y);
+            }
+          }
+          triangleUVs.push({ index, u, v });
+        }
+
+        if (method === "spherical" || method === "cylindrical") {
+          const values = triangleUVs.map(item => item.u);
+          if (Math.max(...values) - Math.min(...values) > 0.5) {
+            triangleUVs.forEach(item => {
+              if (item.u < 0.5) item.u += 1;
+            });
+          }
+        }
+
+        triangleUVs.forEach(item => {
+          uvs[item.index * 2] = item.u;
+          uvs[item.index * 2 + 1] = item.v;
+        });
+      }
+      return Array.from(uvs);
+    }
+
+    function applyUVTransform() {
+      if (!mesh) return;
+      const uScale = Number(document.getElementById("uScale").value) / 100;
+      const vScale = Number(document.getElementById("vScale").value) / 100;
+      const angle = THREE.MathUtils.degToRad(Number(document.getElementById("uvRotation").value));
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      const transformed = new Float32Array(baseUVs.length);
+
+      for (let i = 0; i < baseUVs.length; i += 2) {
+        const u = (baseUVs[i] - 0.5) * uScale;
+        const v = (baseUVs[i + 1] - 0.5) * vScale;
+        transformed[i] = u * cos - v * sin + 0.5;
+        transformed[i + 1] = u * sin + v * cos + 0.5;
+      }
+      mesh.geometry.setAttribute("uv", new THREE.BufferAttribute(transformed, 2));
+      mesh.geometry.attributes.uv.needsUpdate = true;
+      updateMetrics();
+      drawUVs();
+    }
+
+    function rebuild() {
+      if (mesh) {
+        scene.remove(mesh, wire);
+        mesh.geometry.dispose();
+        wire.geometry.dispose();
+      }
+      const geometry = makeGeometry(objectType);
+      baseUVs = createBaseUVs(geometry, mapping);
+      geometry.setAttribute("uv", new THREE.Float32BufferAttribute(baseUVs, 2));
+      mesh = new THREE.Mesh(geometry, material);
+      mesh.position.y = 1.55;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+
+      wire = new THREE.LineSegments(new THREE.WireframeGeometry(geometry), wireMaterial);
+      wire.position.copy(mesh.position);
+      wire.visible = showWire;
+      scene.add(wire);
+      applyUVTransform();
+    }
+
+    const baseDistortion = {
+      sphere: { spherical: 0.08, cylindrical: 0.34, box: 0.48, planar: 0.78 },
+      cylinder: { spherical: 0.42, cylindrical: 0.08, box: 0.3, planar: 0.58 },
+      box: { spherical: 0.68, cylindrical: 0.46, box: 0.05, planar: 0.52 }
+    };
+    const seamCounts = {
+      spherical: { seams: 1, islands: 1 },
+      cylindrical: { seams: 2, islands: 3 },
+      box: { seams: 12, islands: 6 },
+      planar: { seams: 0, islands: 1 }
+    };
+
+    function updateMetrics() {
+      const uScale = Number(document.getElementById("uScale").value) / 100;
+      const vScale = Number(document.getElementById("vScale").value) / 100;
+      const aspectPenalty = Math.min(Math.abs(Math.log(Math.max(uScale, 0.01) / Math.max(vScale, 0.01))) * 0.34, 0.65);
+      distortion = Math.min(baseDistortion[objectType][mapping] + aspectPenalty, 0.99);
+      const info = seamCounts[mapping];
+      document.getElementById("uScaleValue").textContent = uScale.toFixed(2);
+      document.getElementById("vScaleValue").textContent = vScale.toFixed(2);
+      document.getElementById("rotationValue").textContent = `${document.getElementById("uvRotation").value}°`;
+      document.getElementById("checkerValue").textContent = document.getElementById("checkerSize").value;
+      document.getElementById("distortionValue").textContent = `${Math.round(distortion * 100)}%`;
+      document.getElementById("seamValue").textContent = info.seams;
+      document.getElementById("islandValue").textContent = info.islands;
+      document.getElementById("distortionMarker").style.left = `${distortion * 100}%`;
+
+      const descriptions = {
+        spherical: "Spherical mapping wraps longitude and latitude around the form. It needs a seam and compresses near the poles.",
+        cylindrical: "Cylindrical mapping rolls a rectangle around the sides. Caps need separate islands or they stretch.",
+        box: "Box mapping projects from six directions. It suits hard surfaces but creates more seams and islands.",
+        planar: "Planar mapping projects from one direction. Surfaces facing sideways collapse or stretch heavily."
+      };
+      document.getElementById("concept").textContent = descriptions[mapping];
+      evaluateChallenge();
+    }
+
+    function drawCheckerBackground(context, width, height) {
+      const cells = Number(document.getElementById("checkerSize").value);
+      const cellW = width / cells;
+      const cellH = height / cells;
+      const colors = ["#ff9022", "#f7f7f3", "#3a6fa8", "#fff0d8"];
+      for (let y = 0; y < cells; y++) {
+        for (let x = 0; x < cells; x++) {
+          context.fillStyle = colors[(x + y * 3) % colors.length];
+          context.fillRect(x * cellW, height - (y + 1) * cellH, cellW, cellH);
+        }
+      }
+    }
+
+    function drawUVs() {
+      const rect = uvCanvas.getBoundingClientRect();
+      const dpr = Math.min(devicePixelRatio, 2);
+      const width = Math.max(1, Math.round(rect.width * dpr));
+      const height = Math.max(1, Math.round(rect.height * dpr));
+      if (uvCanvas.width !== width || uvCanvas.height !== height) {
+        uvCanvas.width = width;
+        uvCanvas.height = height;
+      }
+      uvContext.clearRect(0, 0, width, height);
+      drawCheckerBackground(uvContext, width, height);
+      uvContext.fillStyle = "rgba(23,32,51,.28)";
+      uvContext.fillRect(0, 0, width, height);
+      uvContext.strokeStyle = "rgba(255,255,255,.62)";
+      uvContext.lineWidth = Math.max(0.7, dpr * 0.55);
+      const uv = mesh.geometry.attributes.uv;
+
+      for (let i = 0; i < uv.count; i += 3) {
+        uvContext.beginPath();
+        for (let corner = 0; corner < 3; corner++) {
+          const index = i + corner;
+          const u = THREE.MathUtils.euclideanModulo(uv.getX(index), 1);
+          const v = THREE.MathUtils.euclideanModulo(uv.getY(index), 1);
+          const x = u * width;
+          const y = (1 - v) * height;
+          if (corner === 0) uvContext.moveTo(x, y);
+          else uvContext.lineTo(x, y);
+        }
+        uvContext.closePath();
+        uvContext.stroke();
+      }
+      uvContext.strokeStyle = "rgba(255,218,34,.9)";
+      uvContext.lineWidth = 2 * dpr;
+      uvContext.strokeRect(1, 1, width - 2, height - 2);
+    }
+
+    const challenges = [
+      { object: "sphere", title: "Wrap the sphere", copy: "Choose a mapping with less than 20% distortion and keep U and V scale nearly equal." },
+      { object: "cylinder", title: "Label a can", copy: "Choose a mapping under 20% distortion, then rotate the UVs to roughly 90 degrees." },
+      { object: "box", title: "Texture a crate", copy: "Choose a mapping under 15% distortion and use at least four checker cells." }
+    ];
+    let challengeIndex = 0;
+
+    function evaluateChallenge() {
+      const challenge = challenges[challengeIndex];
+      const scaleDifference = Math.abs(Number(document.getElementById("uScale").value) - Number(document.getElementById("vScale").value));
+      const rotation = Math.abs(Number(document.getElementById("uvRotation").value));
+      const checkerSize = Number(document.getElementById("checkerSize").value);
+      let complete = objectType === challenge.object && distortion < (challengeIndex === 2 ? 0.15 : 0.2);
+      if (challengeIndex === 0) complete = complete && scaleDifference <= 15;
+      if (challengeIndex === 1) complete = complete && rotation >= 75 && rotation <= 105;
+      if (challengeIndex === 2) complete = complete && checkerSize >= 4;
+      document.getElementById("challenge").classList.toggle("complete", complete);
+      document.getElementById("challengeStatus").textContent = complete
+        ? "UV challenge complete"
+        : `${objectType} / ${mapping} / ${Math.round(distortion * 100)}% distortion`;
+    }
+
+    function showChallenge() {
+      const challenge = challenges[challengeIndex];
+      objectType = challenge.object;
+      document.getElementById("challengeNumber").textContent = `${challengeIndex + 1} / ${challenges.length}`;
+      document.getElementById("challengeTitle").textContent = challenge.title;
+      document.getElementById("challengeCopy").textContent = challenge.copy;
+      document.querySelectorAll("[data-object]").forEach(button => {
+        button.classList.toggle("active", button.dataset.object === objectType);
+      });
+      rebuild();
+    }
+
+    document.querySelectorAll("[data-object]").forEach(button => {
+      button.addEventListener("click", () => {
+        objectType = button.dataset.object;
+        document.querySelectorAll("[data-object]").forEach(item => item.classList.toggle("active", item === button));
+        rebuild();
+      });
+    });
+    document.querySelectorAll("[data-mapping]").forEach(button => {
+      button.addEventListener("click", () => {
+        mapping = button.dataset.mapping;
+        document.querySelectorAll("[data-mapping]").forEach(item => item.classList.toggle("active", item === button));
+        rebuild();
+      });
+    });
+    ["uScale", "vScale", "uvRotation"].forEach(id => {
+      document.getElementById(id).addEventListener("input", applyUVTransform);
+    });
+    document.getElementById("checkerSize").addEventListener("input", () => {
+      checker.texture.dispose();
+      checker = makeCheckerTexture(Number(document.getElementById("checkerSize").value));
+      material.map = checker.texture;
+      material.needsUpdate = true;
+      updateMetrics();
+      drawUVs();
+    });
+    document.getElementById("wireToggle").addEventListener("click", event => {
+      showWire = !showWire;
+      wire.visible = showWire;
+      event.currentTarget.classList.toggle("active", showWire);
+      event.currentTarget.textContent = showWire ? "Wire on" : "Wire off";
+    });
+    document.getElementById("spinToggle").addEventListener("click", event => {
+      autoSpin = !autoSpin;
+      event.currentTarget.classList.toggle("active", autoSpin);
+      event.currentTarget.textContent = autoSpin ? "Spin on" : "Spin off";
+    });
+    document.getElementById("resetUV").addEventListener("click", () => {
+      document.getElementById("uScale").value = 100;
+      document.getElementById("vScale").value = 100;
+      document.getElementById("uvRotation").value = 0;
+      applyUVTransform();
+    });
+    document.getElementById("nextChallenge").addEventListener("click", () => {
+      challengeIndex = (challengeIndex + 1) % challenges.length;
+      mapping = challengeIndex === 0 ? "planar" : "spherical";
+      document.querySelectorAll("[data-mapping]").forEach(item => item.classList.toggle("active", item.dataset.mapping === mapping));
+      showChallenge();
+    });
+
+    function resize() {
+      const width = Math.max(1, Math.round(viewport.clientWidth * (innerWidth <= 820 ? 1 : 0.66)));
+      const height = Math.max(1, Math.round(viewport.clientHeight * (innerWidth <= 820 ? 0.58 : 1)));
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      drawUVs();
+    }
+    window.addEventListener("resize", resize);
+    rebuild();
+    resize();
+    showChallenge();
+
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = Math.min(clock.getDelta(), 0.04);
+      if (autoSpin && mesh) {
+        mesh.rotation.y += delta * 0.28;
+        wire.rotation.copy(mesh.rotation);
+      }
+      orbit.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+
+</html>

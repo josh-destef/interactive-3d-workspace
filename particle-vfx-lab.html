@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Particle VFX Lab - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <link rel="stylesheet" href="advanced-lab.css">
+</head>
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+      <header>
+        <p class="eyebrow">VFX systems 01</p>
+        <h1>Particle Behavior Lab</h1>
+        <p class="lede">An emitter creates short-lived particles. Initial velocity, forces, drag, lifetime, color, and blending turn the same points into sparks, smoke, rain, or magic.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Emitter</h2>
+        <div class="control">
+          <div class="control-head"><span>Emission rate</span><span id="rateValue" class="value">30 /s</span></div>
+          <input id="rate" type="range" min="5" max="180" value="30">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Lifetime</span><span id="lifeValue" class="value">2.0 s</span></div>
+          <input id="life" type="range" min="4" max="50" value="20">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Launch speed</span><span id="speedValue" class="value">4.0 m/s</span></div>
+          <input id="speed" type="range" min="5" max="90" value="40">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Drag</span><span id="dragValue" class="value">0.20</span></div>
+          <input id="drag" type="range" min="0" max="95" value="20">
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Behavior</h2>
+        <div class="split-button-row">
+          <button class="tool-btn active" data-shape="cone">Cone</button>
+          <button class="tool-btn" data-shape="sphere">Sphere</button>
+          <button class="tool-btn" data-shape="line">Line</button>
+        </div>
+        <div class="button-grid" style="margin-top:8px">
+          <button id="gravity" class="tool-btn active">Gravity on</button>
+          <button id="additive" class="tool-btn">Alpha blend</button>
+          <button id="colorLife" class="tool-btn active">Color over life</button>
+          <button id="burst" class="tool-btn">Burst 100</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">System health</h2>
+        <div class="readout-grid">
+          <div class="readout"><strong id="liveReadout">0</strong><span>live particles</span></div>
+          <div class="readout"><strong id="budgetReadout">0%</strong><span>pool usage</span></div>
+          <div class="readout"><strong id="oldestReadout">0.0 s</strong><span>oldest age</span></div>
+          <div class="readout"><strong id="blendReadout">alpha</strong><span>blend mode</span></div>
+        </div>
+      </section>
+
+      <div class="concept-note">Lifetime is both a visual control and a performance control. At steady state, live particles are approximately emission rate multiplied by lifetime.</div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">VFX challenge</div>
+        <h2 class="challenge-title">Author a readable spark fountain</h2>
+        <p class="challenge-copy">Maintain 80-220 live particles, use gravity, enable color over life, and keep drag between 0.1 and 0.5.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">Tune the emitter</span></div>
+      </section>
+    </aside>
+
+    <section class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="viewport-label"><strong>Particle lifecycle</strong>Every point stores position, velocity, age, and lifetime. The renderer reads those values each frame.</div>
+      <div class="hud"><span class="hud-pill">pool = 600</span><span class="hud-pill">CPU simulation</span></div>
+      <div class="help">Compare cone, sphere, and line emission using the same forces.</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}
+  </script>
+  <script type="module">
+    import { THREE, createLab, startLoop, bindRange, bindToggle, setChallenge, setMeter } from "./advanced-lab-core.js";
+
+    const lab = createLab({ cameraPosition: [7, 4.5, 8], target: [0, 2, 0] });
+    const capacity = 600;
+    const positions = new Float32Array(capacity * 3);
+    const colors = new Float32Array(capacity * 3);
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    const material = new THREE.PointsMaterial({
+      size: 0.12,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.92,
+      depthWrite: false,
+      blending: THREE.NormalBlending
+    });
+    const points = new THREE.Points(geometry, material);
+    points.frustumCulled = false;
+    lab.scene.add(points);
+
+    const emitter = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.45, 0.62, 0.35, 24),
+      new THREE.MeshStandardMaterial({ color: 0x172033, roughness: 0.55 })
+    );
+    emitter.position.y = 0.18;
+    emitter.castShadow = true;
+    lab.scene.add(emitter);
+
+    const particles = Array.from({ length: capacity }, () => ({
+      alive: false,
+      position: new THREE.Vector3(),
+      velocity: new THREE.Vector3(),
+      age: 0,
+      life: 1
+    }));
+    const state = { rate: 30, life: 2, speed: 4, drag: 0.2, gravity: true, additive: false, colorLife: true, shape: "cone" };
+    let accumulator = 0;
+
+    function spawn(count = 1) {
+      for (let amount = 0; amount < count; amount++) {
+        const particle = particles.find(item => !item.alive);
+        if (!particle) return;
+        particle.alive = true;
+        particle.age = 0;
+        particle.life = state.life * (0.72 + Math.random() * 0.56);
+        particle.position.set(0, 0.45, 0);
+        if (state.shape === "sphere") {
+          particle.velocity.set(Math.random() - 0.5, Math.random() - 0.1, Math.random() - 0.5).normalize().multiplyScalar(state.speed);
+        } else if (state.shape === "line") {
+          particle.position.x = (Math.random() - 0.5) * 2.4;
+          particle.velocity.set((Math.random() - 0.5) * 0.4, state.speed, (Math.random() - 0.5) * 0.4);
+        } else {
+          particle.velocity.set((Math.random() - 0.5) * 1.5, 2.2 + Math.random() * 1.8, (Math.random() - 0.5) * 1.5).normalize().multiplyScalar(state.speed);
+        }
+      }
+    }
+
+    function updateParticles(dt) {
+      accumulator += state.rate * dt;
+      const births = Math.floor(accumulator);
+      accumulator -= births;
+      spawn(births);
+      let live = 0;
+      let oldest = 0;
+      particles.forEach((particle, index) => {
+        const pointer = index * 3;
+        if (!particle.alive) {
+          positions[pointer + 1] = -100;
+          return;
+        }
+        particle.age += dt;
+        if (particle.age >= particle.life) {
+          particle.alive = false;
+          positions[pointer + 1] = -100;
+          return;
+        }
+        live++;
+        oldest = Math.max(oldest, particle.age);
+        if (state.gravity) particle.velocity.y -= 7.4 * dt;
+        particle.velocity.multiplyScalar(Math.max(0, 1 - state.drag * dt));
+        particle.position.addScaledVector(particle.velocity, dt);
+        positions[pointer] = particle.position.x;
+        positions[pointer + 1] = particle.position.y;
+        positions[pointer + 2] = particle.position.z;
+        const progress = particle.age / particle.life;
+        const color = state.colorLife
+          ? new THREE.Color(0xffda22).lerp(new THREE.Color(0xe63462), progress).lerp(new THREE.Color(0x172033), Math.max(0, progress - 0.72) / 0.28)
+          : new THREE.Color(0xff9022);
+        colors[pointer] = color.r;
+        colors[pointer + 1] = color.g;
+        colors[pointer + 2] = color.b;
+      });
+      geometry.getAttribute("position").needsUpdate = true;
+      geometry.getAttribute("color").needsUpdate = true;
+      document.getElementById("liveReadout").textContent = live;
+      document.getElementById("budgetReadout").textContent = `${Math.round(live / capacity * 100)}%`;
+      document.getElementById("oldestReadout").textContent = `${oldest.toFixed(1)} s`;
+      const complete = live >= 80 && live <= 220 && state.gravity && state.colorLife && state.drag >= 0.1 && state.drag <= 0.5;
+      setChallenge(complete, complete ? "Readable spark fountain complete" : live < 80 ? "Increase rate or lifetime" : live > 220 ? "Reduce rate or lifetime" : "Check gravity, color, and drag");
+    }
+
+    bindRange("rate", value => `${value} /s`, value => { state.rate = value; });
+    bindRange("life", value => `${(value / 10).toFixed(1)} s`, value => { state.life = value / 10; });
+    bindRange("speed", value => `${(value / 10).toFixed(1)} m/s`, value => { state.speed = value / 10; });
+    bindRange("drag", value => (value / 100).toFixed(2), value => { state.drag = value / 100; });
+    bindToggle("gravity", value => { state.gravity = value; }, "Gravity on", "Gravity off", true);
+    bindToggle("additive", value => {
+      state.additive = value;
+      material.blending = value ? THREE.AdditiveBlending : THREE.NormalBlending;
+      material.needsUpdate = true;
+      document.getElementById("blendReadout").textContent = value ? "additive" : "alpha";
+    }, "Additive blend", "Alpha blend");
+    bindToggle("colorLife", value => { state.colorLife = value; }, "Color over life", "Single color", true);
+
+    document.querySelectorAll("[data-shape]").forEach(button => button.addEventListener("click", () => {
+      document.querySelectorAll("[data-shape]").forEach(item => item.classList.remove("active"));
+      button.classList.add("active");
+      state.shape = button.dataset.shape;
+    }));
+    document.getElementById("burst").addEventListener("click", () => spawn(100));
+
+    startLoop(lab, updateParticles);
+  </script>
+</body>
+</html>

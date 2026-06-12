@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accessibility in 3D Space - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <link rel="stylesheet" href="advanced-lab.css">
+</head>
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+      <header>
+        <p class="eyebrow">Inclusive design 01</p>
+        <h1>Accessibility in 3D</h1>
+        <p class="lede">Readable 3D experiences do not rely on one sensory channel. Camera comfort, contrast, target size, shape, labels, and alternate cues should reinforce the same information.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Visual readability</h2>
+        <div class="control">
+          <div class="control-head"><span>Scene contrast</span><span id="contrastValue" class="value">60%</span></div>
+          <input id="contrast" type="range" min="10" max="100" value="60">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Target size</span><span id="targetSizeValue" class="value">0.8 m</span></div>
+          <input id="targetSize" type="range" min="4" max="18" value="8">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Field of view</span><span id="fovValue" class="value">70&#176;</span></div>
+          <input id="fov" type="range" min="45" max="110" value="70">
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Camera comfort</h2>
+        <div class="control">
+          <div class="control-head"><span>Motion intensity</span><span id="motionValue" class="value">45%</span></div>
+          <input id="motion" type="range" min="0" max="100" value="45">
+        </div>
+        <div class="button-grid" style="margin-top:10px">
+          <button id="reducedMotion" class="tool-btn">Reduced motion off</button>
+          <button id="alternateCues" class="tool-btn">Color-only cues</button>
+          <button id="highVisibility" class="tool-btn">Standard palette</button>
+          <button id="pause" class="tool-btn">Motion running</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Access audit</h2>
+        <div class="readout-grid">
+          <div class="readout"><strong id="comfortReadout">moderate</strong><span>camera comfort</span></div>
+          <div class="readout"><strong id="visibilityReadout">medium</strong><span>target visibility</span></div>
+          <div class="readout"><strong id="cueReadout">color</strong><span>cue channels</span></div>
+          <div class="readout"><strong id="fovReadout">70&#176;</strong><span>current FOV</span></div>
+        </div>
+        <div class="step-list" style="margin-top:11px">
+          <div id="checkMotion" class="step"><b>1</b><span>Motion can be reduced or paused</span></div>
+          <div id="checkContrast" class="step"><b>2</b><span>Important targets separate from the scene</span></div>
+          <div id="checkCues" class="step"><b>3</b><span>Shape or labels duplicate color meaning</span></div>
+          <div id="checkTarget" class="step"><b>4</b><span>Targets remain large enough at play distance</span></div>
+        </div>
+      </section>
+
+      <div class="concept-note">Accessibility options work best when they change independent layers. Reduced camera motion should not require reducing player speed or removing gameplay information.</div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Accessibility challenge</div>
+        <h2 class="challenge-title">Create a comfortable, redundant route</h2>
+        <p class="challenge-copy">Use 70%+ contrast, a target of at least 1 m, FOV from 60-85 degrees, reduced motion, and non-color cues.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">Improve the access audit</span></div>
+      </section>
+    </aside>
+
+    <section class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="viewport-label"><strong>Observe the route</strong>Orange and blue targets initially differ mainly by color. Add shape and labels so meaning survives low color discrimination.</div>
+      <div class="hud"><span class="hud-pill">comfort preview</span><span class="hud-pill">redundant cues</span></div>
+      <div class="help">Tune the access controls while the camera previews movement through the scene.</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}
+  </script>
+  <script type="module">
+    import { THREE, createLab, startLoop, bindRange, bindToggle, setChallenge, makeLabel, standardMaterial } from "./advanced-lab-core.js";
+
+    const lab = createLab({ cameraPosition: [0, 2.2, 8], target: [0, 1.4, 0], fov: 70 });
+    lab.orbit.enabled = false;
+    const state = { contrast: 0.6, targetSize: 0.8, fov: 70, motion: 0.45, reduced: false, cues: false, highVisibility: false, paused: false };
+    const world = new THREE.Group();
+    lab.scene.add(world);
+
+    for (let index = 0; index < 8; index++) {
+      const left = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.2 + index * 0.08, 1.2), standardMaterial(index % 2 ? 0x7b8797 : 0x9ba3ad));
+      const right = left.clone();
+      left.position.set(-2.7, left.geometry.parameters.height / 2, -index * 3);
+      right.position.set(2.7, left.position.y, -index * 3);
+      left.castShadow = right.castShadow = true;
+      world.add(left, right);
+    }
+
+    const targetData = [
+      { position: [-1.2, 1.2, -4], type: "GO", color: 0xff9022, shape: "ring" },
+      { position: [1.2, 1.2, -9], type: "WAIT", color: 0x3a6fa8, shape: "diamond" },
+      { position: [-1.2, 1.2, -14], type: "GO", color: 0xff9022, shape: "ring" },
+      { position: [1.2, 1.2, -19], type: "WAIT", color: 0x3a6fa8, shape: "diamond" }
+    ];
+    const targets = targetData.map(data => {
+      const group = new THREE.Group();
+      group.position.fromArray(data.position);
+      const ring = new THREE.Mesh(
+        data.shape === "ring" ? new THREE.TorusGeometry(0.5, 0.12, 12, 32) : new THREE.OctahedronGeometry(0.58, 0),
+        standardMaterial(data.color, { emissive: data.color, emissiveIntensity: 0.1, roughness: 0.35 })
+      );
+      ring.rotation.x = data.shape === "ring" ? Math.PI / 2 : 0;
+      ring.castShadow = true;
+      group.add(ring);
+      const label = makeLabel(data.type);
+      label.position.y = 0.9;
+      label.visible = false;
+      group.add(label);
+      world.add(group);
+      return { group, ring, label, data };
+    });
+
+    function updateAccess() {
+      const backgroundLightness = state.highVisibility ? 0xf5f5f0 : 0xe2e4e1;
+      lab.scene.background.setHex(backgroundLightness);
+      targets.forEach(({ group, ring, label, data }) => {
+        group.scale.setScalar(state.targetSize);
+        const base = new THREE.Color(data.color);
+        if (state.highVisibility) base.set(data.type === "GO" ? 0xff8a00 : 0x0057d8);
+        const muted = new THREE.Color(0x8b9199);
+        ring.material.color.copy(muted.lerp(base, state.contrast));
+        ring.material.emissive.copy(base);
+        ring.material.emissiveIntensity = state.contrast * 0.35;
+        label.visible = state.cues;
+      });
+      lab.camera.fov = state.fov;
+      lab.camera.updateProjectionMatrix();
+      document.getElementById("comfortReadout").textContent = state.reduced || state.motion <= 0.25 ? "comfortable" : state.motion <= 0.55 ? "moderate" : "intense";
+      document.getElementById("visibilityReadout").textContent = state.contrast >= 0.7 && state.targetSize >= 1 ? "high" : state.contrast >= 0.45 ? "medium" : "low";
+      document.getElementById("cueReadout").textContent = state.cues ? "color + shape + text" : "color";
+      document.getElementById("fovReadout").textContent = `${state.fov}\u00b0`;
+      const checks = {
+        motion: state.reduced || state.motion <= 0.25,
+        contrast: state.contrast >= 0.7,
+        cues: state.cues,
+        target: state.targetSize >= 1 && state.fov >= 60 && state.fov <= 85
+      };
+      document.getElementById("checkMotion").classList.toggle("active", checks.motion);
+      document.getElementById("checkContrast").classList.toggle("active", checks.contrast);
+      document.getElementById("checkCues").classList.toggle("active", checks.cues);
+      document.getElementById("checkTarget").classList.toggle("active", checks.target);
+      const complete = Object.values(checks).every(Boolean);
+      setChallenge(complete, complete ? "Route provides comfortable redundant cues" : "Improve the access audit");
+    }
+
+    bindRange("contrast", value => `${value}%`, value => { state.contrast = value / 100; updateAccess(); });
+    bindRange("targetSize", value => `${(value / 10).toFixed(1)} m`, value => { state.targetSize = value / 10; updateAccess(); });
+    bindRange("fov", value => `${value}\u00b0`, value => { state.fov = value; updateAccess(); });
+    bindRange("motion", value => `${value}%`, value => { state.motion = value / 100; updateAccess(); });
+    bindToggle("reducedMotion", value => { state.reduced = value; updateAccess(); }, "Reduced motion on", "Reduced motion off", matchMedia("(prefers-reduced-motion: reduce)").matches);
+    bindToggle("alternateCues", value => { state.cues = value; updateAccess(); }, "Shape + text cues", "Color-only cues");
+    bindToggle("highVisibility", value => { state.highVisibility = value; updateAccess(); }, "High-visibility palette", "Standard palette");
+    bindToggle("pause", value => { state.paused = value; }, "Motion paused", "Motion running");
+
+    startLoop(lab, (dt, time) => {
+      if (!state.paused) {
+        const speed = state.reduced ? 0.18 : 0.45;
+        const travel = (time * speed) % 18;
+        lab.camera.position.z = 7 - travel;
+        const intensity = state.reduced ? 0 : state.motion;
+        lab.camera.position.y = 2.1 + Math.sin(time * 8) * 0.12 * intensity;
+        lab.camera.rotation.z = Math.sin(time * 4) * 0.012 * intensity;
+        lab.camera.lookAt(0, 1.35, lab.camera.position.z - 5);
+      }
+      targets.forEach(({ ring }, index) => {
+        ring.rotation.y += dt * (index % 2 ? -0.35 : 0.35);
+      });
+    });
+  </script>
+</body>
+</html>

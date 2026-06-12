@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Camera Lab - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <style>
+    .projection-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+
+    .projection-row .mode-btn {
+      min-height: 44px;
+    }
+
+    .switch-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 0;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .switch {
+      position: relative;
+      width: 42px;
+      height: 23px;
+      flex: 0 0 auto;
+      padding: 0;
+      background: #dfe2dd;
+      border: 0;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .switch::after {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 17px;
+      height: 17px;
+      content: "";
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(23, 32, 51, 0.2);
+      transition: transform 0.2s ease;
+    }
+
+    .switch.active {
+      background: var(--green);
+    }
+
+    .switch.active::after {
+      transform: translateX(19px);
+    }
+
+    .guide {
+      position: absolute;
+      inset: 0 26% 0 0;
+      z-index: 3;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .guide-line {
+      position: absolute;
+      display: none;
+      background: rgba(255, 255, 255, 0.48);
+      box-shadow: 0 0 1px rgba(0, 0, 0, 0.4);
+    }
+
+    .guide.thirds .thirds-line {
+      display: block;
+    }
+
+    .guide.center .center-line {
+      display: block;
+    }
+
+    .guide .v1 {
+      top: 0;
+      bottom: 0;
+      left: 33.333%;
+      width: 1px;
+    }
+
+    .guide .v2 {
+      top: 0;
+      bottom: 0;
+      left: 66.666%;
+      width: 1px;
+    }
+
+    .guide .h1 {
+      left: 0;
+      right: 0;
+      top: 33.333%;
+      height: 1px;
+    }
+
+    .guide .h2 {
+      left: 0;
+      right: 0;
+      top: 66.666%;
+      height: 1px;
+    }
+
+    .guide .cv {
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 1px;
+    }
+
+    .guide .ch {
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 1px;
+    }
+
+    .view-divider {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 26%;
+      z-index: 4;
+      width: 1px;
+      background: rgba(23, 32, 51, 0.2);
+      pointer-events: none;
+    }
+
+    .view-label {
+      position: absolute;
+      z-index: 5;
+      top: 18px;
+      color: rgba(23, 32, 51, 0.65);
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      pointer-events: none;
+    }
+
+    .shot-label {
+      left: 20px;
+    }
+
+    .diagram-label {
+      right: 20px;
+    }
+
+    .lesson-card {
+      padding: 13px;
+      color: #44506a;
+      background: #eef4ff;
+      border-left: 3px solid var(--blue);
+      border-radius: 0 10px 10px 0;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+
+      <header>
+        <p class="eyebrow">Camera lab</p>
+        <h1>Frame the Scene</h1>
+        <p class="lede">A camera does more than crop the world. Projection, lens, and distance decide how depth is translated into an image.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Projection</h2>
+        <div class="projection-row">
+          <button class="mode-btn active" data-projection="perspective">Perspective</button>
+          <button class="mode-btn" data-projection="orthographic">Orthographic</button>
+        </div>
+        <p id="projectionCopy" class="panel-note" style="margin-top:10px;margin-bottom:0">Parallel lines converge and distant objects appear smaller, matching everyday vision.</p>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Camera setup</h2>
+        <div class="control">
+          <div class="control-head"><span>Focal length</span><span id="focalValue" class="value">35 mm</span></div>
+          <input id="focal" type="range" min="18" max="120" step="1" value="35">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Camera distance</span><span id="distanceValue" class="value">7.0</span></div>
+          <input id="distance" type="range" min="30" max="180" step="1" value="70">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Frame left / right</span><span id="aimValue" class="value">0.0</span></div>
+          <input id="aim" type="range" min="-25" max="25" step="1" value="0">
+        </div>
+        <div class="switch-row">
+          <span>Hold subject size while changing lens</span>
+          <button id="dollyLock" class="switch" aria-label="Hold subject size"></button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Composition guide</h2>
+        <div class="mode-row">
+          <button class="mode-btn active" data-guide="none">None</button>
+          <button class="mode-btn" data-guide="thirds">Thirds</button>
+          <button class="mode-btn" data-guide="center">Center</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Shot recipes</h2>
+        <div class="button-grid">
+          <button class="tool-btn" data-preset="wide">Wide drama</button>
+          <button class="tool-btn" data-preset="portrait">Portrait</button>
+          <button class="tool-btn" data-preset="product">Product</button>
+          <button class="tool-btn" data-preset="diagram">Diagram</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">What the camera sees</h2>
+        <div class="readout" style="display:grid;grid-template-columns:1fr auto;gap:7px 12px;padding:12px;background:#f7f8f6;border-radius:9px;color:var(--muted);font-size:10px">
+          <span>Field of view</span><strong id="fovReadout" class="value">54.4°</strong>
+          <span>Depth effect</span><strong id="depthReadout" class="value">natural</strong>
+          <span>Projection</span><strong id="projectionReadout" class="value">perspective</strong>
+        </div>
+      </section>
+
+      <div id="lesson" class="lesson-card">A wider lens exaggerates the size difference between near and far objects. Move the camera close to make that effect obvious.</div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Camera challenge</div>
+        <h2 class="challenge-title">Compress the scene</h2>
+        <p class="challenge-copy">Keep perspective projection, use a lens above 80 mm, move farther than 10 units, and keep the subject near the center.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">Lens 35 mm, distance 7.0</span></div>
+      </section>
+    </aside>
+
+    <section id="viewport" class="viewport">
+      <canvas class="webgl"></canvas>
+      <div id="guide" class="guide">
+        <span class="guide-line thirds-line v1"></span>
+        <span class="guide-line thirds-line v2"></span>
+        <span class="guide-line thirds-line h1"></span>
+        <span class="guide-line thirds-line h2"></span>
+        <span class="guide-line center-line cv"></span>
+        <span class="guide-line center-line ch"></span>
+      </div>
+      <div class="view-divider"></div>
+      <span class="view-label shot-label">Camera image</span>
+      <span class="view-label diagram-label">Overhead diagram</span>
+      <div class="help">The right panel shows where the image on the left comes from.</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{
+      "three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js"
+    }}
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+
+    const viewport = document.getElementById("viewport");
+    const canvas = viewport.querySelector("canvas");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xecece7);
+    scene.fog = new THREE.Fog(0xecece7, 18, 36);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    renderer.autoClear = false;
+
+    const perspectiveCamera = new THREE.PerspectiveCamera(54.4, 1, 0.1, 50);
+    const orthographicCamera = new THREE.OrthographicCamera(-3.2, 3.2, 2.4, -2.4, 0.1, 50);
+    const diagramCamera = new THREE.OrthographicCamera(-7.5, 7.5, 9, -9, 0.1, 50);
+    diagramCamera.position.set(0, 18, 2);
+    diagramCamera.up.set(0, 0, -1);
+    diagramCamera.lookAt(0, 0, 1);
+
+    let projection = "perspective";
+    let guide = "none";
+    let lockSubjectSize = false;
+    let lockReference = { focal: 35, distance: 7 };
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x596273, 2));
+    const key = new THREE.DirectionalLight(0xffffff, 3.2);
+    key.position.set(5, 9, 7);
+    key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048);
+    scene.add(key);
+    const rim = new THREE.DirectionalLight(0x7d9dff, 1.4);
+    rim.position.set(-5, 4, -6);
+    scene.add(rim);
+
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(30, 34),
+      new THREE.MeshStandardMaterial({ color: 0xdedfd9, roughness: 0.92 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.z = -5;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    const grid = new THREE.GridHelper(30, 30, 0x647086, 0x647086);
+    grid.position.z = -5;
+    grid.material.opacity = 0.1;
+    grid.material.transparent = true;
+    scene.add(grid);
+
+    function material(color, roughness = 0.5) {
+      return new THREE.MeshStandardMaterial({ color, roughness, metalness: 0.03 });
+    }
+
+    const subject = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.72, 1.15, 8, 20), material(0xf1f1ec, 0.38));
+    body.position.y = 1.45;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.76, 32, 20), material(0xff9022, 0.3));
+    head.scale.y = 0.82;
+    head.position.y = 2.75;
+    const eyeA = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 10), material(0x172033, 0.18));
+    eyeA.position.set(-0.25, 2.85, 0.65);
+    const eyeB = eyeA.clone();
+    eyeB.position.x = 0.25;
+    const footA = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.35, 1), material(0x3a6fa8));
+    footA.position.set(-0.4, 0.2, 0.15);
+    const footB = footA.clone();
+    footB.material = footA.material.clone();
+    footB.position.x = 0.4;
+    subject.add(body, head, eyeA, eyeB, footA, footB);
+    subject.traverse(child => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+    scene.add(subject);
+
+    const nearMarker = new THREE.Mesh(new THREE.BoxGeometry(1.1, 2.2, 1.1), material(0xc0453a));
+    nearMarker.position.set(-3.1, 1.1, 2.1);
+    nearMarker.castShadow = true;
+    scene.add(nearMarker);
+
+    const farMarker = new THREE.Mesh(new THREE.BoxGeometry(1.1, 2.2, 1.1), material(0x00aa00));
+    farMarker.position.set(3.1, 1.1, -5.3);
+    farMarker.castShadow = true;
+    scene.add(farMarker);
+
+    for (let i = 0; i < 7; i++) {
+      const column = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.25, 0.32, 4.5, 18),
+        material(i % 2 ? 0xc6cad1 : 0xb7bcc6, 0.72)
+      );
+      column.position.set((i - 3) * 2.2, 2.25, -8);
+      column.castShadow = true;
+      scene.add(column);
+    }
+
+    const perspectiveHelper = new THREE.CameraHelper(perspectiveCamera);
+    const orthographicHelper = new THREE.CameraHelper(orthographicCamera);
+    perspectiveHelper.material.color.set(0xff9022);
+    orthographicHelper.material.color.set(0xff9022);
+    scene.add(perspectiveHelper, orthographicHelper);
+
+    function focalToFov(focal) {
+      const sensorHeight = 24;
+      return THREE.MathUtils.radToDeg(2 * Math.atan(sensorHeight / (2 * focal)));
+    }
+
+    function activeCamera() {
+      return projection === "perspective" ? perspectiveCamera : orthographicCamera;
+    }
+
+    function updateCamera() {
+      const focal = Number(document.getElementById("focal").value);
+      let distance = Number(document.getElementById("distance").value) / 10;
+      const aim = Number(document.getElementById("aim").value) / 10;
+
+      if (lockSubjectSize && projection === "perspective") {
+        distance = THREE.MathUtils.clamp(lockReference.distance * focal / lockReference.focal, 3, 18);
+        document.getElementById("distance").value = Math.round(distance * 10);
+      }
+
+      const target = new THREE.Vector3(aim, 1.55, 0);
+      const shotAspect = Math.max((viewport.clientWidth * 0.74) / viewport.clientHeight, 0.4);
+      perspectiveCamera.aspect = shotAspect;
+      perspectiveCamera.fov = focalToFov(focal);
+      perspectiveCamera.position.set(0, 2.25, distance);
+      perspectiveCamera.lookAt(target);
+      perspectiveCamera.updateProjectionMatrix();
+
+      const orthoHalfHeight = 3.1;
+      orthographicCamera.left = -orthoHalfHeight * shotAspect;
+      orthographicCamera.right = orthoHalfHeight * shotAspect;
+      orthographicCamera.top = orthoHalfHeight;
+      orthographicCamera.bottom = -orthoHalfHeight;
+      orthographicCamera.position.set(0, 2.25, distance);
+      orthographicCamera.lookAt(target);
+      orthographicCamera.updateProjectionMatrix();
+
+      perspectiveHelper.update();
+      orthographicHelper.update();
+
+      document.getElementById("focalValue").textContent = projection === "perspective" ? `${focal} mm` : "not used";
+      document.getElementById("distanceValue").textContent = distance.toFixed(1);
+      document.getElementById("aimValue").textContent = aim.toFixed(1);
+      document.getElementById("fovReadout").textContent = projection === "perspective" ? `${perspectiveCamera.fov.toFixed(1)}°` : "parallel";
+      document.getElementById("projectionReadout").textContent = projection;
+
+      const depthEffect = projection === "orthographic"
+        ? "none"
+        : focal < 28 && distance < 6 ? "exaggerated"
+          : focal > 80 && distance > 9 ? "compressed"
+            : "natural";
+      document.getElementById("depthReadout").textContent = depthEffect;
+
+      let lesson;
+      if (projection === "orthographic") {
+        lesson = "Orthographic projection removes size change with distance. It is useful for diagrams, plans, and stylized views, but it does not look like normal eyesight.";
+      } else if (lockSubjectSize) {
+        lesson = "The subject stays similarly framed while lens and distance change together. Watch the red and green blocks: their apparent size relationship still changes.";
+      } else if (focal < 28) {
+        lesson = "A wide lens shows more of the world. Used nearby, it exaggerates depth and makes foreground objects feel larger.";
+      } else if (focal > 80) {
+        lesson = "A long lens narrows the view. From farther away, near and far objects appear closer in size, compressing depth.";
+      } else {
+        lesson = "Focal length controls field of view. Camera distance controls viewpoint. Similar framing can hide very different perspective.";
+      }
+      document.getElementById("lesson").textContent = lesson;
+      evaluateChallenge();
+    }
+
+    function setProjection(value) {
+      projection = value;
+      document.querySelectorAll("[data-projection]").forEach(button => {
+        button.classList.toggle("active", button.dataset.projection === projection);
+      });
+      document.getElementById("projectionCopy").textContent = projection === "perspective"
+        ? "Parallel lines converge and distant objects appear smaller, matching everyday vision."
+        : "Parallel lines stay parallel and distance does not change apparent size.";
+      document.getElementById("focal").disabled = projection === "orthographic";
+      updateCamera();
+    }
+
+    function setGuide(value) {
+      guide = value;
+      document.getElementById("guide").className = `guide ${guide}`;
+      document.querySelectorAll("[data-guide]").forEach(button => {
+        button.classList.toggle("active", button.dataset.guide === guide);
+      });
+    }
+
+    function evaluateChallenge() {
+      const focal = Number(document.getElementById("focal").value);
+      const distance = Number(document.getElementById("distance").value) / 10;
+      const aim = Math.abs(Number(document.getElementById("aim").value) / 10);
+      const complete = projection === "perspective" && focal >= 80 && distance >= 10 && aim <= 0.5;
+      document.getElementById("challenge").classList.toggle("complete", complete);
+      document.getElementById("challengeStatus").textContent = complete
+        ? "Compressed shot achieved"
+        : `Lens ${focal} mm, distance ${distance.toFixed(1)}, offset ${aim.toFixed(1)}`;
+    }
+
+    document.querySelectorAll("[data-projection]").forEach(button => {
+      button.addEventListener("click", () => setProjection(button.dataset.projection));
+    });
+    document.querySelectorAll("[data-guide]").forEach(button => {
+      button.addEventListener("click", () => setGuide(button.dataset.guide));
+    });
+    ["focal", "distance", "aim"].forEach(id => {
+      document.getElementById(id).addEventListener("input", () => {
+        if (id === "distance" && lockSubjectSize) {
+          lockReference.distance = Number(document.getElementById("distance").value) / 10;
+          lockReference.focal = Number(document.getElementById("focal").value);
+        }
+        updateCamera();
+      });
+    });
+
+    document.getElementById("dollyLock").addEventListener("click", event => {
+      lockSubjectSize = !lockSubjectSize;
+      event.currentTarget.classList.toggle("active", lockSubjectSize);
+      lockReference = {
+        focal: Number(document.getElementById("focal").value),
+        distance: Number(document.getElementById("distance").value) / 10
+      };
+      updateCamera();
+    });
+
+    const presets = {
+      wide: { projection: "perspective", focal: 20, distance: 40, aim: -8, guide: "thirds" },
+      portrait: { projection: "perspective", focal: 70, distance: 105, aim: 0, guide: "thirds" },
+      product: { projection: "perspective", focal: 100, distance: 145, aim: 0, guide: "center" },
+      diagram: { projection: "orthographic", focal: 35, distance: 70, aim: 0, guide: "center" }
+    };
+
+    document.querySelectorAll("[data-preset]").forEach(button => {
+      button.addEventListener("click", () => {
+        const preset = presets[button.dataset.preset];
+        lockSubjectSize = false;
+        document.getElementById("dollyLock").classList.remove("active");
+        document.getElementById("focal").value = preset.focal;
+        document.getElementById("distance").value = preset.distance;
+        document.getElementById("aim").value = preset.aim;
+        setProjection(preset.projection);
+        setGuide(preset.guide);
+      });
+    });
+
+    function resize() {
+      const width = viewport.clientWidth;
+      const height = viewport.clientHeight;
+      renderer.setSize(width, height, false);
+      diagramCamera.left = -7.5;
+      diagramCamera.right = 7.5;
+      diagramCamera.top = 9;
+      diagramCamera.bottom = -9;
+      diagramCamera.updateProjectionMatrix();
+      updateCamera();
+    }
+    window.addEventListener("resize", resize);
+    resize();
+    setGuide("none");
+
+    function render() {
+      requestAnimationFrame(render);
+      const width = viewport.clientWidth;
+      const height = viewport.clientHeight;
+      const shotWidth = Math.floor(width * 0.74);
+      const diagramWidth = width - shotWidth;
+
+      renderer.setScissorTest(true);
+      renderer.setViewport(0, 0, shotWidth, height);
+      renderer.setScissor(0, 0, shotWidth, height);
+      renderer.setClearColor(0xecece7, 1);
+      renderer.clear();
+      perspectiveHelper.visible = false;
+      orthographicHelper.visible = false;
+      renderer.render(scene, activeCamera());
+
+      renderer.setViewport(shotWidth, 0, diagramWidth, height);
+      renderer.setScissor(shotWidth, 0, diagramWidth, height);
+      renderer.setClearColor(0xf7f7f3, 1);
+      renderer.clear();
+      perspectiveHelper.visible = projection === "perspective";
+      orthographicHelper.visible = projection === "orthographic";
+      renderer.render(scene, diagramCamera);
+      renderer.setScissorTest(false);
+    }
+    render();
+  </script>
+</body>
+
+</html>

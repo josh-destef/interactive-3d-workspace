@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Optimization Challenge - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <link rel="stylesheet" href="advanced-lab.css">
+</head>
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+      <header>
+        <p class="eyebrow">Production pipeline 05</p>
+        <h1>Optimization Challenge</h1>
+        <p class="lede">Performance is a budget shared by geometry, draw calls, textures, lights, and effects. Optimize the representation while protecting the visual goal.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Scene complexity</h2>
+        <div class="control">
+          <div class="control-head"><span>Object count</span><span id="countValue" class="value">120</span></div>
+          <input id="count" type="range" min="20" max="300" step="10" value="120">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Mesh detail</span><span id="detailValue" class="value">level 2</span></div>
+          <input id="detail" type="range" min="0" max="3" value="2">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Texture size</span><span id="textureValue" class="value">1024 px</span></div>
+          <input id="texture" type="range" min="8" max="11" value="10">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Dynamic lights</span><span id="lightsValue" class="value">3</span></div>
+          <input id="lights" type="range" min="1" max="5" value="3">
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Production techniques</h2>
+        <div class="button-grid">
+          <button id="instancing" class="tool-btn">Instancing off</button>
+          <button id="lod" class="tool-btn">LOD off</button>
+          <button class="tool-btn" data-preset="max">Max quality</button>
+          <button class="tool-btn" data-preset="balanced">Balanced</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Frame budget <span id="budgetLabel" class="value">over</span></h2>
+        <div class="meter"><span id="frameMeter"></span></div>
+        <div class="readout-grid" style="margin-top:10px">
+          <div class="readout"><strong id="trianglesReadout">0</strong><span>triangles</span></div>
+          <div class="readout"><strong id="drawReadout">0</strong><span>draw calls</span></div>
+          <div class="readout"><strong id="memoryReadout">0 MB</strong><span>texture memory</span></div>
+          <div class="readout"><strong id="frameReadout">0 ms</strong><span>estimated frame</span></div>
+          <div class="readout"><strong id="qualityReadout">0</strong><span>visual score</span></div>
+          <div class="readout"><strong>16.7 ms</strong><span>60 fps target</span></div>
+        </div>
+      </section>
+
+      <div class="concept-note">Instancing reduces draw submissions for repeated meshes. LOD reduces vertex work when an object's screen-space size no longer justifies full detail.</div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Optimization challenge</div>
+        <h2 class="challenge-title">Ship the scene at 60 fps</h2>
+        <p class="challenge-copy">Keep visual score at 70 or higher, estimated frame time under 16.7 ms, draw calls below 60, and textures below 48 MB.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">Balance quality and cost</span></div>
+      </section>
+    </aside>
+
+    <section class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="viewport-label"><strong>Representation matters</strong>The same repeated scene can require hundreds of submissions or only a few instanced draws.</div>
+      <div class="hud"><span class="hud-pill">near = full detail</span><span class="hud-pill">far = LOD candidate</span></div>
+      <div class="help">Orbit across the field and compare silhouettes before reducing detail.</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}
+  </script>
+  <script type="module">
+    import { THREE, createLab, startLoop, bindRange, bindToggle, setChallenge, setMeter, disposeObject, seededRandom } from "./advanced-lab-core.js";
+
+    const lab = createLab({ cameraPosition: [12, 9, 15], target: [0, 1, -2] });
+    lab.floor.scale.setScalar(2);
+    const state = { count: 120, detail: 2, texture: 1024, lights: 3, instancing: false, lod: false };
+    let sceneRoot = new THREE.Group();
+    let texture;
+    const extraLights = [];
+    lab.scene.add(sceneRoot);
+
+    function createTexture(size) {
+      texture?.dispose();
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.min(size, 1024);
+      canvas.height = Math.min(size, 1024);
+      const context = canvas.getContext("2d");
+      const gradient = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, "#ff9022");
+      gradient.addColorStop(0.5, "#ffda22");
+      gradient.addColorStop(1, "#3a6fa8");
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.strokeStyle = "rgba(255,255,255,.34)";
+      context.lineWidth = Math.max(2, canvas.width / 128);
+      for (let index = 0; index < 12; index++) {
+        context.beginPath();
+        context.arc(canvas.width / 2, canvas.height / 2, canvas.width * (index + 1) / 26, 0, Math.PI * 2);
+        context.stroke();
+      }
+      texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      return texture;
+    }
+
+    function geometryFor(detail) {
+      return new THREE.IcosahedronGeometry(0.48, THREE.MathUtils.clamp(detail, 0, 3));
+    }
+
+    function clearRoot() {
+      disposeObject(sceneRoot);
+      sceneRoot = new THREE.Group();
+      lab.scene.add(sceneRoot);
+    }
+
+    function rebuild() {
+      clearRoot();
+      const random = seededRandom(42);
+      const material = new THREE.MeshStandardMaterial({ map: createTexture(state.texture), roughness: 0.5, metalness: 0.04 });
+      const transforms = Array.from({ length: state.count }, (_, index) => {
+        const row = Math.floor(index / 20);
+        const column = index % 20;
+        return {
+          position: new THREE.Vector3((column - 9.5) * 0.95 + (random() - 0.5) * 0.15, 0.52 + random() * 0.28, -row * 1.05 + (random() - 0.5) * 0.15),
+          rotation: random() * Math.PI,
+          scale: 0.75 + random() * 0.45,
+          far: row > 4
+        };
+      });
+
+      if (state.instancing) {
+        const groups = state.lod
+          ? [
+              { items: transforms.filter(item => !item.far), detail: state.detail },
+              { items: transforms.filter(item => item.far), detail: Math.max(0, state.detail - 2) }
+            ]
+          : [{ items: transforms, detail: state.detail }];
+        groups.forEach(group => {
+          if (!group.items.length) return;
+          const instanced = new THREE.InstancedMesh(geometryFor(group.detail), material, group.items.length);
+          const matrix = new THREE.Matrix4();
+          const quaternion = new THREE.Quaternion();
+          const scale = new THREE.Vector3();
+          group.items.forEach((item, index) => {
+            quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), item.rotation);
+            scale.setScalar(item.scale);
+            matrix.compose(item.position, quaternion, scale);
+            instanced.setMatrixAt(index, matrix);
+            instanced.setColorAt(index, new THREE.Color().setHSL(0.06 + (index % 11) * 0.012, 0.85, 0.52));
+          });
+          instanced.instanceMatrix.needsUpdate = true;
+          if (instanced.instanceColor) instanced.instanceColor.needsUpdate = true;
+          instanced.castShadow = true;
+          sceneRoot.add(instanced);
+        });
+      } else {
+        const geometries = new Map();
+        transforms.forEach((item, index) => {
+          const detail = state.lod && item.far ? Math.max(0, state.detail - 2) : state.detail;
+          if (!geometries.has(detail)) geometries.set(detail, geometryFor(detail));
+          const mesh = new THREE.Mesh(geometries.get(detail), material);
+          mesh.position.copy(item.position);
+          mesh.rotation.y = item.rotation;
+          mesh.scale.setScalar(item.scale);
+          mesh.material = material.clone();
+          mesh.material.color.setHSL(0.06 + (index % 11) * 0.012, 0.85, 0.52);
+          mesh.castShadow = index < 80;
+          sceneRoot.add(mesh);
+        });
+      }
+      updateLights();
+      updateMetrics();
+    }
+
+    function updateLights() {
+      extraLights.splice(0).forEach(light => light.removeFromParent());
+      const colors = [0xff9022, 0x3a6fa8, 0xe63462, 0x13b8a6, 0xffda22];
+      for (let index = 0; index < state.lights; index++) {
+        const light = new THREE.PointLight(colors[index], 12, 9, 2);
+        light.position.set((index - 2) * 3.5, 3.8, -2 - index * 1.5);
+        lab.scene.add(light);
+        extraLights.push(light);
+      }
+    }
+
+    function triangleCount(detail) {
+      const geometry = geometryFor(detail);
+      const count = geometry.index ? geometry.index.count / 3 : geometry.getAttribute("position").count / 3;
+      geometry.dispose();
+      return count;
+    }
+
+    function updateMetrics() {
+      const nearCount = Math.min(state.count, 100);
+      const farCount = Math.max(0, state.count - nearCount);
+      const triangles = state.lod
+        ? nearCount * triangleCount(state.detail) + farCount * triangleCount(Math.max(0, state.detail - 2))
+        : state.count * triangleCount(state.detail);
+      const geometryDraws = state.instancing ? (state.lod && farCount ? 2 : 1) : state.count;
+      const drawCalls = geometryDraws + state.lights;
+      const textureMemory = state.texture * state.texture * 4 * 3 / 1048576;
+      const frame = 3.8 + triangles / 180000 * 3.8 + drawCalls * 0.045 + state.lights * 0.72 + textureMemory * 0.055;
+      const quality = Math.round(34 + state.detail * 14 + Math.log2(state.texture / 256) * 8 + Math.min(state.lights, 3) * 5 - (state.lod ? 2 : 0));
+      document.getElementById("trianglesReadout").textContent = triangles > 999999 ? `${(triangles / 1000000).toFixed(1)}m` : `${Math.round(triangles / 1000)}k`;
+      document.getElementById("drawReadout").textContent = drawCalls;
+      document.getElementById("memoryReadout").textContent = `${textureMemory.toFixed(1)} MB`;
+      document.getElementById("frameReadout").textContent = `${frame.toFixed(1)} ms`;
+      document.getElementById("qualityReadout").textContent = quality;
+      document.getElementById("budgetLabel").textContent = frame <= 16.7 ? "within" : "over";
+      setMeter("frameMeter", frame / 20, 0.7);
+      const checks = [quality >= 70, frame <= 16.7, drawCalls < 60, textureMemory < 48];
+      const remaining = checks.filter(value => !value).length;
+      setChallenge(remaining === 0, remaining ? `${remaining} shipping constraint${remaining === 1 ? "" : "s"} remain` : "Scene meets the 60 fps shipping target");
+    }
+
+    bindRange("count", value => String(value), value => { state.count = value; rebuild(); });
+    bindRange("detail", value => `level ${value}`, value => { state.detail = value; rebuild(); });
+    bindRange("texture", value => `${2 ** value} px`, value => { state.texture = 2 ** value; rebuild(); });
+    bindRange("lights", value => String(value), value => { state.lights = value; rebuild(); });
+    bindToggle("instancing", value => { state.instancing = value; rebuild(); }, "Instancing on", "Instancing off");
+    bindToggle("lod", value => { state.lod = value; rebuild(); }, "LOD on", "LOD off");
+
+    document.querySelectorAll("[data-preset]").forEach(button => button.addEventListener("click", () => {
+      const values = button.dataset.preset === "max"
+        ? { count: 220, detail: 3, texture: 11, lights: 5 }
+        : { count: 160, detail: 2, texture: 9, lights: 2 };
+      Object.entries(values).forEach(([id, value]) => {
+        const input = document.getElementById(id);
+        input.value = value;
+        input.dispatchEvent(new Event("input"));
+      });
+      if (button.dataset.preset === "balanced") {
+        if (!document.getElementById("instancing").classList.contains("active")) document.getElementById("instancing").click();
+        if (!document.getElementById("lod").classList.contains("active")) document.getElementById("lod").click();
+      }
+    }));
+
+    startLoop(lab, (dt, time) => {
+      sceneRoot.rotation.y = Math.sin(time * 0.12) * 0.04;
+    });
+  </script>
+</body>
+</html>

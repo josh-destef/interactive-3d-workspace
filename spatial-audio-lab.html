@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spatial Audio Lab - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <style>
+    .direction-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+    .direction-grid button:nth-child(1) { grid-column:2; }
+    .direction-grid button:nth-child(2) { grid-column:1; grid-row:2; }
+    .direction-grid button:nth-child(3) { grid-column:2; grid-row:2; }
+    .direction-grid button:nth-child(4) { grid-column:3; grid-row:2; }
+    .audio-note { padding:11px; color:#4a6175; background:#edf7ff; border-left:3px solid var(--blue); border-radius:0 9px 9px 0; font-size:10px; line-height:1.55; }
+    .speaker-state { position:absolute; left:18px; top:18px; z-index:4; display:flex; align-items:center; gap:8px; padding:9px 12px; background:rgba(255,255,255,.88); border-radius:999px; box-shadow:0 6px 18px rgba(23,32,51,.08); font-family:var(--mono); font-size:9px; }
+    .speaker-state i { width:8px; height:8px; background:var(--red); border-radius:50%; }
+    .speaker-state.playing i { background:var(--green); box-shadow:0 0 0 4px rgba(0,170,0,.12); }
+  </style>
+</head>
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+      <header>
+        <p class="eyebrow">Playable systems 02</p>
+        <h1>Spatial Audio Lab</h1>
+        <p class="lede">3D sound has a position, distance curve, and direction. Listen with headphones, then connect what you hear to the visible coordinate system.</p>
+      </header>
+
+      <button id="startAudio" class="wide-btn primary">Start audio</button>
+
+      <section class="panel">
+        <h2 class="panel-title">Source position</h2>
+        <div class="control">
+          <div class="control-head"><span>Angle around listener</span><span id="angleValue" class="value">45&#176;</span></div>
+          <input id="angle" type="range" min="-180" max="180" value="45">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Distance</span><span id="distanceValue" class="value">4.0 m</span></div>
+          <input id="distance" type="range" min="10" max="90" value="40">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Rolloff</span><span id="rolloffValue" class="value">1.0</span></div>
+          <input id="rolloff" type="range" min="0" max="30" value="10">
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Spatializer</h2>
+        <div class="mode-row">
+          <button class="mode-btn active" data-model="HRTF">HRTF</button>
+          <button class="mode-btn" data-model="equalpower">Equal power</button>
+          <button id="hideSource" class="mode-btn">Hide source</button>
+        </div>
+        <p id="modelCopy" class="panel-note" style="margin-top:10px;margin-bottom:0">HRTF filters simulate how sound reaches each ear, helping with front, back, and elevation cues.</p>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Mystery direction</h2>
+        <p class="panel-note">Hide the beacon, generate a mystery position, then identify the strongest direction by ear.</p>
+        <button id="mystery" class="wide-btn">New mystery source</button>
+        <div class="direction-grid" style="margin-top:8px">
+          <button class="tool-btn" data-guess="front">Front</button>
+          <button class="tool-btn" data-guess="left">Left</button>
+          <button class="tool-btn" data-guess="back">Back</button>
+          <button class="tool-btn" data-guess="right">Right</button>
+        </div>
+      </section>
+
+      <div class="audio-note">Audio starts only after a button press because browsers require a user gesture. The tone is generated locally with the Web Audio API.</div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Listening challenge</div>
+        <h2 class="challenge-title">Locate two hidden sources</h2>
+        <p class="challenge-copy">Use headphones if available. Correctly identify two mystery directions.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">0 / 2 located</span></div>
+      </section>
+    </aside>
+
+    <section class="viewport">
+      <div id="speakerState" class="speaker-state"><i></i><span>audio stopped</span></div>
+      <canvas class="webgl"></canvas>
+      <div class="hud"><span class="hud-pill">Web Audio PannerNode</span></div>
+      <div class="help">Drag to orbit · the white head is the listener</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    const canvas = document.querySelector("canvas");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf4f4ef);
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+    camera.position.set(8, 7, 9);
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    const orbit = new OrbitControls(camera, canvas);
+    orbit.target.set(0, 1, 0);
+    orbit.enableDamping = true;
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x667085, 2.2));
+    const sun = new THREE.DirectionalLight(0xffffff, 2.8);
+    sun.position.set(5, 9, 4);
+    scene.add(sun);
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(10, 64), new THREE.MeshStandardMaterial({ color: 0xe5e6df, roughness: 1 }));
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
+    const rings = [];
+    for (let radius = 2; radius <= 8; radius += 2) {
+      const ring = new THREE.Mesh(new THREE.RingGeometry(radius - 0.018, radius + 0.018, 96), new THREE.MeshBasicMaterial({ color: 0xb9beb6, side: THREE.DoubleSide }));
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.y = 0.01;
+      scene.add(ring);
+      rings.push(ring);
+    }
+    const listener = new THREE.Group();
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 28, 18), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.55 }));
+    head.position.y = 1.15;
+    listener.add(head);
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.45, 16), new THREE.MeshStandardMaterial({ color: 0x172033 }));
+    nose.rotation.x = Math.PI / 2;
+    nose.position.set(0, 1.12, -0.55);
+    listener.add(nose);
+    scene.add(listener);
+
+    const source = new THREE.Group();
+    const speaker = new THREE.Mesh(new THREE.BoxGeometry(0.75, 1.1, 0.5), new THREE.MeshStandardMaterial({ color: 0xff9022, roughness: 0.38 }));
+    speaker.position.y = 0.65;
+    source.add(speaker);
+    for (const y of [0.48, 0.82]) {
+      const cone = new THREE.Mesh(new THREE.CircleGeometry(0.18, 24), new THREE.MeshStandardMaterial({ color: 0x172033 }));
+      cone.position.set(0, y, -0.256);
+      cone.rotation.x = -Math.PI / 2;
+      source.add(cone);
+    }
+    scene.add(source);
+    const waveMaterial = new THREE.MeshBasicMaterial({ color: 0x13b8a6, transparent: true, opacity: 0.55, side: THREE.DoubleSide });
+    const waves = Array.from({ length: 4 }, (_, index) => {
+      const wave = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.54, 48), waveMaterial.clone());
+      wave.rotation.x = -Math.PI / 2;
+      wave.position.y = 0.08;
+      wave.userData.offset = index / 4;
+      source.add(wave);
+      return wave;
+    });
+
+    let context = null;
+    let oscillator = null;
+    let gain = null;
+    let panner = null;
+    let hidden = false;
+    let mysteryDirection = null;
+    let score = 0;
+
+    function startAudio() {
+      if (!context) {
+        context = new AudioContext();
+        oscillator = context.createOscillator();
+        oscillator.type = "sine";
+        oscillator.frequency.value = 330;
+        const tremolo = context.createOscillator();
+        const tremoloGain = context.createGain();
+        tremolo.frequency.value = 2.2;
+        tremoloGain.gain.value = 0.08;
+        gain = context.createGain();
+        gain.gain.value = 0.15;
+        panner = context.createPanner();
+        panner.panningModel = "HRTF";
+        panner.distanceModel = "inverse";
+        panner.refDistance = 1;
+        panner.maxDistance = 30;
+        panner.rolloffFactor = 1;
+        oscillator.connect(gain).connect(panner).connect(context.destination);
+        tremolo.connect(tremoloGain).connect(gain.gain);
+        oscillator.start();
+        tremolo.start();
+      }
+      context.resume();
+      document.getElementById("speakerState").classList.add("playing");
+      document.querySelector("#speakerState span").textContent = "audio playing";
+      document.getElementById("startAudio").textContent = "Audio playing";
+      updateAudio();
+    }
+
+    function updateSource() {
+      const angle = THREE.MathUtils.degToRad(Number(document.getElementById("angle").value));
+      const distance = Number(document.getElementById("distance").value) / 10;
+      source.position.set(Math.sin(angle) * distance, 0, -Math.cos(angle) * distance);
+      source.lookAt(0, 0.7, 0);
+      updateAudio();
+    }
+
+    function updateAudio() {
+      if (!panner) return;
+      panner.positionX.value = source.position.x;
+      panner.positionY.value = 0.7;
+      panner.positionZ.value = source.position.z;
+      panner.rolloffFactor = Number(document.getElementById("rolloff").value) / 10;
+    }
+
+    function directionForAngle(angle) {
+      const normalized = ((angle + 180) % 360 + 360) % 360 - 180;
+      if (normalized >= -45 && normalized < 45) return "front";
+      if (normalized >= 45 && normalized < 135) return "right";
+      if (normalized <= -45 && normalized > -135) return "left";
+      return "back";
+    }
+
+    document.getElementById("startAudio").addEventListener("click", startAudio);
+    document.getElementById("angle").addEventListener("input", event => {
+      document.getElementById("angleValue").textContent = `${event.target.value}\u00b0`;
+      updateSource();
+    });
+    document.getElementById("distance").addEventListener("input", event => {
+      document.getElementById("distanceValue").textContent = `${(event.target.value / 10).toFixed(1)} m`;
+      updateSource();
+    });
+    document.getElementById("rolloff").addEventListener("input", event => {
+      document.getElementById("rolloffValue").textContent = (event.target.value / 10).toFixed(1);
+      updateAudio();
+    });
+    document.querySelectorAll("[data-model]").forEach(button => button.addEventListener("click", () => {
+      document.querySelectorAll("[data-model]").forEach(item => item.classList.toggle("active", item === button));
+      if (panner) panner.panningModel = button.dataset.model;
+      document.getElementById("modelCopy").textContent = button.dataset.model === "HRTF"
+        ? "HRTF filters simulate how sound reaches each ear, helping with front, back, and elevation cues."
+        : "Equal-power panning is cheaper and clear from left to right, but carries fewer spatial cues.";
+    }));
+    document.getElementById("hideSource").addEventListener("click", event => {
+      hidden = !hidden;
+      source.visible = !hidden;
+      event.currentTarget.classList.toggle("active", hidden);
+      event.currentTarget.textContent = hidden ? "Show source" : "Hide source";
+    });
+    document.getElementById("mystery").addEventListener("click", () => {
+      startAudio();
+      const directions = ["front", "right", "back", "left"];
+      mysteryDirection = directions[Math.floor(Math.random() * directions.length)];
+      const angleByDirection = { front: 0, right: 90, back: 180, left: -90 };
+      const angle = angleByDirection[mysteryDirection] + (Math.random() * 34 - 17);
+      document.getElementById("angle").value = Math.round(angle);
+      document.getElementById("angleValue").textContent = "mystery";
+      hidden = true;
+      source.visible = false;
+      document.getElementById("hideSource").classList.add("active");
+      document.getElementById("hideSource").textContent = "Show source";
+      updateSource();
+      document.getElementById("challengeStatus").textContent = "Listen, then choose a direction";
+    });
+    document.querySelectorAll("[data-guess]").forEach(button => button.addEventListener("click", () => {
+      if (!mysteryDirection) return;
+      const correct = button.dataset.guess === mysteryDirection;
+      if (correct) score = Math.min(score + 1, 2);
+      document.getElementById("challengeStatus").textContent = correct ? `${score} / 2 located` : `That source was ${mysteryDirection}`;
+      mysteryDirection = null;
+      const complete = score >= 2;
+      document.getElementById("challenge").classList.toggle("complete", complete);
+      if (complete) document.getElementById("challengeStatus").textContent = "Two hidden sources located";
+    }));
+
+    updateSource();
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      renderer.setSize(rect.width, rect.height, false);
+      camera.aspect = rect.width / rect.height;
+      camera.updateProjectionMatrix();
+    }
+    addEventListener("resize", resize);
+    resize();
+    renderer.setAnimationLoop(time => {
+      waves.forEach(wave => {
+        const phase = (time * 0.00035 + wave.userData.offset) % 1;
+        wave.scale.setScalar(1 + phase * 5);
+        wave.material.opacity = (1 - phase) * 0.5;
+      });
+      orbit.update();
+      renderer.render(scene, camera);
+    });
+  </script>
+</body>
+</html>

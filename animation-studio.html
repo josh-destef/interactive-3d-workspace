@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keyframe Studio - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <style>
+    .timeline-card {
+      padding: 12px;
+      background: #f7f8f6;
+      border-radius: 10px;
+    }
+
+    .timeline-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .play-button {
+      width: 40px;
+      height: 40px;
+      flex: 0 0 auto;
+      color: #fff;
+      background: var(--orange);
+      border: 0;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .time-readout {
+      font-family: var(--mono);
+      font-size: 16px;
+    }
+
+    .timeline-wrap {
+      position: relative;
+      height: 38px;
+      padding-top: 13px;
+    }
+
+    #timeline {
+      position: relative;
+      z-index: 2;
+      margin: 0;
+    }
+
+    .key-markers {
+      position: absolute;
+      inset: 0 8px;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .key-marker {
+      position: absolute;
+      top: 0;
+      width: 9px;
+      height: 9px;
+      background: var(--orange);
+      border: 2px solid #fff;
+      border-radius: 2px;
+      box-shadow: 0 0 0 1px rgba(23, 32, 51, 0.22);
+      transform: translateX(-50%) rotate(45deg);
+    }
+
+    .frame-labels {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 8px;
+    }
+
+    .curve {
+      display: block;
+      width: 100%;
+      height: 88px;
+      background: #172033;
+      border-radius: 9px;
+    }
+
+    .key-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .key-chip {
+      min-height: 28px;
+      padding: 0 9px;
+      color: var(--orange);
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-radius: 999px;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 9px;
+    }
+
+    .key-chip.active {
+      color: #fff;
+      background: var(--orange);
+    }
+
+    .key-chip button {
+      margin-left: 5px;
+      padding: 0;
+      color: inherit;
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+    }
+
+    .concept {
+      padding: 13px;
+      color: #4d3d16;
+      background: #fff9d9;
+      border: 1px solid #f4df73;
+      border-radius: 10px;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+
+      <header>
+        <p class="eyebrow">Animation lab</p>
+        <h1>Keyframe Studio</h1>
+        <p class="lede">Animation stores important poses at specific times. The computer creates the in-between motion using an interpolation rule.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Animated object</h2>
+        <div class="mode-row">
+          <button class="mode-btn active" data-object="rocket">Rocket</button>
+          <button class="mode-btn" data-object="cube">Cube</button>
+          <button class="mode-btn" data-object="ball">Ball</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Timeline</h2>
+        <div class="timeline-card">
+          <div class="timeline-head">
+            <button id="play" class="play-button" aria-label="Play animation">&#9654;</button>
+            <div>
+              <div class="time-readout"><span id="frameValue">0</span> / 100</div>
+              <div style="color:var(--muted);font-size:9px">frames</div>
+            </div>
+          </div>
+          <div class="timeline-wrap">
+            <div id="keyMarkers" class="key-markers"></div>
+            <input id="timeline" type="range" min="0" max="100" step="1" value="0">
+          </div>
+          <div class="frame-labels"><span>0</span><span>25</span><span>50</span><span>75</span><span>100</span></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Pose at this frame</h2>
+        <div class="control">
+          <div class="control-head"><span>Side to side</span><span id="xValue" class="value">0.0</span></div>
+          <input id="poseX" type="range" min="-40" max="40" value="0">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Height</span><span id="yValue" class="value">0.0</span></div>
+          <input id="poseY" type="range" min="0" max="60" value="0">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Rotation</span><span id="rotationValue" class="value">0°</span></div>
+          <input id="poseRotation" type="range" min="-360" max="360" value="0">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Scale</span><span id="scaleValue" class="value">1.00</span></div>
+          <input id="poseScale" type="range" min="40" max="180" value="100">
+        </div>
+        <button id="setKeyframe" class="wide-btn primary" style="margin-top:13px">Set keyframe at 0</button>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Interpolation</h2>
+        <div class="mode-row">
+          <button class="mode-btn" data-easing="step">Stepped</button>
+          <button class="mode-btn" data-easing="linear">Linear</button>
+          <button class="mode-btn active" data-easing="ease">Ease</button>
+        </div>
+        <p id="interpolationCopy" class="panel-note" style="margin-top:10px;margin-bottom:0">Ease starts and stops gently, giving motion a sense of weight.</p>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Keyframes <span id="keyCount" class="value">0</span></h2>
+        <div id="keyList" class="key-list"></div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Motion graph <span class="value">height</span></h2>
+        <canvas id="curve" class="curve" width="300" height="88"></canvas>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Animation recipes</h2>
+        <div class="button-grid">
+          <button class="tool-btn" data-preset="bounce">Bounce</button>
+          <button class="tool-btn" data-preset="launch">Launch</button>
+          <button class="tool-btn" data-preset="spin">Spin</button>
+          <button class="tool-btn" data-preset="squash">Squash</button>
+        </div>
+      </section>
+
+      <div id="concept" class="concept">Set a pose at frame 0, move to a later frame, change the pose, and set another keyframe. Two stored moments are enough to create motion.</div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Animation challenge</div>
+        <h2 class="challenge-title">Tell a three-pose story</h2>
+        <p class="challenge-copy">Create at least three keyframes. Include a high pose and a rotation, then play the result.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">0 of 3 keyframes</span></div>
+      </section>
+    </aside>
+
+    <section id="viewport" class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="hud">
+        <span class="hud-pill">ghosts = nearby key poses</span>
+        <span id="easingHud" class="hud-pill">ease interpolation</span>
+      </div>
+      <div class="help">Scrub slowly between keys and watch what the computer invents.</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{
+      "three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",
+      "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"
+    }}
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    const viewport = document.getElementById("viewport");
+    const canvas = viewport.querySelector("canvas.webgl");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf2f2ed);
+    scene.fog = new THREE.Fog(0xf2f2ed, 14, 28);
+
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 100);
+    camera.position.set(7, 4.5, 9);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
+    const orbit = new OrbitControls(camera, canvas);
+    orbit.enableDamping = true;
+    orbit.target.set(0, 2.2, 0);
+    orbit.minDistance = 5;
+    orbit.maxDistance = 16;
+    orbit.maxPolarAngle = Math.PI * 0.49;
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x546077, 2.4));
+    const key = new THREE.DirectionalLight(0xffffff, 3.4);
+    key.position.set(5, 9, 6);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    scene.add(key);
+    const rim = new THREE.DirectionalLight(0x7598ff, 1.7);
+    rim.position.set(-5, 5, -6);
+    scene.add(rim);
+
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(24, 24),
+      new THREE.MeshStandardMaterial({ color: 0xe4e5df, roughness: 0.95 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    const grid = new THREE.GridHelper(20, 20, 0x566173, 0x566173);
+    grid.material.opacity = 0.1;
+    grid.material.transparent = true;
+    scene.add(grid);
+
+    let objectType = "rocket";
+    let actor;
+    let previousGhost;
+    let nextGhost;
+    let currentFrame = 0;
+    let easing = "ease";
+    let playing = false;
+    let hasPlayed = false;
+    let playFrame = 0;
+    let lastTime = performance.now();
+    let keyframes = [];
+
+    function standardMaterial(color, roughness = 0.45) {
+      return new THREE.MeshStandardMaterial({ color, roughness, metalness: 0.04 });
+    }
+
+    function buildObject(type, ghost = false) {
+      const group = new THREE.Group();
+      if (type === "cube") {
+        const cube = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.7, 1.7), standardMaterial(0xff9022));
+        cube.position.y = 0.85;
+        group.add(cube);
+      } else if (type === "ball") {
+        const ball = new THREE.Mesh(new THREE.SphereGeometry(1.05, 40, 24), standardMaterial(0x3a6fa8, 0.3));
+        ball.position.y = 1.05;
+        group.add(ball);
+      } else {
+        const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.62, 1.35, 8, 22), standardMaterial(0xf1f1ec, 0.32));
+        body.position.y = 1.45;
+        const nose = new THREE.Mesh(new THREE.ConeGeometry(0.62, 0.9, 32), standardMaterial(0xff9022, 0.38));
+        nose.position.y = 2.82;
+        const windowMesh = new THREE.Mesh(new THREE.SphereGeometry(0.3, 24, 16), standardMaterial(0x3a6fa8, 0.12));
+        windowMesh.scale.z = 0.22;
+        windowMesh.position.set(0, 1.75, 0.6);
+        const finGeometry = new THREE.ConeGeometry(0.4, 0.9, 3);
+        const finA = new THREE.Mesh(finGeometry, standardMaterial(0xc0453a));
+        finA.position.set(0.62, 0.45, 0);
+        finA.rotation.z = -0.25;
+        const finB = finA.clone();
+        finB.material = finA.material.clone();
+        finB.position.x = -0.62;
+        finB.rotation.z = 0.25;
+        group.add(body, nose, windowMesh, finA, finB);
+      }
+
+      group.traverse(child => {
+        if (!child.isMesh) return;
+        child.castShadow = !ghost;
+        child.receiveShadow = !ghost;
+        if (ghost) {
+          child.material = new THREE.MeshBasicMaterial({
+            color: 0x3a6fa8,
+            transparent: true,
+            opacity: 0.13,
+            depthWrite: false,
+            wireframe: true
+          });
+        }
+      });
+      return group;
+    }
+
+    function rebuildActor() {
+      if (actor) scene.remove(actor);
+      if (previousGhost) scene.remove(previousGhost);
+      if (nextGhost) scene.remove(nextGhost);
+      actor = buildObject(objectType);
+      previousGhost = buildObject(objectType, true);
+      nextGhost = buildObject(objectType, true);
+      scene.add(previousGhost, nextGhost, actor);
+      applyFrame(currentFrame, true);
+    }
+
+    function readPoseControls() {
+      return {
+        x: Number(document.getElementById("poseX").value) / 10,
+        y: Number(document.getElementById("poseY").value) / 10,
+        rotation: THREE.MathUtils.degToRad(Number(document.getElementById("poseRotation").value)),
+        scale: Number(document.getElementById("poseScale").value) / 100
+      };
+    }
+
+    function setPoseControls(pose) {
+      document.getElementById("poseX").value = Math.round(pose.x * 10);
+      document.getElementById("poseY").value = Math.round(pose.y * 10);
+      document.getElementById("poseRotation").value = Math.round(THREE.MathUtils.radToDeg(pose.rotation));
+      document.getElementById("poseScale").value = Math.round(pose.scale * 100);
+      updatePoseLabels();
+    }
+
+    function updatePoseLabels() {
+      document.getElementById("xValue").textContent = (Number(document.getElementById("poseX").value) / 10).toFixed(1);
+      document.getElementById("yValue").textContent = (Number(document.getElementById("poseY").value) / 10).toFixed(1);
+      document.getElementById("rotationValue").textContent = `${document.getElementById("poseRotation").value}°`;
+      document.getElementById("scaleValue").textContent = (Number(document.getElementById("poseScale").value) / 100).toFixed(2);
+    }
+
+    function applyPose(object, pose) {
+      object.position.set(pose.x, pose.y, 0);
+      object.rotation.set(0, pose.rotation, -pose.rotation * 0.08);
+      object.scale.setScalar(pose.scale);
+    }
+
+    function interpolationAmount(t) {
+      if (easing === "step") return 0;
+      if (easing === "linear") return t;
+      return t * t * (3 - 2 * t);
+    }
+
+    function poseAt(frame) {
+      if (!keyframes.length) return readPoseControls();
+      const sorted = [...keyframes].sort((a, b) => a.frame - b.frame);
+      if (frame <= sorted[0].frame) return { ...sorted[0].pose };
+      if (frame >= sorted[sorted.length - 1].frame) return { ...sorted[sorted.length - 1].pose };
+      const nextIndex = sorted.findIndex(key => key.frame >= frame);
+      const a = sorted[nextIndex - 1];
+      const b = sorted[nextIndex];
+      const raw = (frame - a.frame) / (b.frame - a.frame);
+      const t = interpolationAmount(raw);
+      return {
+        x: THREE.MathUtils.lerp(a.pose.x, b.pose.x, t),
+        y: THREE.MathUtils.lerp(a.pose.y, b.pose.y, t),
+        rotation: THREE.MathUtils.lerp(a.pose.rotation, b.pose.rotation, t),
+        scale: THREE.MathUtils.lerp(a.pose.scale, b.pose.scale, t)
+      };
+    }
+
+    function nearestKeys(frame) {
+      const sorted = [...keyframes].sort((a, b) => a.frame - b.frame);
+      return {
+        previous: [...sorted].reverse().find(key => key.frame < frame),
+        next: sorted.find(key => key.frame > frame)
+      };
+    }
+
+    function applyFrame(frame, syncControls = true) {
+      currentFrame = Math.max(0, Math.min(100, Math.round(frame)));
+      document.getElementById("timeline").value = currentFrame;
+      document.getElementById("frameValue").textContent = currentFrame;
+      document.getElementById("setKeyframe").textContent = keyframes.some(key => key.frame === currentFrame)
+        ? `Replace keyframe at ${currentFrame}`
+        : `Set keyframe at ${currentFrame}`;
+      const pose = poseAt(currentFrame);
+      applyPose(actor, pose);
+      if (syncControls) setPoseControls(pose);
+
+      const nearby = nearestKeys(currentFrame);
+      previousGhost.visible = Boolean(nearby.previous);
+      nextGhost.visible = Boolean(nearby.next);
+      if (nearby.previous) applyPose(previousGhost, nearby.previous.pose);
+      if (nearby.next) applyPose(nextGhost, nearby.next.pose);
+      renderKeyList();
+      drawCurve();
+    }
+
+    function setKeyframe() {
+      const pose = readPoseControls();
+      const existing = keyframes.find(key => key.frame === currentFrame);
+      if (existing) existing.pose = pose;
+      else keyframes.push({ frame: currentFrame, pose });
+      keyframes.sort((a, b) => a.frame - b.frame);
+      applyPose(actor, pose);
+      renderKeyList();
+      drawCurve();
+      evaluateChallenge();
+    }
+
+    function deleteKeyframe(frame) {
+      keyframes = keyframes.filter(key => key.frame !== frame);
+      applyFrame(currentFrame);
+      evaluateChallenge();
+    }
+
+    function renderKeyList() {
+      const list = document.getElementById("keyList");
+      const markers = document.getElementById("keyMarkers");
+      list.innerHTML = "";
+      markers.innerHTML = "";
+      keyframes.forEach(key => {
+        const chip = document.createElement("div");
+        chip.className = `key-chip${key.frame === currentFrame ? " active" : ""}`;
+        chip.innerHTML = `F${key.frame}<button aria-label="Delete keyframe">&times;</button>`;
+        chip.addEventListener("click", event => {
+          if (event.target.tagName === "BUTTON") deleteKeyframe(key.frame);
+          else applyFrame(key.frame);
+        });
+        list.appendChild(chip);
+
+        const marker = document.createElement("span");
+        marker.className = "key-marker";
+        marker.style.left = `${key.frame}%`;
+        markers.appendChild(marker);
+      });
+      if (!keyframes.length) list.innerHTML = '<span style="color:var(--muted);font-size:10px">No keyframes yet</span>';
+      document.getElementById("keyCount").textContent = keyframes.length;
+    }
+
+    function drawCurve() {
+      const graph = document.getElementById("curve");
+      const context = graph.getContext("2d");
+      const width = graph.width;
+      const height = graph.height;
+      context.clearRect(0, 0, width, height);
+      context.strokeStyle = "rgba(255,255,255,.09)";
+      context.lineWidth = 1;
+      for (let i = 1; i < 4; i++) {
+        context.beginPath();
+        context.moveTo(0, (height / 4) * i);
+        context.lineTo(width, (height / 4) * i);
+        context.stroke();
+      }
+      context.strokeStyle = "#ff9022";
+      context.lineWidth = 2;
+      context.beginPath();
+      for (let frame = 0; frame <= 100; frame++) {
+        const pose = poseAt(frame);
+        const x = frame / 100 * width;
+        const y = height - 8 - (Math.max(0, Math.min(6, pose.y)) / 6) * (height - 16);
+        if (frame === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      }
+      context.stroke();
+
+      keyframes.forEach(key => {
+        const x = key.frame / 100 * width;
+        const y = height - 8 - (Math.max(0, Math.min(6, key.pose.y)) / 6) * (height - 16);
+        context.fillStyle = "#ffda22";
+        context.fillRect(x - 3, y - 3, 6, 6);
+      });
+      context.strokeStyle = "rgba(255,255,255,.55)";
+      const playX = currentFrame / 100 * width;
+      context.beginPath();
+      context.moveTo(playX, 0);
+      context.lineTo(playX, height);
+      context.stroke();
+    }
+
+    function setPlaying(value) {
+      playing = value;
+      document.getElementById("play").innerHTML = playing ? "&#10074;&#10074;" : "&#9654;";
+      if (playing) {
+        hasPlayed = true;
+        playFrame = currentFrame >= 100 ? 0 : currentFrame;
+        lastTime = performance.now();
+      }
+      evaluateChallenge();
+    }
+
+    function evaluateChallenge() {
+      const high = keyframes.some(key => key.pose.y >= 3);
+      const turned = keyframes.some(key => Math.abs(THREE.MathUtils.radToDeg(key.pose.rotation)) >= 90);
+      const complete = keyframes.length >= 3 && high && turned && hasPlayed;
+      document.getElementById("challenge").classList.toggle("complete", complete);
+      let status = `${Math.min(keyframes.length, 3)} of 3 keyframes`;
+      if (keyframes.length >= 3 && !high) status = "Add a pose above height 3";
+      else if (keyframes.length >= 3 && !turned) status = "Add a rotation over 90°";
+      else if (keyframes.length >= 3 && high && turned && !hasPlayed) status = "Press play";
+      else if (complete) status = "Animation challenge complete";
+      document.getElementById("challengeStatus").textContent = status;
+    }
+
+    ["poseX", "poseY", "poseRotation", "poseScale"].forEach(id => {
+      document.getElementById(id).addEventListener("input", () => {
+        updatePoseLabels();
+        applyPose(actor, readPoseControls());
+      });
+    });
+
+    document.getElementById("timeline").addEventListener("input", event => {
+      setPlaying(false);
+      applyFrame(Number(event.target.value));
+    });
+    document.getElementById("setKeyframe").addEventListener("click", setKeyframe);
+    document.getElementById("play").addEventListener("click", () => setPlaying(!playing));
+
+    document.querySelectorAll("[data-easing]").forEach(button => {
+      button.addEventListener("click", () => {
+        easing = button.dataset.easing;
+        document.querySelectorAll("[data-easing]").forEach(item => item.classList.toggle("active", item === button));
+        const copies = {
+          step: "Stepped holds one pose until the next keyframe. It is useful for planning and stop-motion timing.",
+          linear: "Linear moves at a constant speed. It can feel mechanical because it starts and stops instantly.",
+          ease: "Ease starts and stops gently, giving motion a sense of weight."
+        };
+        document.getElementById("interpolationCopy").textContent = copies[easing];
+        document.getElementById("easingHud").textContent = `${easing} interpolation`;
+        applyFrame(currentFrame);
+      });
+    });
+
+    document.querySelectorAll("[data-object]").forEach(button => {
+      button.addEventListener("click", () => {
+        objectType = button.dataset.object;
+        document.querySelectorAll("[data-object]").forEach(item => item.classList.toggle("active", item === button));
+        rebuildActor();
+      });
+    });
+
+    const presets = {
+      bounce: [
+        { frame: 0, pose: { x: -2.8, y: 0, rotation: 0, scale: 1 } },
+        { frame: 25, pose: { x: -1.4, y: 3.7, rotation: 0.8, scale: 1 } },
+        { frame: 50, pose: { x: 0, y: 0, rotation: 1.6, scale: 1 } },
+        { frame: 75, pose: { x: 1.4, y: 2.1, rotation: 2.4, scale: 1 } },
+        { frame: 100, pose: { x: 2.8, y: 0, rotation: 3.2, scale: 1 } }
+      ],
+      launch: [
+        { frame: 0, pose: { x: 0, y: 0, rotation: 0, scale: 1 } },
+        { frame: 35, pose: { x: 0, y: 0, rotation: 0, scale: 0.85 } },
+        { frame: 55, pose: { x: 0, y: 1.2, rotation: 0, scale: 1.12 } },
+        { frame: 100, pose: { x: 0.5, y: 6, rotation: 0.25, scale: 0.75 } }
+      ],
+      spin: [
+        { frame: 0, pose: { x: -3, y: 1, rotation: 0, scale: 0.8 } },
+        { frame: 50, pose: { x: 0, y: 3.5, rotation: Math.PI * 2, scale: 1.3 } },
+        { frame: 100, pose: { x: 3, y: 1, rotation: Math.PI * 4, scale: 0.8 } }
+      ],
+      squash: [
+        { frame: 0, pose: { x: 0, y: 0, rotation: 0, scale: 1 } },
+        { frame: 30, pose: { x: 0, y: 0, rotation: 0, scale: 1.5 } },
+        { frame: 55, pose: { x: 0, y: 4.5, rotation: Math.PI, scale: 0.65 } },
+        { frame: 100, pose: { x: 0, y: 0, rotation: Math.PI * 2, scale: 1 } }
+      ]
+    };
+
+    document.querySelectorAll("[data-preset]").forEach(button => {
+      button.addEventListener("click", () => {
+        keyframes = presets[button.dataset.preset].map(key => ({ frame: key.frame, pose: { ...key.pose } }));
+        applyFrame(0);
+        evaluateChallenge();
+        document.getElementById("concept").textContent = "A recipe is only a starting point. Move a keyframe, change interpolation, or replace a pose to make the timing your own.";
+      });
+    });
+
+    function resize() {
+      const width = viewport.clientWidth;
+      const height = viewport.clientHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener("resize", resize);
+    resize();
+    rebuildActor();
+    renderKeyList();
+    drawCurve();
+    evaluateChallenge();
+
+    function animate(now) {
+      requestAnimationFrame(animate);
+      const delta = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+      if (playing) {
+        playFrame += delta * 32;
+        if (playFrame > 100) playFrame = 0;
+        applyFrame(playFrame, false);
+      }
+      orbit.update();
+      renderer.render(scene, camera);
+    }
+    requestAnimationFrame(animate);
+  </script>
+</body>
+
+</html>

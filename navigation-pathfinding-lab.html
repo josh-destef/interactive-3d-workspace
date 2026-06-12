@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Navigation and Pathfinding Lab - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <link rel="stylesheet" href="advanced-lab.css">
+</head>
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+      <header>
+        <p class="eyebrow">Playable systems 04</p>
+        <h1>Navigation + Pathfinding</h1>
+        <p class="lede">A navigation surface describes where an agent can stand. Pathfinding searches connected walkable regions, while agent radius changes which passages are actually usable.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Agent constraints</h2>
+        <div class="control">
+          <div class="control-head"><span>Agent radius</span><span id="radiusValue" class="value">0.5 m</span></div>
+          <input id="radius" type="range" min="0" max="12" value="5">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Destination X</span><span id="goalXValue" class="value">10</span></div>
+          <input id="goalX" type="range" min="1" max="10" value="10">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Destination Z</span><span id="goalZValue" class="value">10</span></div>
+          <input id="goalZ" type="range" min="1" max="10" value="10">
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Navigation surface</h2>
+        <div class="button-grid">
+          <button id="route" class="wide-btn primary">Build path</button>
+          <button id="run" class="wide-btn">Run agent</button>
+          <button class="tool-btn" data-layout="corridor">Narrow corridor</button>
+          <button class="tool-btn" data-layout="islands">Obstacle islands</button>
+          <button id="clear" class="wide-btn danger">Clear obstacles</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Search result</h2>
+        <div class="readout-grid">
+          <div class="readout"><strong id="pathReadout">0</strong><span>path cells</span></div>
+          <div class="readout"><strong id="visitedReadout">0</strong><span>cells searched</span></div>
+          <div class="readout"><strong id="blockedReadout">0</strong><span>blocked cells</span></div>
+          <div class="readout"><strong id="statusReadout">ready</strong><span>route state</span></div>
+        </div>
+        <div class="legend" style="margin-top:10px">
+          <span><i style="background:#93c99a"></i>walkable</span>
+          <span><i style="background:#ffda22"></i>radius clearance</span>
+          <span><i style="background:#c0453a"></i>obstacle</span>
+          <span><i style="background:#13b8a6"></i>path</span>
+        </div>
+      </section>
+
+      <div class="concept-note">Agent radius expands obstacles before search. A corridor can be visibly open but still unusable for an agent whose body does not fit.</div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Navigation challenge</div>
+        <h2 class="challenge-title">Route around meaningful obstacles</h2>
+        <p class="challenge-copy">Use at least eight obstacles, keep radius at 0.5 m or more, build a path of 14+ cells, and run the agent to the goal.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">Create a navigable route</span></div>
+      </section>
+    </aside>
+
+    <section class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="viewport-label"><strong>Editable navigation grid</strong>Shift-click a tile to add or remove an obstacle, then rebuild the path.</div>
+      <div class="hud"><span class="hud-pill">A* search</span><span class="hud-pill">12 x 12 cells</span></div>
+      <div class="help">Shift-click tiles to paint obstacles &#183; drag to orbit</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}
+  </script>
+  <script type="module">
+    import { THREE, createLab, startLoop, bindRange, setChallenge, disposeObject } from "./advanced-lab-core.js";
+
+    const lab = createLab({ cameraPosition: [10, 12, 12], target: [0, 0, 0], floor: false });
+    const size = 12;
+    const start = { x: 1, z: 1 };
+    const state = { radius: 0.5, goal: { x: 10, z: 10 }, obstacles: new Set(), path: [], visited: 0, completedRun: false };
+    const tiles = [];
+    const board = new THREE.Group();
+    lab.scene.add(board);
+    const pathRoot = new THREE.Group();
+    lab.scene.add(pathRoot);
+
+    function key(x, z) { return `${x},${z}`; }
+    function world(x, z) { return new THREE.Vector3(x - (size - 1) / 2, 0, z - (size - 1) / 2); }
+
+    for (let z = 0; z < size; z++) {
+      for (let x = 0; x < size; x++) {
+        const tile = new THREE.Mesh(
+          new THREE.BoxGeometry(0.92, 0.12, 0.92),
+          new THREE.MeshStandardMaterial({ color: 0x93c99a, roughness: 0.88 })
+        );
+        tile.position.copy(world(x, z)).setY(0.02);
+        tile.receiveShadow = true;
+        tile.userData.cell = { x, z };
+        board.add(tile);
+        tiles.push(tile);
+      }
+    }
+
+    const agent = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.28, 0.65, 5, 12),
+      new THREE.MeshStandardMaterial({ color: 0x172033, roughness: 0.45 })
+    );
+    agent.castShadow = true;
+    board.add(agent);
+    const goal = new THREE.Mesh(
+      new THREE.TorusGeometry(0.35, 0.08, 12, 30),
+      new THREE.MeshStandardMaterial({ color: 0xe63462, emissive: 0x4b0718, emissiveIntensity: 0.5 })
+    );
+    goal.rotation.x = Math.PI / 2;
+    board.add(goal);
+
+    function expandedObstacles() {
+      const result = new Set(state.obstacles);
+      const cells = Math.ceil(state.radius / 0.72);
+      state.obstacles.forEach(entry => {
+        const [x, z] = entry.split(",").map(Number);
+        for (let dz = -cells; dz <= cells; dz++) {
+          for (let dx = -cells; dx <= cells; dx++) {
+            if (Math.hypot(dx, dz) * 0.72 <= state.radius + 0.25) result.add(key(x + dx, z + dz));
+          }
+        }
+      });
+      return result;
+    }
+
+    function updateBoard() {
+      const expanded = expandedObstacles();
+      tiles.forEach(tile => {
+        const { x, z } = tile.userData.cell;
+        const entry = key(x, z);
+        const obstacle = state.obstacles.has(entry);
+        const clearance = !obstacle && expanded.has(entry);
+        tile.material.color.setHex(obstacle ? 0xc0453a : clearance ? 0xffda22 : 0x93c99a);
+        tile.position.y = obstacle ? 0.35 : 0.02;
+        tile.scale.y = obstacle ? 6 : 1;
+      });
+      agent.position.copy(world(start.x, start.z)).setY(0.62);
+      agent.scale.setScalar(0.8 + state.radius * 0.5);
+      goal.position.copy(world(state.goal.x, state.goal.z)).setY(0.28);
+      document.getElementById("blockedReadout").textContent = state.obstacles.size;
+    }
+
+    function findPath() {
+      const blocked = expandedObstacles();
+      blocked.delete(key(start.x, start.z));
+      blocked.delete(key(state.goal.x, state.goal.z));
+      const open = [{ ...start, g: 0, f: 0 }];
+      const cameFrom = new Map();
+      const cost = new Map([[key(start.x, start.z), 0]]);
+      const visited = new Set();
+      while (open.length) {
+        open.sort((a, b) => a.f - b.f);
+        const current = open.shift();
+        const currentKey = key(current.x, current.z);
+        if (visited.has(currentKey)) continue;
+        visited.add(currentKey);
+        if (current.x === state.goal.x && current.z === state.goal.z) {
+          const path = [{ x: current.x, z: current.z }];
+          let cursor = currentKey;
+          while (cameFrom.has(cursor)) {
+            const previous = cameFrom.get(cursor);
+            path.push(previous);
+            cursor = key(previous.x, previous.z);
+          }
+          state.path = path.reverse();
+          state.visited = visited.size;
+          drawPath();
+          return;
+        }
+        [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dz]) => {
+          const x = current.x + dx;
+          const z = current.z + dz;
+          const nextKey = key(x, z);
+          if (x < 0 || z < 0 || x >= size || z >= size || blocked.has(nextKey)) return;
+          const newCost = current.g + 1;
+          if (!cost.has(nextKey) || newCost < cost.get(nextKey)) {
+            cost.set(nextKey, newCost);
+            cameFrom.set(nextKey, { x: current.x, z: current.z });
+            const heuristic = Math.abs(state.goal.x - x) + Math.abs(state.goal.z - z);
+            open.push({ x, z, g: newCost, f: newCost + heuristic });
+          }
+        });
+      }
+      state.path = [];
+      state.visited = visited.size;
+      drawPath();
+    }
+
+    function drawPath() {
+      while (pathRoot.children.length) disposeObject(pathRoot.children[0]);
+      if (state.path.length) {
+        const points = state.path.map(cell => world(cell.x, cell.z).setY(0.6));
+        const line = new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(points),
+          new THREE.LineBasicMaterial({ color: 0x13b8a6, linewidth: 2 })
+        );
+        pathRoot.add(line);
+        points.forEach(point => {
+          const marker = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 8), new THREE.MeshBasicMaterial({ color: 0x13b8a6 }));
+          marker.position.copy(point);
+          pathRoot.add(marker);
+        });
+      }
+      document.getElementById("pathReadout").textContent = state.path.length;
+      document.getElementById("visitedReadout").textContent = state.visited;
+      document.getElementById("statusReadout").textContent = state.path.length ? "path ready" : "no route";
+      state.completedRun = false;
+      updateChallenge();
+    }
+
+    function updateChallenge() {
+      const complete = state.obstacles.size >= 8 && state.radius >= 0.5 && state.path.length >= 14 && state.completedRun;
+      setChallenge(complete, complete ? "Agent reached the goal on a valid route" : !state.path.length ? "Build a valid path" : state.path.length < 14 ? "Create a longer route around obstacles" : "Run the agent to the goal");
+    }
+
+    let runIndex = -1;
+    document.getElementById("route").addEventListener("click", findPath);
+    document.getElementById("run").addEventListener("click", () => {
+      if (!state.path.length) findPath();
+      runIndex = state.path.length ? 0 : -1;
+      state.completedRun = false;
+    });
+    document.getElementById("clear").addEventListener("click", () => {
+      state.obstacles.clear();
+      state.path = [];
+      updateBoard();
+      drawPath();
+    });
+
+    document.querySelectorAll("[data-layout]").forEach(button => button.addEventListener("click", () => {
+      state.obstacles.clear();
+      if (button.dataset.layout === "corridor") {
+        for (let z = 2; z < 11; z++) {
+          if (z !== 6) state.obstacles.add(key(4, z));
+          if (z !== 7) state.obstacles.add(key(7, z));
+        }
+      } else {
+        [[3,3],[3,4],[4,3],[6,6],[6,7],[7,6],[8,3],[8,4],[9,4],[3,8],[4,8],[4,9]].forEach(([x,z]) => state.obstacles.add(key(x,z)));
+      }
+      updateBoard();
+      findPath();
+    }));
+
+    bindRange("radius", value => `${(value / 10).toFixed(1)} m`, value => {
+      state.radius = value / 10;
+      updateBoard();
+      findPath();
+    });
+    bindRange("goalX", value => String(value), value => {
+      state.goal.x = value;
+      updateBoard();
+      findPath();
+    });
+    bindRange("goalZ", value => String(value), value => {
+      state.goal.z = value;
+      updateBoard();
+      findPath();
+    });
+
+    const pointer = new THREE.Vector2();
+    const raycaster = new THREE.Raycaster();
+    lab.canvas.addEventListener("click", event => {
+      if (!event.shiftKey) return;
+      const rect = lab.canvas.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, lab.camera);
+      const hit = raycaster.intersectObjects(tiles, false)[0];
+      if (!hit) return;
+      const { x, z } = hit.object.userData.cell;
+      const entry = key(x, z);
+      if (entry === key(start.x, start.z) || entry === key(state.goal.x, state.goal.z)) return;
+      if (state.obstacles.has(entry)) state.obstacles.delete(entry);
+      else state.obstacles.add(entry);
+      updateBoard();
+      findPath();
+    });
+
+    startLoop(lab, dt => {
+      if (runIndex < 0 || !state.path.length) return;
+      const destination = world(state.path[Math.min(runIndex + 1, state.path.length - 1)].x, state.path[Math.min(runIndex + 1, state.path.length - 1)].z).setY(0.62);
+      agent.position.lerp(destination, Math.min(1, dt * 4));
+      if (agent.position.distanceTo(destination) < 0.06) {
+        runIndex++;
+        if (runIndex >= state.path.length - 1) {
+          runIndex = -1;
+          state.completedRun = true;
+          document.getElementById("statusReadout").textContent = "goal reached";
+          updateChallenge();
+        }
+      }
+    });
+
+    updateBoard();
+    findPath();
+  </script>
+</body>
+</html>

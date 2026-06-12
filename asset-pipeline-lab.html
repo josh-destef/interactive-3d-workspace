@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Asset Pipeline Lab - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <link rel="stylesheet" href="advanced-lab.css">
+</head>
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+      <header>
+        <p class="eyebrow">Production pipeline 06</p>
+        <h1>Asset Pipeline Inspector</h1>
+        <p class="lede">An asset is more than visible geometry. Units, orientation, pivot, transforms, naming, materials, and compression determine whether it behaves predictably after export.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Source conventions</h2>
+        <div class="control">
+          <div class="control-head"><span>Asset name</span><span class="value">identifier</span></div>
+          <input id="assetName" type="text" value="training_drone" spellcheck="false">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Working units</span><span class="value">scale</span></div>
+          <select id="units">
+            <option value="cm">centimeters</option>
+            <option value="m" selected>meters</option>
+            <option value="in">inches</option>
+          </select>
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Up axis</span><span class="value">orientation</span></div>
+          <select id="axis">
+            <option value="z">Z up</option>
+            <option value="y" selected>Y up</option>
+          </select>
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Pivot policy</span><span class="value">placement</span></div>
+          <select id="pivot">
+            <option value="center">center</option>
+            <option value="base" selected>base</option>
+            <option value="offset">authored offset</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Export preparation</h2>
+        <div class="button-grid">
+          <button id="transforms" class="tool-btn">Transforms unapplied</button>
+          <button id="compression" class="tool-btn">Textures raw</button>
+          <button id="materials" class="tool-btn active">PBR materials</button>
+          <button id="validate" class="wide-btn primary">Validate glTF asset</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Inspection report</h2>
+        <div class="readout-grid">
+          <div class="readout"><strong id="boundsReadout">2.4 x 1.3 x 2.1</strong><span>bounds meters</span></div>
+          <div class="readout"><strong id="pivotReadout">base</strong><span>pivot position</span></div>
+          <div class="readout"><strong id="sizeReadout">3.8 MB</strong><span>estimated package</span></div>
+          <div class="readout"><strong id="issueReadout">not checked</strong><span>validation</span></div>
+        </div>
+        <div class="step-list" style="margin-top:11px">
+          <div id="checkName" class="step"><b>1</b><span>Portable lowercase asset name</span></div>
+          <div id="checkUnits" class="step"><b>2</b><span>Meter scale, Y-up, base pivot</span></div>
+          <div id="checkTransform" class="step"><b>3</b><span>Transforms applied before export</span></div>
+          <div id="checkPackage" class="step"><b>4</b><span>PBR textures compressed and referenced</span></div>
+        </div>
+      </section>
+
+      <div class="warning-note">Applying transforms is not cosmetic. Negative or non-uniform scale can change normals, physics shapes, animation, and child transforms downstream.</div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Pipeline challenge</div>
+        <h2 class="challenge-title">Prepare a predictable glTF asset</h2>
+        <p class="challenge-copy">Use meters, Y-up, a base pivot, applied transforms, PBR materials, compressed textures, and a valid portable name.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">Run validation when the asset is ready</span></div>
+      </section>
+    </aside>
+
+    <section class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="viewport-label"><strong>Origin and bounds</strong>The cyan marker is the export pivot. The dark box is the measured asset boundary after source conversion.</div>
+      <div class="hud"><span class="hud-pill">glTF target</span><span class="hud-pill">PBR metallic-roughness</span></div>
+      <div class="help">Change source conventions and watch the normalized preview respond.</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}
+  </script>
+  <script type="module">
+    import { THREE, createLab, startLoop, bindToggle, setChallenge, standardMaterial } from "./advanced-lab-core.js";
+
+    const lab = createLab({ cameraPosition: [6.5, 4.5, 7.2], target: [0, 1.2, 0] });
+    const state = { transforms: false, compression: false, materials: true, validated: false };
+    const model = new THREE.Group();
+    lab.scene.add(model);
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.65, 1.35), standardMaterial(0xff9022));
+    body.position.y = 0.95;
+    body.castShadow = true;
+    model.add(body);
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.55, 30, 20), standardMaterial(0x172033, { roughness: 0.3, metalness: 0.55 }));
+    core.position.y = 1.35;
+    core.castShadow = true;
+    model.add(core);
+    [[-1, -.82], [1, -.82], [-1, .82], [1, .82]].forEach(([x, z]) => {
+      const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1, 12), standardMaterial(0x3a6fa8));
+      arm.rotation.z = Math.PI / 2;
+      arm.position.set(x * 0.72, 1.08, z * 0.72);
+      arm.castShadow = true;
+      model.add(arm);
+      const rotor = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.06, 24), standardMaterial(0x13b8a6, { metalness: 0.25 }));
+      rotor.position.set(x, 1.15, z);
+      rotor.userData.rotor = true;
+      rotor.castShadow = true;
+      model.add(rotor);
+    });
+    model.rotation.set(0.12, 0.25, -0.08);
+    model.scale.set(1.15, 0.88, 1.05);
+
+    const bounds = new THREE.Box3().setFromObject(model);
+    const boundsHelper = new THREE.Box3Helper(bounds, 0x172033);
+    lab.scene.add(boundsHelper);
+    const pivotMarker = new THREE.Mesh(
+      new THREE.SphereGeometry(0.12, 16, 12),
+      new THREE.MeshBasicMaterial({ color: 0x13b8a6, depthTest: false })
+    );
+    pivotMarker.renderOrder = 6;
+    lab.scene.add(pivotMarker);
+    lab.scene.add(new THREE.AxesHelper(2.2));
+
+    function sourceScale() {
+      const units = document.getElementById("units").value;
+      return units === "cm" ? 0.01 : units === "in" ? 0.0254 : 1;
+    }
+
+    function updatePreview() {
+      const scale = sourceScale();
+      model.rotation.set(document.getElementById("axis").value === "z" ? -Math.PI / 2 : 0, 0, state.transforms ? 0 : -0.08);
+      const displayScale = scale === 1 ? 1 : scale * 18;
+      model.scale.set(displayScale, displayScale * (state.transforms ? 1 : 0.88), displayScale);
+      model.updateMatrixWorld(true);
+      bounds.setFromObject(model);
+      boundsHelper.box.copy(bounds);
+      const size = bounds.getSize(new THREE.Vector3());
+      const center = bounds.getCenter(new THREE.Vector3());
+      const pivot = document.getElementById("pivot").value;
+      if (pivot === "base") pivotMarker.position.set(center.x, bounds.min.y, center.z);
+      else if (pivot === "center") pivotMarker.position.copy(center);
+      else pivotMarker.position.set(bounds.max.x + 0.5, bounds.min.y, bounds.max.z + 0.4);
+      document.getElementById("boundsReadout").textContent = `${size.x.toFixed(1)} x ${size.y.toFixed(1)} x ${size.z.toFixed(1)}`;
+      document.getElementById("pivotReadout").textContent = pivot;
+      const packageSize = (state.compression ? 1.4 : 4.8) + (state.materials ? 0.6 : 0.2);
+      document.getElementById("sizeReadout").textContent = `${packageSize.toFixed(1)} MB`;
+      state.validated = false;
+      document.getElementById("issueReadout").textContent = "not checked";
+      updateChallenge();
+    }
+
+    function conditions() {
+      const name = document.getElementById("assetName").value;
+      return {
+        name: /^[a-z][a-z0-9_]*$/.test(name),
+        units: document.getElementById("units").value === "m" && document.getElementById("axis").value === "y" && document.getElementById("pivot").value === "base",
+        transform: state.transforms,
+        package: state.compression && state.materials
+      };
+    }
+
+    function updateChallenge() {
+      const checks = conditions();
+      Object.entries(checks).forEach(([key, value]) => {
+        const id = key === "transform" ? "checkTransform" : key === "package" ? "checkPackage" : key === "name" ? "checkName" : "checkUnits";
+        document.getElementById(id).classList.toggle("active", value);
+      });
+      const issueCount = Object.values(checks).filter(value => !value).length;
+      const complete = state.validated && issueCount === 0;
+      setChallenge(complete, complete ? "Validated asset is ready for handoff" : state.validated ? `${issueCount} validation issue${issueCount === 1 ? "" : "s"} remain` : "Run validation when the asset is ready");
+    }
+
+    bindToggle("transforms", value => { state.transforms = value; updatePreview(); }, "Transforms applied", "Transforms unapplied");
+    bindToggle("compression", value => { state.compression = value; updatePreview(); }, "Textures compressed", "Textures raw");
+    bindToggle("materials", value => { state.materials = value; updatePreview(); }, "PBR materials", "Basic materials", true);
+
+    ["assetName", "units", "axis", "pivot"].forEach(id => document.getElementById(id).addEventListener("input", updatePreview));
+    document.getElementById("validate").addEventListener("click", () => {
+      state.validated = true;
+      const issueCount = Object.values(conditions()).filter(value => !value).length;
+      document.getElementById("issueReadout").textContent = issueCount ? `${issueCount} issues` : "0 issues";
+      updateChallenge();
+    });
+
+    updatePreview();
+    startLoop(lab, (dt, time) => {
+      model.children.filter(child => child.userData.rotor).forEach((rotor, index) => {
+        rotor.rotation.y = time * (index % 2 ? -8 : 8);
+      });
+    });
+  </script>
+</body>
+</html>

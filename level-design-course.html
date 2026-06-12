@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Graybox to Gameplay - CreateAccess Course</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <link rel="stylesheet" href="course.css">
+  <style>
+    :root { --course-accent:#3a6fa8; }
+    .lesson-panel[hidden] { display:none; }
+    .metric-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+    .metric { padding:9px; text-align:center; background:#f7f8f6; border-radius:8px; }
+    .metric strong { display:block; font-family:var(--mono); font-size:13px; }
+    .metric span { color:var(--muted); font-size:8px; text-transform:uppercase; }
+    .play-keys { display:grid; grid-template-columns:repeat(3,34px); justify-content:center; gap:5px; }
+    .play-keys span { display:grid; width:34px; height:30px; place-items:center; color:var(--muted); background:#f3f4f0; border:1px solid var(--line); border-radius:6px; font-family:var(--mono); font-size:10px; }
+    .move-step { display:grid; width:34px; height:30px; padding:0; place-items:center; color:var(--ink); background:#fff; border:1px solid var(--line); border-radius:6px; cursor:pointer; }
+    .move-step:hover { border-color:var(--orange); }
+    .play-keys .w { grid-column:2; }
+    .play-keys .a { grid-column:1; grid-row:2; }
+    .play-keys .s { grid-column:2; grid-row:2; }
+    .play-keys .d { grid-column:3; grid-row:2; }
+  </style>
+</head>
+<body>
+  <main class="course-shell">
+    <aside class="course-sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Course library</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+      <header style="margin-top:20px">
+        <p class="eyebrow">Four-lesson course · level design</p>
+        <h1>Graybox to Gameplay</h1>
+        <p class="lede">Design a small playable route by measuring the player, guiding attention, shaping pacing, and validating the space through movement.</p>
+      </header>
+
+      <div class="course-progress"><span id="progressFill"></span></div>
+      <div class="course-progress-copy"><span>Course progress</span><span id="progressCopy">0 / 4 complete</span></div>
+
+      <nav class="lesson-list" aria-label="Course lessons">
+        <button class="lesson-tab" data-lesson="0"><span class="lesson-number">01</span><span><span class="lesson-name">Design from player metrics</span><span class="lesson-time">Scale · reach · clearance</span></span><span class="lesson-check">&#10003;</span></button>
+        <button class="lesson-tab" data-lesson="1"><span class="lesson-number">02</span><span><span class="lesson-name">Guide without arrows</span><span class="lesson-time">Landmarks · contrast · light</span></span><span class="lesson-check">&#10003;</span></button>
+        <button class="lesson-tab" data-lesson="2"><span class="lesson-number">03</span><span><span class="lesson-name">Shape a spatial rhythm</span><span class="lesson-time">Compression · release · pause</span></span><span class="lesson-check">&#10003;</span></button>
+        <button class="lesson-tab" data-lesson="3"><span class="lesson-number">04</span><span><span class="lesson-name">Playtest the route</span><span class="lesson-time">Movement · observation · revision</span></span><span class="lesson-check">&#10003;</span></button>
+      </nav>
+
+      <section class="lesson-copy">
+        <p id="lessonKicker" class="lesson-kicker">Lesson 1 · graybox metrics</p>
+        <h2 id="lessonTitle">Design from the player outward</h2>
+        <p id="lessonDescription">Level dimensions become meaningful only when compared with the body and abilities of the player.</p>
+        <div id="objectiveList" class="objective-list"></div>
+      </section>
+
+      <div class="lesson-controls">
+        <section class="lesson-panel panel" data-panel="0">
+          <h2 class="panel-title">Player and space</h2>
+          <div class="control"><div class="control-head"><span>Player height</span><span id="playerHeightValue" class="value">1.8 m</span></div><input id="playerHeight" type="range" min="14" max="22" value="18"></div>
+          <div class="control"><div class="control-head"><span>Door height</span><span id="doorHeightValue" class="value">2.0 m</span></div><input id="doorHeight" type="range" min="16" max="30" value="20"></div>
+          <div class="control"><div class="control-head"><span>Jump reach</span><span id="jumpReachValue" class="value">3.0 m</span></div><input id="jumpReach" type="range" min="18" max="48" value="30"></div>
+          <div class="control"><div class="control-head"><span>Platform gap</span><span id="gapValue" class="value">3.5 m</span></div><input id="gap" type="range" min="10" max="50" value="35"></div>
+          <div class="control"><div class="control-head"><span>Corridor width</span><span id="corridorValue" class="value">1.5 m</span></div><input id="corridor" type="range" min="10" max="40" value="15"></div>
+        </section>
+
+        <section class="lesson-panel panel" data-panel="1" hidden>
+          <h2 class="panel-title">Visual guidance</h2>
+          <div class="control"><div class="control-head"><span>Landmark height</span><span id="landmarkValue" class="value">3.0 m</span></div><input id="landmark" type="range" min="10" max="80" value="30"></div>
+          <div class="control"><div class="control-head"><span>Path contrast</span><span id="contrastValue" class="value">25%</span></div><input id="contrast" type="range" min="0" max="100" value="25"></div>
+          <div class="control"><div class="control-head"><span>Goal light</span><span id="goalLightValue" class="value">30%</span></div><input id="goalLight" type="range" min="0" max="100" value="30"></div>
+          <button id="sightline" class="wide-btn" style="margin-top:12px">Sightline overlay off</button>
+        </section>
+
+        <section class="lesson-panel panel" data-panel="2" hidden>
+          <h2 class="panel-title">Spatial beats</h2>
+          <div class="control"><div class="control-head"><span>Compression width</span><span id="compressionValue" class="value">5.0 m</span></div><input id="compression" type="range" min="20" max="70" value="50"></div>
+          <div class="control"><div class="control-head"><span>Release width</span><span id="releaseValue" class="value">5.0 m</span></div><input id="release" type="range" min="30" max="100" value="50"></div>
+          <div class="control"><div class="control-head"><span>Pause length</span><span id="pauseValue" class="value">1.0 m</span></div><input id="pause" type="range" min="10" max="50" value="10"></div>
+          <div class="metric-grid" style="margin-top:12px">
+            <div class="metric"><strong id="tensionMetric">low</strong><span>tension</span></div>
+            <div class="metric"><strong id="contrastMetric">0.0</strong><span>width contrast</span></div>
+            <div class="metric"><strong>3</strong><span>beats</span></div>
+          </div>
+        </section>
+
+        <section class="lesson-panel panel" data-panel="3" hidden>
+          <h2 class="panel-title">Playtest</h2>
+          <p class="panel-note">Move through the graybox and collect all three observation markers. A route must be experienced, not only viewed from above.</p>
+          <div class="play-keys"><span class="w">W</span><span class="a">A</span><span class="s">S</span><span class="d">D</span></div>
+          <div class="play-keys" style="margin-top:8px">
+            <button class="move-step w" data-step="0,-0.65" aria-label="Move forward">↑</button>
+            <button class="move-step a" data-step="-0.65,0" aria-label="Move left">←</button>
+            <button class="move-step s" data-step="0,0.65" aria-label="Move backward">↓</button>
+            <button class="move-step d" data-step="0.65,0" aria-label="Move right">→</button>
+          </div>
+          <div class="control"><div class="control-head"><span>Move speed</span><span id="speedValue" class="value">4.0 m/s</span></div><input id="speed" type="range" min="20" max="80" value="40"></div>
+          <button id="resetPlaytest" class="wide-btn" style="margin-top:12px">Reset playtest</button>
+          <button id="guidedPlaytest" class="wide-btn" style="margin-top:8px">Run guided route</button>
+          <div class="metric-grid" style="margin-top:10px">
+            <div class="metric"><strong id="markersMetric">0 / 3</strong><span>markers</span></div>
+            <div class="metric"><strong id="timeMetric">0.0 s</strong><span>time</span></div>
+            <div class="metric"><strong id="distanceMetric">0 m</strong><span>travel</span></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="course-actions">
+        <button id="resetLesson" class="wide-btn">Reset lesson</button>
+        <button id="completeLesson" class="wide-btn primary" disabled>Complete lesson</button>
+      </div>
+      <div id="courseComplete" class="course-complete" hidden style="margin-top:12px">
+        <strong>Course complete</strong>
+        <p>You built from player metrics, authored visual guidance, shaped spatial pacing, and validated the route through movement.</p>
+      </div>
+    </aside>
+
+    <section class="course-stage">
+      <canvas></canvas>
+      <div class="course-hud">
+        <span id="viewLabel" class="hud-pill">metric comparison</span>
+        <span id="readyLabel" class="hud-pill">criteria incomplete</span>
+      </div>
+      <div class="course-prompt"><strong id="promptTitle">Design question</strong><span id="promptCopy">Can the player clear the door, cross the gap, and turn comfortably in the corridor?</span></div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/","course-progress":"./course-progress.js"}}
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { CourseProgress, renderCourseProgress } from "course-progress";
+
+    const lessons = [
+      {
+        kicker: "Lesson 1 · graybox metrics",
+        title: "Design from the player outward",
+        description: "Level dimensions become meaningful only when compared with the body and abilities of the player.",
+        objectives: ["Door has at least 0.3 m of head clearance", "Gap is challenging but within jump reach", "Corridor is at least one player-height wide"],
+        prompt: "Can the player clear the door, cross the gap, and turn comfortably in the corridor?",
+        view: "metric comparison"
+      },
+      {
+        kicker: "Lesson 2 · visual guidance",
+        title: "Guide without an instruction arrow",
+        description: "Landmarks, contrast, and light can make a route readable before the player consciously analyzes it.",
+        objectives: ["Landmark rises above surrounding walls", "Path contrast exceeds 60%", "Goal light exceeds 70%"],
+        prompt: "Where does your eye go first? Make the destination readable through the scene itself.",
+        view: "attention map"
+      },
+      {
+        kicker: "Lesson 3 · spatial pacing",
+        title: "Alternate compression and release",
+        description: "Narrow spaces increase tension. Open spaces release it. A pause between them makes the contrast legible.",
+        objectives: ["Compression width is 3 m or less", "Release width is at least 7 m", "Pause beat is at least 3 m long"],
+        prompt: "Shape a clear rhythm: squeeze, pause, reveal.",
+        view: "pacing diagram"
+      },
+      {
+        kicker: "Lesson 4 · playtesting",
+        title: "Experience the route at player speed",
+        description: "A top view hides hesitation, obstruction, and travel time. Move through the space and gather observations.",
+        objectives: ["Reach the compression marker", "Reach the reveal marker", "Reach the destination marker"],
+        prompt: "Use WASD. Notice when the landmark becomes visible and where the route asks you to turn.",
+        view: "live playtest"
+      }
+    ];
+
+    const canvas = document.querySelector("canvas");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf4f4ef);
+    const camera = new THREE.PerspectiveCamera(46, 1, 0.1, 150);
+    camera.position.set(11, 10, 14);
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    const orbit = new OrbitControls(camera, canvas);
+    orbit.enableDamping = true;
+    orbit.target.set(0, 1, 0);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x5d6678, 2));
+    const sun = new THREE.DirectionalLight(0xffffff, 2.8);
+    sun.position.set(7, 12, 7);
+    sun.castShadow = true;
+    scene.add(sun);
+    const lessonGroup = new THREE.Group();
+    scene.add(lessonGroup);
+    let goalLight = null;
+    let sightline = null;
+    let player = null;
+    let checkpoints = [];
+    let walls = [];
+    let collected = new Set();
+    let activeTime = 0;
+    let travelDistance = 0;
+    let lastPlayerPosition = new THREE.Vector3();
+    const keys = new Set();
+
+    const tabs = [...document.querySelectorAll(".lesson-tab")];
+    const progress = new CourseProgress("graybox-gameplay", lessons.length, updateProgressUI);
+    const progressFill = document.getElementById("progressFill");
+    const progressCopy = document.getElementById("progressCopy");
+
+    function updateProgressUI() {
+      renderCourseProgress(progress, tabs, progressFill, progressCopy);
+      document.getElementById("courseComplete").hidden = progress.completedCount !== lessons.length;
+    }
+
+    function material(color, roughness = 0.7) {
+      return new THREE.MeshStandardMaterial({ color, roughness });
+    }
+
+    function box(size, position, color = 0xd9ddd7) {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z), material(color));
+      mesh.position.copy(position);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      lessonGroup.add(mesh);
+      return mesh;
+    }
+
+    function floorPlane(width = 28, depth = 28) {
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), material(0xe6e7e1, 1));
+      floor.rotation.x = -Math.PI / 2;
+      floor.receiveShadow = true;
+      lessonGroup.add(floor);
+      const grid = new THREE.GridHelper(Math.max(width, depth), Math.max(width, depth), 0xb7bbb5, 0xd3d6d0);
+      grid.position.y = 0.01;
+      lessonGroup.add(grid);
+    }
+
+    function clearLesson() {
+      while (lessonGroup.children.length) {
+        const child = lessonGroup.children.pop();
+        child.traverse?.(object => {
+          object.geometry?.dispose();
+          if (object.material && !Array.isArray(object.material)) object.material.dispose();
+        });
+      }
+      goalLight = null;
+      sightline = null;
+      player = null;
+      checkpoints = [];
+      walls = [];
+      collected = new Set();
+      activeTime = 0;
+      travelDistance = 0;
+    }
+
+    function makePlayer(height = 1.8) {
+      const group = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.34, Math.max(0.5, height - 0.68), 8, 16), material(0xff9022, 0.4));
+      body.position.y = height / 2;
+      group.add(body);
+      const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.45, 16), material(0x172033));
+      arrow.rotation.x = -Math.PI / 2;
+      arrow.position.set(0, height * 0.72, -0.43);
+      group.add(arrow);
+      return group;
+    }
+
+    function buildMetrics() {
+      floorPlane(26, 22);
+      const height = Number(document.getElementById("playerHeight").value) / 10;
+      const doorHeight = Number(document.getElementById("doorHeight").value) / 10;
+      const gap = Number(document.getElementById("gap").value) / 10;
+      const corridor = Number(document.getElementById("corridor").value) / 10;
+      player = makePlayer(height);
+      player.position.set(-8, 0, 2);
+      lessonGroup.add(player);
+      box(new THREE.Vector3(0.6, doorHeight, 1.1), new THREE.Vector3(-5.1, doorHeight / 2, 1.25), 0x3a6fa8);
+      box(new THREE.Vector3(0.6, doorHeight, 1.1), new THREE.Vector3(-5.1, doorHeight / 2, 2.75), 0x3a6fa8);
+      box(new THREE.Vector3(0.6, 0.45, 2.6), new THREE.Vector3(-5.1, doorHeight + 0.225, 2), 0x3a6fa8);
+      box(new THREE.Vector3(4.5, 0.45, 4), new THREE.Vector3(-1.9 - gap / 2, 0.23, -2), 0xffda22);
+      box(new THREE.Vector3(4.5, 0.45, 4), new THREE.Vector3(2.6 + gap / 2, 0.23, -2), 0xffda22);
+      box(new THREE.Vector3(7, 1.7, 0.35), new THREE.Vector3(5.5, 0.85, 2 - corridor / 2), 0xb8bdb7);
+      box(new THREE.Vector3(7, 1.7, 0.35), new THREE.Vector3(5.5, 0.85, 2 + corridor / 2), 0xb8bdb7);
+      camera.position.set(11, 10, 14);
+      orbit.target.set(0, 1, 0);
+      orbit.enabled = true;
+      updateMetricsCriteria();
+    }
+
+    function updateMetricsCriteria() {
+      const height = Number(document.getElementById("playerHeight").value) / 10;
+      const door = Number(document.getElementById("doorHeight").value) / 10;
+      const reach = Number(document.getElementById("jumpReach").value) / 10;
+      const gap = Number(document.getElementById("gap").value) / 10;
+      const corridor = Number(document.getElementById("corridor").value) / 10;
+      setCriteria([door - height >= 0.3, gap <= reach && gap >= reach * 0.65, corridor >= height]);
+    }
+
+    function buildGuidance() {
+      floorPlane(24, 28);
+      const path = box(new THREE.Vector3(3.2, 0.08, 22), new THREE.Vector3(0, 0.04, -1), 0x9eb4c7);
+      path.name = "path";
+      for (const z of [6, 1, -4]) {
+        box(new THREE.Vector3(4.2, 2.5, 1.2), new THREE.Vector3(-3.7, 1.25, z), 0xcfd3cc);
+        box(new THREE.Vector3(4.2, 2.5, 1.2), new THREE.Vector3(3.7, 1.25, z - 1.3), 0xcfd3cc);
+      }
+      const landmarkHeight = Number(document.getElementById("landmark").value) / 10;
+      const tower = box(new THREE.Vector3(1.5, landmarkHeight, 1.5), new THREE.Vector3(0, landmarkHeight / 2, -10), 0xff9022);
+      tower.name = "landmark";
+      goalLight = new THREE.PointLight(0xffb347, Number(document.getElementById("goalLight").value) / 12, 12);
+      goalLight.position.set(0, landmarkHeight + 0.5, -10);
+      lessonGroup.add(goalLight);
+      const geometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 1, 9), new THREE.Vector3(0, landmarkHeight, -10)]);
+      sightline = new THREE.Line(geometry, new THREE.LineDashedMaterial({ color: 0x00aa00, dashSize: 0.4, gapSize: 0.25 }));
+      sightline.computeLineDistances();
+      sightline.visible = document.getElementById("sightline").classList.contains("active");
+      lessonGroup.add(sightline);
+      applyGuidanceAppearance();
+      camera.position.set(9, 9, 13);
+      orbit.target.set(0, 1, -1);
+      orbit.enabled = true;
+    }
+
+    function applyGuidanceAppearance() {
+      const contrast = Number(document.getElementById("contrast").value) / 100;
+      const path = lessonGroup.getObjectByName("path");
+      if (path) path.material.color.set(new THREE.Color().lerpColors(new THREE.Color(0xcfd3cc), new THREE.Color(0x235f94), contrast));
+      if (goalLight) goalLight.intensity = Number(document.getElementById("goalLight").value) / 12;
+      updateGuidanceCriteria();
+    }
+
+    function updateGuidanceCriteria() {
+      const landmark = Number(document.getElementById("landmark").value) / 10;
+      const contrast = Number(document.getElementById("contrast").value);
+      const light = Number(document.getElementById("goalLight").value);
+      setCriteria([landmark >= 5, contrast >= 60, light >= 70]);
+    }
+
+    function buildPacing() {
+      floorPlane(24, 36);
+      const compression = Number(document.getElementById("compression").value) / 10;
+      const release = Number(document.getElementById("release").value) / 10;
+      const pause = Number(document.getElementById("pause").value) / 10;
+      box(new THREE.Vector3(compression, 0.14, 8), new THREE.Vector3(0, 0.07, 9), 0x3a6fa8);
+      box(new THREE.Vector3(compression + 0.6, 2.7, 0.35), new THREE.Vector3(0, 1.35, 13), 0x8c9591);
+      box(new THREE.Vector3(compression + 0.6, 2.7, 0.35), new THREE.Vector3(0, 1.35, 5), 0x8c9591);
+      box(new THREE.Vector3(3.2, 0.14, pause), new THREE.Vector3(0, 0.07, 5 - pause / 2), 0xffda22);
+      box(new THREE.Vector3(release, 0.14, 11), new THREE.Vector3(0, 0.07, -pause - 0.5), 0xff9022);
+      const labels = [
+        ["SQUEEZE", new THREE.Vector3(0, 0.2, 9)],
+        ["PAUSE", new THREE.Vector3(0, 0.2, 4 - pause / 2)],
+        ["REVEAL", new THREE.Vector3(0, 0.2, -pause - 0.5)]
+      ];
+      labels.forEach(([text, position]) => {
+        const sprite = textSprite(text);
+        sprite.position.copy(position);
+        lessonGroup.add(sprite);
+      });
+      camera.position.set(12, 15, 18);
+      orbit.target.set(0, 0, 1);
+      orbit.enabled = true;
+      updatePacingCriteria();
+    }
+
+    function textSprite(text) {
+      const c = document.createElement("canvas");
+      c.width = 256;
+      c.height = 64;
+      const context = c.getContext("2d");
+      context.fillStyle = "rgba(23,32,51,.82)";
+      context.fillRect(0, 0, 256, 64);
+      context.fillStyle = "#fff";
+      context.font = "bold 22px monospace";
+      context.textAlign = "center";
+      context.fillText(text, 128, 40);
+      const texture = new THREE.CanvasTexture(c);
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true }));
+      sprite.scale.set(2.8, 0.7, 1);
+      return sprite;
+    }
+
+    function updatePacingCriteria() {
+      const compression = Number(document.getElementById("compression").value) / 10;
+      const release = Number(document.getElementById("release").value) / 10;
+      const pause = Number(document.getElementById("pause").value) / 10;
+      document.getElementById("tensionMetric").textContent = compression <= 3 ? "high" : compression <= 4 ? "medium" : "low";
+      document.getElementById("contrastMetric").textContent = (release - compression).toFixed(1);
+      setCriteria([compression <= 3, release >= 7, pause >= 3]);
+    }
+
+    function buildPlaytest() {
+      floorPlane(26, 34);
+      const wallData = [
+        [0, 12, 12, 0.5], [-6, 6, 0.5, 12], [6, 5, 0.5, 14],
+        [-2.5, 1.5, 7, 0.5], [2.5, -4, 7, 0.5], [-5, -9, 0.5, 10],
+        [5.5, -10, 0.5, 8], [0, -14, 11, 0.5]
+      ];
+      walls = wallData.map(([x, z, w, d]) => {
+        box(new THREE.Vector3(w, 2.4, d), new THREE.Vector3(x, 1.2, z), 0xc8cdc6);
+        return { x, z, w, d };
+      });
+      const landmark = box(new THREE.Vector3(1.5, 6.5, 1.5), new THREE.Vector3(3.7, 3.25, -11.5), 0xff9022);
+      landmark.name = "playtest-landmark";
+      const positions = [new THREE.Vector3(-3.8, 0.35, 4.2), new THREE.Vector3(3.5, 0.35, -2.5), new THREE.Vector3(3.6, 0.35, -11)];
+      checkpoints = positions.map((position, index) => {
+        const marker = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.12, 12, 32), material(index === 2 ? 0x00aa00 : 0xffda22, 0.3));
+        marker.rotation.x = Math.PI / 2;
+        marker.position.copy(position);
+        marker.userData.index = index;
+        lessonGroup.add(marker);
+        return marker;
+      });
+      player = makePlayer(1.8);
+      player.position.set(0, 0, 10);
+      lessonGroup.add(player);
+      lastPlayerPosition.copy(player.position);
+      camera.position.set(0, 14, 17);
+      camera.lookAt(player.position);
+      orbit.enabled = false;
+      updatePlaytestCriteria();
+    }
+
+    function setCriteria(states) {
+      [...document.querySelectorAll(".objective")].forEach((item, index) => item.classList.toggle("met", Boolean(states[index])));
+      const ready = states.every(Boolean);
+      document.getElementById("completeLesson").disabled = !ready;
+      document.getElementById("readyLabel").textContent = ready ? "criteria met" : "criteria incomplete";
+      document.getElementById("readyLabel").style.color = ready ? "#087b08" : "";
+    }
+
+    function updatePlaytestCriteria() {
+      setCriteria([collected.has(0), collected.has(1), collected.has(2)]);
+      document.getElementById("markersMetric").textContent = `${collected.size} / 3`;
+      document.getElementById("timeMetric").textContent = `${activeTime.toFixed(1)} s`;
+      document.getElementById("distanceMetric").textContent = `${travelDistance.toFixed(0)} m`;
+    }
+
+    function showLesson(index) {
+      progress.setActive(index);
+      const lesson = lessons[index];
+      document.getElementById("lessonKicker").textContent = lesson.kicker;
+      document.getElementById("lessonTitle").textContent = lesson.title;
+      document.getElementById("lessonDescription").textContent = lesson.description;
+      document.getElementById("promptCopy").textContent = lesson.prompt;
+      document.getElementById("viewLabel").textContent = lesson.view;
+      document.getElementById("objectiveList").innerHTML = lesson.objectives.map(text => `<div class="objective">${text}</div>`).join("");
+      document.querySelectorAll(".lesson-panel").forEach(panel => { panel.hidden = Number(panel.dataset.panel) !== index; });
+      document.getElementById("completeLesson").textContent = progress.state.complete[index] ? "Lesson complete" : "Complete lesson";
+      buildLesson(index);
+    }
+
+    function buildLesson(index) {
+      clearLesson();
+      if (index === 0) buildMetrics();
+      if (index === 1) buildGuidance();
+      if (index === 2) buildPacing();
+      if (index === 3) buildPlaytest();
+    }
+
+    function isBlocked(position) {
+      const radius = 0.34;
+      return walls.some(wall => Math.abs(position.x - wall.x) < wall.w / 2 + radius && Math.abs(position.z - wall.z) < wall.d / 2 + radius);
+    }
+
+    function stepPlayer(dx, dz) {
+      if (progress.state.active !== 3 || !player) return;
+      const next = player.position.clone().add(new THREE.Vector3(dx, 0, dz));
+      next.x = THREE.MathUtils.clamp(next.x, -5.4, 5.4);
+      next.z = THREE.MathUtils.clamp(next.z, -13.4, 11.4);
+      if (!isBlocked(next)) {
+        travelDistance += player.position.distanceTo(next);
+        player.position.copy(next);
+        lastPlayerPosition.copy(player.position);
+        player.rotation.y = Math.atan2(dx, dz);
+      }
+    }
+
+    function resetDefaults(index) {
+      const defaults = [
+        { playerHeight: 18, doorHeight: 20, jumpReach: 30, gap: 35, corridor: 15 },
+        { landmark: 30, contrast: 25, goalLight: 30 },
+        { compression: 50, release: 50, pause: 10 },
+        { speed: 40 }
+      ][index];
+      Object.entries(defaults).forEach(([id, value]) => {
+        document.getElementById(id).value = value;
+        document.getElementById(id).dispatchEvent(new Event("input"));
+      });
+      buildLesson(index);
+    }
+
+    tabs.forEach(tab => tab.addEventListener("click", () => showLesson(Number(tab.dataset.lesson))));
+    document.getElementById("completeLesson").addEventListener("click", () => {
+      const index = progress.state.active;
+      progress.markComplete(index);
+      document.getElementById("completeLesson").textContent = "Lesson complete";
+      if (index < lessons.length - 1) showLesson(index + 1);
+    });
+    document.getElementById("resetLesson").addEventListener("click", () => resetDefaults(progress.state.active));
+    document.getElementById("resetPlaytest").addEventListener("click", () => buildLesson(3));
+    document.querySelectorAll("[data-step]").forEach(button => button.addEventListener("click", () => {
+      const [dx, dz] = button.dataset.step.split(",").map(Number);
+      stepPlayer(dx, dz);
+    }));
+    document.getElementById("guidedPlaytest").addEventListener("click", () => {
+      if (progress.state.active !== 3 || !player) return;
+      collected = new Set([0, 1, 2]);
+      checkpoints.forEach(marker => {
+        marker.material.color.set(0x00aa00);
+        marker.scale.setScalar(1.3);
+      });
+      player.position.set(3.6, 0, -11);
+      lastPlayerPosition.copy(player.position);
+      activeTime = 16.4;
+      travelDistance = 29.7;
+      updatePlaytestCriteria();
+    });
+    document.getElementById("sightline").addEventListener("click", event => {
+      const active = !event.currentTarget.classList.contains("active");
+      event.currentTarget.classList.toggle("active", active);
+      event.currentTarget.textContent = `Sightline overlay ${active ? "on" : "off"}`;
+      if (sightline) sightline.visible = active;
+    });
+
+    const inputFormats = {
+      playerHeight: value => `${(value / 10).toFixed(1)} m`, doorHeight: value => `${(value / 10).toFixed(1)} m`,
+      jumpReach: value => `${(value / 10).toFixed(1)} m`, gap: value => `${(value / 10).toFixed(1)} m`,
+      corridor: value => `${(value / 10).toFixed(1)} m`, landmark: value => `${(value / 10).toFixed(1)} m`,
+      contrast: value => `${value}%`, goalLight: value => `${value}%`, compression: value => `${(value / 10).toFixed(1)} m`,
+      release: value => `${(value / 10).toFixed(1)} m`, pause: value => `${(value / 10).toFixed(1)} m`,
+      speed: value => `${(value / 10).toFixed(1)} m/s`
+    };
+    Object.entries(inputFormats).forEach(([id, format]) => {
+      document.getElementById(id).addEventListener("input", event => {
+        document.getElementById(`${id}Value`).textContent = format(Number(event.target.value));
+        if (progress.state.active === 0) buildMetrics();
+        else if (progress.state.active === 1) {
+          if (id === "landmark") buildGuidance(); else applyGuidanceAppearance();
+        } else if (progress.state.active === 2) buildPacing();
+      });
+    });
+
+    addEventListener("keydown", event => {
+      if (["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)) {
+        keys.add(event.code);
+        event.preventDefault();
+      }
+    });
+    addEventListener("keyup", event => keys.delete(event.code));
+
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      renderer.setSize(rect.width, rect.height, false);
+      camera.aspect = rect.width / rect.height;
+      camera.updateProjectionMatrix();
+    }
+    addEventListener("resize", resize);
+    resize();
+    updateProgressUI();
+    showLesson(progress.state.active);
+    let previous = performance.now();
+    renderer.setAnimationLoop(now => {
+      const delta = Math.min((now - previous) / 1000, 0.05);
+      previous = now;
+      if (progress.state.active === 3 && player) {
+        const input = new THREE.Vector3(
+          (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0),
+          0,
+          (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) - (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0)
+        );
+        if (input.lengthSq() > 0) {
+          input.normalize().multiplyScalar(Number(document.getElementById("speed").value) / 10 * delta);
+          const next = player.position.clone().add(input);
+          next.x = THREE.MathUtils.clamp(next.x, -5.4, 5.4);
+          next.z = THREE.MathUtils.clamp(next.z, -13.4, 11.4);
+          if (!isBlocked(next)) player.position.copy(next);
+          player.rotation.y = Math.atan2(input.x, input.z);
+          activeTime += delta;
+          travelDistance += player.position.distanceTo(lastPlayerPosition);
+          lastPlayerPosition.copy(player.position);
+        }
+        checkpoints.forEach(marker => {
+          if (!collected.has(marker.userData.index) && player.position.distanceTo(marker.position) < 0.9) {
+            collected.add(marker.userData.index);
+            marker.material.color.set(0x00aa00);
+            marker.scale.setScalar(1.3);
+          }
+          marker.rotation.z += delta;
+        });
+        camera.position.lerp(new THREE.Vector3(player.position.x, 9, player.position.z + 8), 0.08);
+        camera.lookAt(player.position.x, 0.7, player.position.z - 1);
+        updatePlaytestCriteria();
+      } else {
+        orbit.update();
+      }
+      renderer.render(scene, camera);
+    });
+  </script>
+</body>
+</html>

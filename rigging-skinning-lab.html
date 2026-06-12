@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rigging and Skin Weights - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <link rel="stylesheet" href="advanced-lab.css">
+</head>
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+      <header>
+        <p class="eyebrow">Production pipeline 02</p>
+        <h1>Rigging + Skin Weights</h1>
+        <p class="lede">A hierarchy moves rigid objects. A skinned mesh blends every vertex between bones, allowing one continuous surface to bend across a joint.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Pose the skeleton</h2>
+        <div class="control">
+          <div class="control-head"><span>Shoulder</span><span id="shoulderValue" class="value">20&#176;</span></div>
+          <input id="shoulder" type="range" min="-80" max="80" value="20">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Elbow</span><span id="elbowValue" class="value">-35&#176;</span></div>
+          <input id="elbow" type="range" min="-110" max="110" value="-35">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Wrist</span><span id="wristValue" class="value">15&#176;</span></div>
+          <input id="wrist" type="range" min="-100" max="100" value="15">
+        </div>
+        <button id="reachPreset" class="wide-btn" style="margin-top:12px">Load reach pose</button>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Vertex influence</h2>
+        <div class="control">
+          <div class="control-head"><span>Blend width</span><span id="blendValue" class="value">45%</span></div>
+          <input id="blend" type="range" min="0" max="100" value="45">
+        </div>
+        <div class="split-button-row" style="margin-top:12px">
+          <button class="tool-btn active" data-bone="0">Shoulder</button>
+          <button class="tool-btn" data-bone="1">Elbow</button>
+          <button class="tool-btn" data-bone="2">Wrist</button>
+        </div>
+        <div class="legend" style="margin-top:11px">
+          <span><i style="background:#172033"></i>no influence</span>
+          <span><i style="background:#ffda22"></i>partial</span>
+          <span><i style="background:#e63462"></i>full</span>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Deformation health</h2>
+        <div class="readout-grid">
+          <div class="readout"><strong id="distanceReadout">0.00 m</strong><span>hand to target</span></div>
+          <div class="readout"><strong id="modeReadout">blended</strong><span>joint behavior</span></div>
+          <div class="readout"><strong>4</strong><span>bones</span></div>
+          <div class="readout"><strong>2</strong><span>weights / vertex</span></div>
+        </div>
+        <button id="skeletonToggle" class="wide-btn active" style="margin-top:10px">Skeleton visible</button>
+      </section>
+
+      <div class="concept-note">Weight painting does not move a vertex directly. It defines how strongly each bone's transform contributes to that vertex.</div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Rigging challenge</div>
+        <h2 class="challenge-title">Reach without collapsing the elbow</h2>
+        <p class="challenge-copy">Move the hand within 0.45 m of the target while keeping blend width at 35% or more.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">Pose the arm toward the target</span></div>
+      </section>
+    </aside>
+
+    <section class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="viewport-label"><strong>Weight view</strong>The selected bone is visualized across the rest mesh. Warm colors mean stronger influence.</div>
+      <div class="hud"><span class="hud-pill">lines = bones</span><span class="hud-pill">surface = skinned mesh</span></div>
+      <div class="help">Use the pose controls, then switch bones to inspect overlapping influence.</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}
+  </script>
+  <script type="module">
+    import { THREE, createLab, startLoop, bindRange, bindToggle, setChallenge } from "./advanced-lab-core.js";
+
+    const lab = createLab({ cameraPosition: [7.5, 4.2, 8], target: [0, 2.4, 0] });
+    const segmentLength = 1.55;
+    const geometry = new THREE.CylinderGeometry(0.42, 0.52, segmentLength * 3, 18, 30, false);
+    geometry.translate(0, segmentLength * 1.5, 0);
+
+    const bones = [];
+    const rootBone = new THREE.Bone();
+    rootBone.position.y = 0;
+    bones.push(rootBone);
+    for (let index = 1; index < 4; index++) {
+      const bone = new THREE.Bone();
+      bone.position.y = segmentLength;
+      bones[index - 1].add(bone);
+      bones.push(bone);
+    }
+
+    const material = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.58,
+      metalness: 0.02,
+      side: THREE.DoubleSide
+    });
+    const mesh = new THREE.SkinnedMesh(geometry, material);
+    mesh.add(rootBone);
+    mesh.bind(new THREE.Skeleton(bones));
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    lab.scene.add(mesh);
+
+    const helper = new THREE.SkeletonHelper(mesh);
+    helper.material.color.set(0x172033);
+    helper.material.depthTest = false;
+    helper.renderOrder = 5;
+    lab.scene.add(helper);
+
+    const hand = new THREE.Mesh(
+      new THREE.SphereGeometry(0.18, 18, 12),
+      new THREE.MeshStandardMaterial({ color: 0x13b8a6, emissive: 0x073c38, emissiveIntensity: 0.35 })
+    );
+    hand.position.y = 0;
+    bones[3].add(hand);
+
+    const target = new THREE.Mesh(
+      new THREE.TorusGeometry(0.42, 0.075, 12, 36),
+      new THREE.MeshStandardMaterial({ color: 0xe63462, emissive: 0x4d0718, emissiveIntensity: 0.4 })
+    );
+    target.position.set(-2.15, 4.04, 0);
+    target.rotation.x = Math.PI / 2;
+    lab.scene.add(target);
+
+    const state = { blend: 0.45, selectedBone: 0 };
+    const skinIndices = new Uint16Array(geometry.getAttribute("position").count * 4);
+    const skinWeights = new Float32Array(geometry.getAttribute("position").count * 4);
+    const colors = new Float32Array(geometry.getAttribute("position").count * 3);
+    geometry.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(skinIndices, 4));
+    geometry.setAttribute("skinWeight", new THREE.Float32BufferAttribute(skinWeights, 4));
+    geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+
+    function calculateWeights() {
+      const position = geometry.getAttribute("position");
+      const indices = geometry.getAttribute("skinIndex");
+      const weights = geometry.getAttribute("skinWeight");
+      const width = Math.max(0.001, state.blend * segmentLength);
+      for (let index = 0; index < position.count; index++) {
+        const y = THREE.MathUtils.clamp(position.getY(index), 0, segmentLength * 3 - 0.001);
+        const lower = Math.min(2, Math.floor(y / segmentLength));
+        const local = y - lower * segmentLength;
+        let upperWeight;
+        if (state.blend < 0.01) upperWeight = local >= segmentLength ? 1 : 0;
+        else upperWeight = THREE.MathUtils.smoothstep(local, segmentLength - width, segmentLength);
+        indices.setXYZW(index, lower, lower + 1, 0, 0);
+        weights.setXYZW(index, 1 - upperWeight, upperWeight, 0, 0);
+      }
+      indices.needsUpdate = true;
+      weights.needsUpdate = true;
+      mesh.normalizeSkinWeights();
+      updateColors();
+    }
+
+    function updateColors() {
+      const indices = geometry.getAttribute("skinIndex");
+      const weights = geometry.getAttribute("skinWeight");
+      const color = geometry.getAttribute("color");
+      const component = (attribute, index, slot) => {
+        if (slot === 0) return attribute.getX(index);
+        if (slot === 1) return attribute.getY(index);
+        if (slot === 2) return attribute.getZ(index);
+        return attribute.getW(index);
+      };
+      const cold = new THREE.Color(0x172033);
+      const middle = new THREE.Color(0xffda22);
+      const hot = new THREE.Color(0xe63462);
+      for (let index = 0; index < color.count; index++) {
+        let influence = 0;
+        for (let slot = 0; slot < 4; slot++) {
+          if (component(indices, index, slot) === state.selectedBone) {
+            influence += component(weights, index, slot);
+          }
+        }
+        const output = influence < 0.5
+          ? cold.clone().lerp(middle, influence * 2)
+          : middle.clone().lerp(hot, (influence - 0.5) * 2);
+        color.setXYZ(index, output.r, output.g, output.b);
+      }
+      color.needsUpdate = true;
+    }
+
+    function pose() {
+      bones[0].rotation.z = THREE.MathUtils.degToRad(Number(document.getElementById("shoulder").value));
+      bones[1].rotation.z = THREE.MathUtils.degToRad(Number(document.getElementById("elbow").value));
+      bones[2].rotation.z = THREE.MathUtils.degToRad(Number(document.getElementById("wrist").value));
+    }
+
+    bindRange("shoulder", value => `${value}\u00b0`, pose);
+    bindRange("elbow", value => `${value}\u00b0`, pose);
+    bindRange("wrist", value => `${value}\u00b0`, pose);
+    bindRange("blend", value => `${value}%`, value => {
+      state.blend = value / 100;
+      document.getElementById("modeReadout").textContent = value < 12 ? "rigid crease" : value < 35 ? "narrow blend" : "blended";
+      calculateWeights();
+    });
+    bindToggle("skeletonToggle", value => { helper.visible = value; }, "Skeleton visible", "Skeleton hidden", true);
+
+    document.querySelectorAll("[data-bone]").forEach(button => button.addEventListener("click", () => {
+      document.querySelectorAll("[data-bone]").forEach(item => item.classList.remove("active"));
+      button.classList.add("active");
+      state.selectedBone = Number(button.dataset.bone);
+      updateColors();
+    }));
+    document.getElementById("reachPreset").addEventListener("click", () => {
+      [["shoulder", 32], ["elbow", -18], ["wrist", 24]].forEach(([id, value]) => {
+        const input = document.getElementById(id);
+        input.value = value;
+        input.dispatchEvent(new Event("input"));
+      });
+    });
+
+    const handWorld = new THREE.Vector3();
+    startLoop(lab, (dt, time) => {
+      pose();
+      target.scale.setScalar(1 + Math.sin(time * 4) * 0.06);
+      hand.getWorldPosition(handWorld);
+      const distance = handWorld.distanceTo(target.position);
+      document.getElementById("distanceReadout").textContent = `${distance.toFixed(2)} m`;
+      const complete = distance <= 0.45 && state.blend >= 0.35;
+      setChallenge(complete, complete ? "Target reached with a healthy blend" : distance <= 0.45 ? "Increase blend width to protect the joint" : "Pose the hand closer to the target");
+    });
+  </script>
+</body>
+</html>

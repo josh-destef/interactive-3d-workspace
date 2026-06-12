@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ECS Composer - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+  <style>
+    .ecs-stage { position:relative; min-width:0; min-height:0; overflow:hidden; background:#eef0eb; }
+    .ecs-stage a-scene { width:100%; height:100%; }
+    .entity-list { display:grid; gap:6px; }
+    .entity-row { display:grid; grid-template-columns:12px 1fr auto; align-items:center; gap:8px; min-height:38px; padding:7px 9px; background:#f7f8f6; border:1px solid transparent; border-radius:9px; cursor:pointer; }
+    .entity-row.active { background:#fff7ed; border-color:var(--orange); }
+    .entity-dot { width:9px; height:9px; border-radius:50%; }
+    .entity-row span { font-size:10px; font-weight:700; }
+    .entity-row small { color:var(--muted); font-family:var(--mono); font-size:8px; }
+    .component-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+    .component-btn { min-height:48px; padding:7px; background:#fff; border:1px solid var(--line); border-radius:9px; cursor:pointer; font-size:10px; }
+    .component-btn strong { display:block; margin-bottom:3px; }
+    .component-btn small { color:var(--muted); font-size:8px; }
+    .component-btn.active { color:#fff; background:var(--ink); border-color:var(--ink); }
+    .component-btn.active small { color:rgba(255,255,255,.65); }
+    .code-card { overflow:auto; padding:11px; color:#dce7df; background:#172033; border-radius:9px; font-family:var(--mono); font-size:9px; line-height:1.55; white-space:pre-wrap; }
+    .tool-badge { position:absolute; top:18px; right:18px; z-index:5; padding:8px 11px; color:#fff; background:#e63462; border-radius:999px; font-family:var(--mono); font-size:9px; }
+  </style>
+</head>
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+      <header>
+        <p class="eyebrow">Entity-component systems</p>
+        <h1>ECS Composer</h1>
+        <p class="lede">An entity is an address. Components add data and behavior. Compose a world without inventing a new object class for every combination.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Create an entity</h2>
+        <div class="button-grid">
+          <button class="tool-btn" data-create="box">Box entity</button>
+          <button class="tool-btn" data-create="sphere">Sphere entity</button>
+          <button class="tool-btn" data-create="cylinder">Cylinder entity</button>
+          <button id="duplicate" class="tool-btn">Duplicate selected</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Scene entities <span id="entityCount" class="value">0</span></h2>
+        <div id="entityList" class="entity-list"></div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Behavior components</h2>
+        <p class="panel-note">Select an entity, then attach reusable behaviors. Each component works independently.</p>
+        <div class="component-grid">
+          <button class="component-btn" data-component="spin"><strong>Spin</strong><small>rotation each tick</small></button>
+          <button class="component-btn" data-component="bob"><strong>Bob</strong><small>position over time</small></button>
+          <button class="component-btn" data-component="pulse"><strong>Pulse</strong><small>scale over time</small></button>
+          <button class="component-btn" data-component="reactive"><strong>Reactive</strong><small>click changes color</small></button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Selected entity markup</h2>
+        <pre id="markup" class="code-card">&lt;!-- select an entity --&gt;</pre>
+      </section>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Composition challenge</div>
+        <h2 class="challenge-title">Build a behavior family</h2>
+        <p class="challenge-copy">Create three entities and attach at least three different component types across the scene.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">0 entities · 0 component types</span></div>
+      </section>
+    </aside>
+
+    <section class="ecs-stage">
+      <span class="tool-badge">Built with A-Frame</span>
+      <a-scene embedded renderer="antialias: true; colorManagement: true" background="color: #f4f4ef" vr-mode-ui="enabled: false">
+        <a-entity light="type: hemisphere; color: #ffffff; groundColor: #667085; intensity: 1.8"></a-entity>
+        <a-entity light="type: directional; color: #ffffff; intensity: 1.8" position="4 8 5"></a-entity>
+        <a-plane rotation="-90 0 0" width="30" height="30" color="#e5e6df" shadow></a-plane>
+        <a-entity id="rig" position="0 2.8 8">
+          <a-camera look-controls="enabled: true" wasd-controls="acceleration: 18">
+            <a-cursor raycaster="objects: .interactive" color="#ff9022"></a-cursor>
+          </a-camera>
+        </a-entity>
+      </a-scene>
+      <div class="help">Drag to look · WASD to move · click an entity to select or react</div>
+    </section>
+  </main>
+
+  <script>
+    AFRAME.registerComponent("spin", {
+      schema: { speed: { default: 45 } },
+      tick: function (time, delta) {
+        this.el.object3D.rotation.y += THREE.MathUtils.degToRad(this.data.speed) * delta / 1000;
+      }
+    });
+    AFRAME.registerComponent("bob", {
+      init: function () { this.baseY = this.el.object3D.position.y; },
+      tick: function (time) { this.el.object3D.position.y = this.baseY + Math.sin(time * 0.003) * 0.35; },
+      remove: function () { this.el.object3D.position.y = this.baseY; }
+    });
+    AFRAME.registerComponent("pulse", {
+      tick: function (time) {
+        const scale = 1 + Math.sin(time * 0.004) * 0.16;
+        this.el.object3D.scale.setScalar(scale);
+      },
+      remove: function () { this.el.object3D.scale.setScalar(1); }
+    });
+    AFRAME.registerComponent("reactive", {
+      init: function () {
+        this.click = () => {
+          const colors = ["#ff9022", "#00aa00", "#3a6fa8", "#b78bea", "#ffda22"];
+          this.el.setAttribute("material", "color", colors[Math.floor(Math.random() * colors.length)]);
+          refresh();
+        };
+        this.el.addEventListener("click", this.click);
+      },
+      remove: function () { this.el.removeEventListener("click", this.click); }
+    });
+    const scene = document.querySelector("a-scene");
+    const list = document.getElementById("entityList");
+    const components = ["spin", "bob", "pulse", "reactive"];
+    const colors = ["#ff9022", "#00aa00", "#3a6fa8", "#b78bea", "#ffda22"];
+    const entities = [];
+    let selected = null;
+    let serial = 0;
+
+    function createEntity(shape, source = null) {
+      const entity = document.createElement("a-entity");
+      const index = entities.length;
+      serial++;
+      entity.id = `entity-${serial}`;
+      entity.classList.add("interactive");
+      entity.dataset.shape = source?.dataset.shape || shape;
+      entity.setAttribute("geometry", `primitive: ${entity.dataset.shape}; ${entity.dataset.shape === "box" ? "width: 1.2; height: 1.2; depth: 1.2" : entity.dataset.shape === "sphere" ? "radius: 0.72" : "radius: 0.62; height: 1.5"}`);
+      entity.setAttribute("material", `color: ${source?.getAttribute("material")?.color || colors[index % colors.length]}; roughness: 0.45; metalness: 0.08`);
+      entity.setAttribute("position", `${-2.7 + (index % 4) * 1.8} ${entity.dataset.shape === "cylinder" ? 0.75 : 0.72} ${-Math.floor(index / 4) * 1.8}`);
+      entity.setAttribute("shadow", "cast: true; receive: true");
+      if (source) components.forEach(name => { if (source.hasAttribute(name)) entity.setAttribute(name, ""); });
+      entity.addEventListener("click", event => {
+        event.stopPropagation();
+        selectEntity(entity);
+      });
+      scene.appendChild(entity);
+      entities.push(entity);
+      selectEntity(entity);
+      refresh();
+    }
+
+    function selectEntity(entity) {
+      selected = entity;
+      entities.forEach(item => item.setAttribute("material", "emissive", item === selected ? "#33220f" : "#000000"));
+      refresh();
+    }
+
+    function toggleComponent(name) {
+      if (!selected) return;
+      if (selected.hasAttribute(name)) selected.removeAttribute(name);
+      else selected.setAttribute(name, "");
+      refresh();
+    }
+
+    function refresh() {
+      list.innerHTML = "";
+      entities.forEach((entity, index) => {
+        const row = document.createElement("button");
+        row.className = `entity-row${entity === selected ? " active" : ""}`;
+        const color = entity.getAttribute("material")?.color || "#ff9022";
+        const behaviorCount = components.filter(name => entity.hasAttribute(name)).length;
+        row.innerHTML = `<i class="entity-dot" style="background:${color}"></i><span>${entity.id}</span><small>${behaviorCount} behavior${behaviorCount === 1 ? "" : "s"}</small>`;
+        row.addEventListener("click", () => selectEntity(entity));
+        list.append(row);
+      });
+      document.getElementById("entityCount").textContent = entities.length;
+      document.querySelectorAll("[data-component]").forEach(button => {
+        button.classList.toggle("active", Boolean(selected?.hasAttribute(button.dataset.component)));
+      });
+      if (selected) {
+        const attrs = components.filter(name => selected.hasAttribute(name)).map(name => `\n  ${name}`).join("");
+        document.getElementById("markup").textContent =
+          `<a-entity\n  geometry="primitive: ${selected.dataset.shape}"\n  material="color: ${selected.getAttribute("material").color}"${attrs}>\n</a-entity>`;
+      } else {
+        document.getElementById("markup").textContent = "<!-- select an entity -->";
+      }
+      const used = new Set();
+      entities.forEach(entity => components.forEach(name => { if (entity.hasAttribute(name)) used.add(name); }));
+      const complete = entities.length >= 3 && used.size >= 3;
+      document.getElementById("challenge").classList.toggle("complete", complete);
+      document.getElementById("challengeStatus").textContent = complete
+        ? "Behavior family complete"
+        : `${entities.length} entities · ${used.size} component types`;
+    }
+
+    document.querySelectorAll("[data-create]").forEach(button => button.addEventListener("click", () => createEntity(button.dataset.create)));
+    document.querySelectorAll("[data-component]").forEach(button => button.addEventListener("click", () => toggleComponent(button.dataset.component)));
+    document.getElementById("duplicate").addEventListener("click", () => { if (selected) createEntity(selected.dataset.shape, selected); });
+    function seedScene() {
+      if (entities.length) return;
+      createEntity("box");
+      createEntity("sphere");
+    }
+    if (scene.hasLoaded) seedScene();
+    else scene.addEventListener("loaded", seedScene, { once: true });
+  </script>
+</body>
+</html>

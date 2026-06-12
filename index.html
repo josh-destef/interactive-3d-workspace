@@ -56,14 +56,38 @@
     .page-subtitle {
       text-align: center;
       color: var(--text-muted);
-      margin-bottom: 4rem;
+      margin-bottom: 3rem;
       font-size: 1.1rem;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      margin: 3rem 0 1.25rem;
+      padding-bottom: 0.8rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .section-heading:first-of-type {
+      margin-top: 0;
+    }
+
+    .section-title {
+      font-family: 'Lexend', sans-serif;
+      font-size: 1.3rem;
+    }
+
+    .section-kicker {
+      color: var(--text-muted);
+      font-size: 0.82rem;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-      gap: 2.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
     }
 
     .card {
@@ -87,7 +111,7 @@
     }
 
     .card-header {
-      height: 190px;
+      height: 160px;
       background: var(--header-bg);
       position: relative;
       display: flex;
@@ -112,8 +136,92 @@
       opacity: 1;
     }
 
+    .card-header.creation {
+      background: #f4f3ed;
+    }
+
+    .card-header.creation::before {
+      background: radial-gradient(circle at center, rgba(0, 170, 0, 0.13) 0%, transparent 62%);
+    }
+
+    .card-header.playable {
+      background: #172033;
+    }
+
+    .card-header.playable::before {
+      background: radial-gradient(circle at center, rgba(58, 111, 168, 0.45) 0%, transparent 66%);
+    }
+
+    .card-header.course {
+      background:
+        linear-gradient(135deg, rgba(255, 144, 34, 0.95), rgba(255, 218, 34, 0.84)),
+        #ff9022;
+    }
+
+    .card-header.course::before {
+      background:
+        linear-gradient(90deg, transparent 48%, rgba(255, 255, 255, 0.24) 50%, transparent 52%),
+        linear-gradient(transparent 48%, rgba(255, 255, 255, 0.24) 50%, transparent 52%);
+      background-size: 34px 34px;
+      opacity: 0.38;
+    }
+
+    .course .visual {
+      color: #fff;
+      background: rgba(23, 32, 51, 0.86);
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    .course .card-number {
+      color: rgba(23, 32, 51, 0.64);
+    }
+
+    .visual {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      width: 78px;
+      height: 78px;
+      place-items: center;
+      color: var(--accent-orange);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.06);
+      box-shadow: 0 16px 38px rgba(0, 0, 0, 0.2);
+      font-family: 'Lexend', sans-serif;
+      font-size: 2rem;
+      transform: rotate(-4deg);
+      transition: transform 0.3s ease;
+    }
+
+    .creation .visual {
+      color: var(--accent-green);
+      background: #fff;
+      border-color: rgba(0, 0, 0, 0.08);
+      box-shadow: 0 16px 38px rgba(23, 30, 53, 0.12);
+    }
+
+    .card:hover .visual {
+      transform: rotate(0) scale(1.08);
+    }
+
+    .card-number {
+      position: absolute;
+      top: 14px;
+      left: 16px;
+      z-index: 2;
+      color: rgba(255, 255, 255, 0.5);
+      font-family: 'Lexend', sans-serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+    }
+
+    .creation .card-number {
+      color: rgba(23, 30, 53, 0.4);
+    }
+
     .card-body {
-      padding: 1.75rem;
+      padding: 1.45rem;
       flex: 1;
       display: flex;
       flex-direction: column;
@@ -121,9 +229,9 @@
 
     .card-title {
       font-family: 'Lexend', sans-serif;
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       font-weight: 700;
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.55rem;
       color: var(--text-main);
     }
 
@@ -134,6 +242,43 @@
       margin-bottom: 0;
       flex: 1;
     }
+
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 1rem;
+    }
+
+    .tag {
+      padding: 4px 7px;
+      color: var(--text-muted);
+      background: #f4f5f2;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 600;
+    }
+
+    .new-tag {
+      color: #fff;
+      background: var(--accent-green);
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 2.5rem 1rem;
+      }
+
+      .page-title {
+        font-size: 2.1rem;
+      }
+
+      .section-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+    }
   </style>
 </head>
 
@@ -143,56 +288,435 @@
     <h1 class="page-title">Interactive Labs</h1>
     <p class="page-subtitle">Select an experience to begin exploring 3D fundamentals.</p>
 
+    <div class="section-heading">
+      <h2 class="section-title">Foundations</h2>
+      <span class="section-kicker">Understand space, geometry, and transforms</span>
+    </div>
+
     <div class="grid">
-      <!-- Card 1 -->
       <a href="fundamentals1.html" class="card">
         <div class="card-header">
+          <span class="card-number">01</span>
+          <span class="visual">·</span>
         </div>
         <div class="card-body">
-          <h2 class="card-title">Fundamentals 1</h2>
-          <p class="card-desc">An introduction to points, vectors, and planes. Scroll through the interactive timeline
-            to watch 2D geometry extrude into 3D volume.</p>
+          <h2 class="card-title">From 2D to 3D</h2>
+          <p class="card-desc">Watch flat geometry gain depth and become volume through a scroll-driven visual story.</p>
+          <div class="card-tags"><span class="tag">dimensions</span><span class="tag">volume</span></div>
         </div>
       </a>
 
-      <!-- Card 2 -->
       <a href="fundamentals2.html" class="card">
         <div class="card-header">
+          <span class="card-number">02</span>
+          <span class="visual">△</span>
         </div>
         <div class="card-body">
-          <h2 class="card-title">Fundamentals 2</h2>
-          <p class="card-desc">points -> line -> shape -> solid. Not a huge fan of this one but and used a lot of it to
-            build 3 but some elements i abandoned and might port over in next iteration</p>
+          <h2 class="card-title">Points to Solids</h2>
+          <p class="card-desc">Build geometry from points, lines, faces, normals, and volume while manipulating the construction.</p>
+          <div class="card-tags"><span class="tag">vertices</span><span class="tag">faces</span><span class="tag">normals</span></div>
         </div>
       </a>
 
-      <!-- Card 3 -->
       <a href="fundamentals3.html" class="card">
         <div class="card-header">
+          <span class="card-number">03</span>
+          <span class="visual">◇</span>
         </div>
         <div class="card-body">
-          <h2 class="card-title">Fundamentals 3</h2>
-          <p class="card-desc">My personal favorite. Lots of interaction.</p>
+          <h2 class="card-title">Interactive Geometry</h2>
+          <p class="card-desc">A guided, hands-on journey through the structures and interactions that make 3D scenes work.</p>
+          <div class="card-tags"><span class="tag">guided</span><span class="tag">interactive</span></div>
         </div>
       </a>
 
-      <!-- Card 4 -->
       <a href="fundamentals4.html" class="card">
         <div class="card-header">
+          <span class="card-number">04</span>
+          <span class="visual">↔</span>
         </div>
         <div class="card-body">
-          <h2 class="card-title">Fundamentals 4</h2>
+          <h2 class="card-title">Move in 3D</h2>
           <p class="card-desc">Master the movement. Learn how to translate objects across X, Y, and Z axes with precision.</p>
+          <div class="card-tags"><span class="tag">X Y Z</span><span class="tag">translation</span></div>
         </div>
       </a>
 
-      <!-- Card 5 -->
       <a href="fundamentals5.html" class="card">
         <div class="card-header">
+          <span class="card-number">05</span>
+          <span class="visual">⌖</span>
         </div>
         <div class="card-body">
-          <h2 class="card-title">Fundamentals 5</h2>
+          <h2 class="card-title">Navigate + Transform</h2>
           <p class="card-desc">Full 3D control. Navigate the space, rotate models, and scale your creations in a fully interactive 3D software environment.</p>
+          <div class="card-tags"><span class="tag">camera</span><span class="tag">rotate</span><span class="tag">scale</span></div>
+        </div>
+      </a>
+    </div>
+
+    <div class="section-heading">
+      <h2 class="section-title">Creation Studio</h2>
+      <span class="section-kicker">Make, shape, shade, and animate</span>
+    </div>
+
+    <div class="grid">
+      <a href="shape-forge.html" class="card">
+        <div class="card-header creation">
+          <span class="card-number">STUDIO 01</span>
+          <span class="visual">◆</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Shape Forge</h2>
+          <p class="card-desc">Combine primitives into characters, vehicles, sculptures, and your own designs using a compact modeling toolkit.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">primitives</span><span class="tag">modeling</span></div>
+        </div>
+      </a>
+
+      <a href="topology-lab.html" class="card">
+        <div class="card-header creation">
+          <span class="card-number">STUDIO 02</span>
+          <span class="visual">▦</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Topology Lab</h2>
+          <p class="card-desc">Reveal vertices and edges, control mesh density, compare shading, and deform geometry with modifier-like controls.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">topology</span><span class="tag">polygons</span></div>
+        </div>
+      </a>
+
+      <a href="material-light-lab.html" class="card">
+        <div class="card-header creation">
+          <span class="card-number">STUDIO 03</span>
+          <span class="visual">◐</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Material + Light</h2>
+          <p class="card-desc">Build clay, plastic, chrome, gold, rubber, and paint while positioning a professional three-light rig.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">PBR</span><span class="tag">lighting</span></div>
+        </div>
+      </a>
+
+      <a href="animation-studio.html" class="card">
+        <div class="card-header creation">
+          <span class="card-number">STUDIO 04</span>
+          <span class="visual">▶</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Keyframe Studio</h2>
+          <p class="card-desc">Create poses across time, compare interpolation styles, inspect motion curves, and play a finished animation.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">keyframes</span><span class="tag">timing</span></div>
+        </div>
+      </a>
+    </div>
+
+    <div class="section-heading">
+      <h2 class="section-title">Production Pipeline</h2>
+      <span class="section-kicker">Turn authored forms into reliable real-time assets</span>
+    </div>
+
+    <div class="grid">
+      <a href="mesh-editing-lab.html" class="card">
+        <div class="card-header creation">
+          <span class="card-number">PIPELINE 01</span>
+          <span class="visual">EDIT</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Mesh Editing Lab</h2>
+          <p class="card-desc">Extrude, inset, bevel, and add loop cuts while watching topology, silhouette, and face counts respond.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">edit mode</span><span class="tag">topology</span></div>
+        </div>
+      </a>
+
+      <a href="rigging-skinning-lab.html" class="card">
+        <div class="card-header creation">
+          <span class="card-number">PIPELINE 02</span>
+          <span class="visual">RIG</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Rigging + Skin Weights</h2>
+          <p class="card-desc">Pose a bone hierarchy, visualize vertex influence, and preserve a continuous surface across bending joints.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">bones</span><span class="tag">skinning</span></div>
+        </div>
+      </a>
+
+      <a href="texture-baking-lab.html" class="card">
+        <div class="card-header creation">
+          <span class="card-number">PIPELINE 03</span>
+          <span class="visual">MAP</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Texture Maps + Baking</h2>
+          <p class="card-desc">Transfer high-detail appearance to a low-poly target using albedo, normal, roughness, and ambient-occlusion maps.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">baking</span><span class="tag">texture maps</span></div>
+        </div>
+      </a>
+
+      <a href="raycasting-lab.html" class="card">
+        <div class="card-header creation">
+          <span class="card-number">PIPELINE 04</span>
+          <span class="visual">RAY</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Raycast Workshop</h2>
+          <p class="card-desc">Turn screen coordinates into world rays, inspect sorted intersections, and filter interactions by distance and layer.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">selection</span><span class="tag">interaction</span></div>
+        </div>
+      </a>
+
+      <a href="optimization-lab.html" class="card">
+        <div class="card-header creation">
+          <span class="card-number">PIPELINE 05</span>
+          <span class="visual">FPS</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Optimization Challenge</h2>
+          <p class="card-desc">Balance triangles, draw calls, texture memory, lights, instancing, LOD, visual quality, and frame time.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">performance</span><span class="tag">LOD</span></div>
+        </div>
+      </a>
+    </div>
+
+    <div class="section-heading">
+      <h2 class="section-title">Hidden Systems</h2>
+      <span class="section-kicker">See the rules underneath the interface</span>
+    </div>
+
+    <div class="grid">
+      <a href="camera-lab.html" class="card">
+        <div class="card-header creation">
+          <span class="card-number">SYSTEM 01</span>
+          <span class="visual">▣</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Camera Lab</h2>
+          <p class="card-desc">Compare perspective and orthographic projection while seeing focal length, distance, framing, and the camera frustum together.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">projection</span><span class="tag">composition</span></div>
+        </div>
+      </a>
+
+      <a href="uv-lab.html" class="card">
+        <div class="card-header creation">
+          <span class="card-number">SYSTEM 02</span>
+          <span class="visual">▤</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">UV Mapping Lab</h2>
+          <p class="card-desc">Flatten 3D surfaces into texture coordinates, compare projection methods, and diagnose seams and stretching.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">UVs</span><span class="tag">textures</span></div>
+        </div>
+      </a>
+
+      <a href="coordinate-spaces-lab.html" class="card">
+        <div class="card-header creation">
+          <span class="card-number">SYSTEM 03</span>
+          <span class="visual">↗</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Coordinate Spaces</h2>
+          <p class="card-desc">Rotate a ship, switch between world and local axes, and compare the movement paths produced by each frame.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">local</span><span class="tag">world</span></div>
+        </div>
+      </a>
+
+      <a href="hierarchy-lab.html" class="card">
+        <div class="card-header creation">
+          <span class="card-number">SYSTEM 04</span>
+          <span class="visual">⌘</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Hierarchy Machine</h2>
+          <p class="card-desc">Control a parented robot arm, inspect local and world positions, and coordinate its joints to reach a target.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">parenting</span><span class="tag">joints</span></div>
+        </div>
+      </a>
+
+      <a href="normals-detective.html" class="card">
+        <div class="card-header creation">
+          <span class="card-number">SYSTEM 05</span>
+          <span class="visual">⇧</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Normals Detective</h2>
+          <p class="card-desc">Investigate disappearing triangles, reveal face normals, and repair a mesh with incorrect winding.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">normals</span><span class="tag">culling</span></div>
+        </div>
+      </a>
+    </div>
+
+    <div class="section-heading">
+      <h2 class="section-title">Playable Systems</h2>
+      <span class="section-kicker">Turn scenes into responsive worlds</span>
+    </div>
+
+    <div class="grid">
+      <a href="modifier-playground.html" class="card">
+        <div class="card-header playable">
+          <span class="card-number">SYSTEM 06</span>
+          <span class="visual">FX</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Modifier Playground</h2>
+          <p class="card-desc">Stack taper, twist, bend, wave, array, and mirror operations while learning why non-destructive order changes the result.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">modifiers</span><span class="tag">procedural</span></div>
+        </div>
+      </a>
+
+      <a href="physics-playground.html" class="card">
+        <div class="card-header playable">
+          <span class="card-number">SYSTEM 07</span>
+          <span class="visual">g</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Physics Playground</h2>
+          <p class="card-desc">Separate meshes, rigid bodies, and colliders while experimenting with mass, gravity, friction, bounce, and impulses.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">cannon-es</span><span class="tag">collisions</span></div>
+        </div>
+      </a>
+
+      <a href="ecs-composer.html" class="card">
+        <div class="card-header playable">
+          <span class="card-number">SYSTEM 08</span>
+          <span class="visual">E+C</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">ECS Composer</h2>
+          <p class="card-desc">Build an A-Frame world by attaching reusable spin, bob, pulse, and reactive components to simple entities.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">A-Frame</span><span class="tag">behaviors</span></div>
+        </div>
+      </a>
+
+      <a href="spatial-audio-lab.html" class="card">
+        <div class="card-header playable">
+          <span class="card-number">SYSTEM 09</span>
+          <span class="visual">3D</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Spatial Audio Lab</h2>
+          <p class="card-desc">Position generated sound around a listener, compare spatializers, tune distance falloff, and locate hidden sources by ear.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">Web Audio</span><span class="tag">spatialization</span></div>
+        </div>
+      </a>
+    </div>
+
+    <div class="section-heading">
+      <h2 class="section-title">Advanced Practice</h2>
+      <span class="section-kicker">Explore specialized systems and production decisions</span>
+    </div>
+
+    <div class="grid">
+      <a href="particle-vfx-lab.html" class="card">
+        <div class="card-header playable">
+          <span class="card-number">PRACTICE 01</span>
+          <span class="visual">VFX</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Particle Behavior Lab</h2>
+          <p class="card-desc">Shape emitters with rate, lifetime, velocity, gravity, drag, blending, and color over life.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">particles</span><span class="tag">effects</span></div>
+        </div>
+      </a>
+
+      <a href="shader-graph-lab.html" class="card">
+        <div class="card-header playable">
+          <span class="card-number">PRACTICE 02</span>
+          <span class="visual">NODE</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Shader Graph Lab</h2>
+          <p class="card-desc">Connect coordinates, scale, noise, masks, color ramps, and emission into a live procedural material.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">shaders</span><span class="tag">procedural</span></div>
+        </div>
+      </a>
+
+      <a href="navigation-pathfinding-lab.html" class="card">
+        <div class="card-header playable">
+          <span class="card-number">PRACTICE 03</span>
+          <span class="visual">NAV</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Navigation + Pathfinding</h2>
+          <p class="card-desc">Paint obstacles, expand them by agent radius, search a walkable surface, and run an A* route.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">navmesh</span><span class="tag">AI</span></div>
+        </div>
+      </a>
+
+      <a href="sculpt-retopology-lab.html" class="card">
+        <div class="card-header playable">
+          <span class="card-number">PRACTICE 04</span>
+          <span class="visual">CLAY</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Sculpt + Retopology</h2>
+          <p class="card-desc">Push, smooth, and flatten digital clay while comparing dense form capture with a clean production cage.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">sculpting</span><span class="tag">retopology</span></div>
+        </div>
+      </a>
+
+      <a href="rendering-pipeline-lab.html" class="card">
+        <div class="card-header playable">
+          <span class="card-number">PRACTICE 05</span>
+          <span class="visual">RTX</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Rendering Detective</h2>
+          <p class="card-desc">Compare raster and path-traced thinking through samples, bounces, noise, reflections, tone mapping, and post effects.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">rendering</span><span class="tag">sampling</span></div>
+        </div>
+      </a>
+
+      <a href="asset-pipeline-lab.html" class="card">
+        <div class="card-header playable">
+          <span class="card-number">PRACTICE 06</span>
+          <span class="visual">GLTF</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Asset Pipeline Inspector</h2>
+          <p class="card-desc">Validate units, orientation, pivots, transforms, names, PBR materials, compression, bounds, and handoff readiness.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">glTF</span><span class="tag">export</span></div>
+        </div>
+      </a>
+
+      <a href="accessibility-3d-lab.html" class="card">
+        <div class="card-header playable">
+          <span class="card-number">PRACTICE 07</span>
+          <span class="visual">A11Y</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Accessibility in 3D</h2>
+          <p class="card-desc">Tune camera comfort, contrast, FOV, target size, reduced motion, and redundant color, shape, and text cues.</p>
+          <div class="card-tags"><span class="tag new-tag">new</span><span class="tag">accessibility</span><span class="tag">comfort</span></div>
+        </div>
+      </a>
+    </div>
+
+    <div class="section-heading">
+      <h2 class="section-title">Guided Courses</h2>
+      <span class="section-kicker">Build, test, revise, and save your progress</span>
+    </div>
+
+    <div class="grid">
+      <a href="level-design-course.html" class="card">
+        <div class="card-header course">
+          <span class="card-number">COURSE 01 · 4 LESSONS</span>
+          <span class="visual">LD</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Graybox to Gameplay</h2>
+          <p class="card-desc">Design a playable route from player metrics, guide attention with the environment, shape pacing, and validate it through a WASD playtest.</p>
+          <div class="card-tags"><span class="tag new-tag">course</span><span class="tag">level design</span><span class="tag">spatial reasoning</span></div>
+        </div>
+      </a>
+
+      <a href="game-feel-course.html" class="card">
+        <div class="card-header course">
+          <span class="card-number">COURSE 02 · 4 LESSONS</span>
+          <span class="visual">GF</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Feel the Controls</h2>
+          <p class="card-desc">Tune acceleration, braking, steering, grip, jump arcs, camera response, and impact feedback as independent layers of game feel.</p>
+          <div class="card-tags"><span class="tag new-tag">course</span><span class="tag">game feel</span><span class="tag">movement</span></div>
         </div>
       </a>
     </div>

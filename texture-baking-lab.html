@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Texture Maps and Baking - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <link rel="stylesheet" href="advanced-lab.css">
+</head>
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+      <header>
+        <p class="eyebrow">Production pipeline 03</p>
+        <h1>Texture Maps + Baking</h1>
+        <p class="lede">A low-poly mesh can carry the appearance of a denser source. Baking transfers surface information into textures that a real-time renderer can sample cheaply.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Bake setup</h2>
+        <div class="control">
+          <div class="control-head"><span>Pattern frequency</span><span id="densityValue" class="value">4 cells</span></div>
+          <input id="density" type="range" min="1" max="10" value="4">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Normal strength</span><span id="normalStrengthValue" class="value">1.0</span></div>
+          <input id="normalStrength" type="range" min="0" max="200" value="100">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Texture resolution</span><span id="resolutionValue" class="value">512 px</span></div>
+          <input id="resolution" type="range" min="7" max="11" value="9">
+        </div>
+        <button id="bake" class="wide-btn primary" style="margin-top:12px">Bake source to low-poly</button>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Map channels</h2>
+        <div class="button-grid">
+          <button id="albedo" class="tool-btn active">Albedo on</button>
+          <button id="normal" class="tool-btn">Normal off</button>
+          <button id="roughness" class="tool-btn">Roughness off</button>
+          <button id="ao" class="tool-btn">AO off</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Asset budget</h2>
+        <div class="readout-grid">
+          <div class="readout"><strong id="sourceFaces">18.4k</strong><span>source triangles</span></div>
+          <div class="readout"><strong id="targetFaces">768</strong><span>target triangles</span></div>
+          <div class="readout"><strong id="memoryReadout">1.0 MB</strong><span>active texture memory</span></div>
+          <div class="readout"><strong id="channelsReadout">1</strong><span>active maps</span></div>
+        </div>
+      </section>
+
+      <div class="warning-note">Normal maps change the direction used for lighting. They do not change the silhouette or create real collision detail.</div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Baking challenge</div>
+        <h2 class="challenge-title">Preserve detail on the real-time mesh</h2>
+        <p class="challenge-copy">Bake the source, enable normal, roughness, and AO, and use at least four pattern cells.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">Bake the source maps</span></div>
+      </section>
+    </aside>
+
+    <section class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="viewport-label"><strong>Compare silhouettes</strong>The left source has real raised geometry. The right target keeps a smooth outline and recreates detail through shading.</div>
+      <div class="hud"><span class="hud-pill">left = high-poly source</span><span class="hud-pill">right = low-poly target</span></div>
+      <div class="help">Orbit toward the rim: baked detail disappears from the silhouette.</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}
+  </script>
+  <script type="module">
+    import { THREE, createLab, startLoop, bindRange, bindToggle, setChallenge, makeLabel } from "./advanced-lab-core.js";
+
+    const lab = createLab({ cameraPosition: [7.8, 4.2, 8.5], target: [0, 1.5, 0] });
+    const state = { density: 4, strength: 1, resolution: 512, baked: false, maps: { albedo: true, normal: false, roughness: false, ao: false } };
+    const sourceGeometry = new THREE.SphereGeometry(1.45, 96, 64);
+    const sourcePosition = sourceGeometry.getAttribute("position");
+    const sourceDirections = sourcePosition.array.slice();
+
+    function deformSource() {
+      const frequency = state.density;
+      for (let index = 0; index < sourcePosition.count; index++) {
+        const pointer = index * 3;
+        const normal = new THREE.Vector3(sourceDirections[pointer], sourceDirections[pointer + 1], sourceDirections[pointer + 2]).normalize();
+        const wave = Math.sin(normal.x * frequency * Math.PI) * Math.sin(normal.y * frequency * Math.PI) * Math.sin(normal.z * frequency * Math.PI);
+        const radius = 1.45 + wave * 0.075;
+        sourcePosition.setXYZ(index, normal.x * radius, normal.y * radius, normal.z * radius);
+      }
+      sourcePosition.needsUpdate = true;
+      sourceGeometry.computeVertexNormals();
+    }
+
+    const source = new THREE.Mesh(
+      sourceGeometry,
+      new THREE.MeshStandardMaterial({ color: 0xc8ccd2, roughness: 0.48, metalness: 0.02 })
+    );
+    source.position.set(-2, 1.55, 0);
+    source.castShadow = true;
+    source.receiveShadow = true;
+    lab.scene.add(source);
+
+    const targetGeometry = new THREE.SphereGeometry(1.45, 24, 16);
+    targetGeometry.setAttribute("uv1", targetGeometry.getAttribute("uv").clone());
+    const targetMaterial = new THREE.MeshStandardMaterial({ color: 0xff9022, roughness: 0.52, metalness: 0.02 });
+    const target = new THREE.Mesh(targetGeometry, targetMaterial);
+    target.position.set(2, 1.55, 0);
+    target.castShadow = true;
+    target.receiveShadow = true;
+    lab.scene.add(target);
+
+    const sourceLabel = makeLabel("HIGH-POLY SOURCE");
+    sourceLabel.position.set(-2, 3.55, 0);
+    lab.scene.add(sourceLabel);
+    const targetLabel = makeLabel("LOW-POLY TARGET");
+    targetLabel.position.set(2, 3.55, 0);
+    lab.scene.add(targetLabel);
+
+    let textures = {};
+    function createMaps() {
+      Object.values(textures).forEach(texture => texture.dispose());
+      const size = Math.min(state.resolution, 512);
+      const canvases = ["albedo", "normal", "roughness", "ao"].reduce((result, key) => {
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        result[key] = canvas;
+        return result;
+      }, {});
+      const contexts = Object.fromEntries(Object.entries(canvases).map(([key, canvas]) => [key, canvas.getContext("2d")]));
+      const imageData = Object.fromEntries(Object.entries(contexts).map(([key, context]) => [key, context.createImageData(size, size)]));
+      const cells = state.density;
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const u = x / size;
+          const v = y / size;
+          const waveX = Math.sin(u * Math.PI * 2 * cells);
+          const waveY = Math.sin(v * Math.PI * 2 * cells);
+          const height = waveX * waveY;
+          const dx = Math.cos(u * Math.PI * 2 * cells) * waveY;
+          const dy = waveX * Math.cos(v * Math.PI * 2 * cells);
+          const pointer = (y * size + x) * 4;
+          const checker = (Math.floor(u * cells) + Math.floor(v * cells)) % 2;
+          const albedo = checker ? [255, 144, 34] : [53, 111, 168];
+          imageData.albedo.data.set([...albedo, 255], pointer);
+          imageData.normal.data.set([
+            128 + dx * 58 * state.strength,
+            128 + dy * 58 * state.strength,
+            240,
+            255
+          ], pointer);
+          const rough = 135 + height * 65;
+          imageData.roughness.data.set([rough, rough, rough, 255], pointer);
+          const ambient = 205 + height * 42;
+          imageData.ao.data.set([ambient, ambient, ambient, 255], pointer);
+        }
+      }
+      Object.keys(contexts).forEach(key => {
+        contexts[key].putImageData(imageData[key], 0, 0);
+        textures[key] = new THREE.CanvasTexture(canvases[key]);
+        textures[key].wrapS = textures[key].wrapT = THREE.RepeatWrapping;
+        if (key === "albedo") textures[key].colorSpace = THREE.SRGBColorSpace;
+      });
+    }
+
+    function applyMaps() {
+      targetMaterial.map = state.maps.albedo && state.baked ? textures.albedo : null;
+      targetMaterial.normalMap = state.maps.normal && state.baked ? textures.normal : null;
+      targetMaterial.normalScale.setScalar(state.strength);
+      targetMaterial.roughnessMap = state.maps.roughness && state.baked ? textures.roughness : null;
+      targetMaterial.aoMap = state.maps.ao && state.baked ? textures.ao : null;
+      targetMaterial.aoMapIntensity = 1.25;
+      targetMaterial.needsUpdate = true;
+      const activeChannels = Object.values(state.maps).filter(Boolean).length;
+      document.getElementById("channelsReadout").textContent = activeChannels;
+      const bytes = state.resolution * state.resolution * 4 * activeChannels;
+      document.getElementById("memoryReadout").textContent = `${(bytes / 1048576).toFixed(1)} MB`;
+      const complete = state.baked && state.maps.normal && state.maps.roughness && state.maps.ao && state.density >= 4;
+      setChallenge(complete, complete ? "Detail preserved within the target budget" : state.baked ? "Enable the three surface-detail maps" : "Bake the source maps");
+    }
+
+    bindRange("density", value => `${value} cells`, value => {
+      state.density = value;
+      deformSource();
+      state.baked = false;
+      applyMaps();
+    });
+    bindRange("normalStrength", value => (value / 100).toFixed(1), value => {
+      state.strength = value / 100;
+      targetMaterial.normalScale.setScalar(state.strength);
+    });
+    bindRange("resolution", value => `${2 ** value} px`, value => {
+      state.resolution = 2 ** value;
+      state.baked = false;
+      applyMaps();
+    });
+
+    Object.keys(state.maps).forEach(key => {
+      bindToggle(key, value => {
+        state.maps[key] = value;
+        applyMaps();
+      }, `${key[0].toUpperCase()}${key.slice(1)} on`, `${key[0].toUpperCase()}${key.slice(1)} off`, key === "albedo");
+    });
+
+    document.getElementById("bake").addEventListener("click", () => {
+      createMaps();
+      state.baked = true;
+      state.maps.normal = true;
+      state.maps.roughness = true;
+      state.maps.ao = true;
+      ["normal", "roughness", "ao"].forEach(id => {
+        const button = document.getElementById(id);
+        if (!button.classList.contains("active")) button.click();
+      });
+      applyMaps();
+    });
+
+    deformSource();
+    createMaps();
+    applyMaps();
+    startLoop(lab, (dt, time) => {
+      source.rotation.y = target.rotation.y = time * 0.14;
+    });
+  </script>
+</body>
+</html>

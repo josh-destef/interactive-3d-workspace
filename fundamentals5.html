@@ -671,8 +671,9 @@
         }
         function getArrowHeadPos(axisKey) {
             if (typeof character === 'undefined' || !character) return V3();
+            const factor = getCharacterControlScale();
             const dir = axisKey === 'x' ? V3(1, 0, 0) : axisKey === 'y' ? V3(0, 1, 0) : V3(0, 0, 1);
-            return character.position.clone().add(dir.multiplyScalar(1.325));
+            return getCharacterCenterWorld().add(dir.multiplyScalar(1.325 * factor));
         }
 
         const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
@@ -793,6 +794,19 @@
         ═══════════════════════════════════════════════ */
         let character = null;
         let characterHeight = 2.0; // updated after load
+        const characterLocalCenter = V3(0, 1, 0);
+        const characterHomePosition = V3(0, 1, 0);
+        let characterControlRadius = 1.0;
+
+        function getCharacterCenterWorld(target = new THREE.Vector3()) {
+            if (!character) return target.set(0, 0, 0);
+            character.updateMatrixWorld(true);
+            return target.copy(characterLocalCenter).applyMatrix4(character.matrixWorld);
+        }
+
+        function getCharacterControlScale() {
+            return characterControlRadius * (character ? character.scale.x : 1);
+        }
 
         const loader = new GLTFLoader();
         loader.load('./gizmo.glb', (gltf) => {
@@ -810,20 +824,38 @@
                 }
             });
 
-            // center the model horizontally and sit it on y=0
+            // Apply the asset-facing transform before measuring it. This keeps
+            // the control placement correct when a replacement GLB has a
+            // different authored size, origin, or orientation.
+            model.rotation.y = Math.PI;
+            model.scale.setScalar(0.5);
+            model.updateMatrixWorld(true);
+
             const box = new THREE.Box3().setFromObject(model);
             const center = box.getCenter(new THREE.Vector3());
-            const size = box.getSize(new THREE.Vector3());
-            model.position.sub(center);
-            model.position.y += size.y / 2;
-            characterHeight = size.y * 0.6;
-
-            // Rotate model so it faces forward (towards the camera) and scale to 60%
-            model.rotation.y = Math.PI;
-            model.scale.setScalar(0.6);
+            model.position.x -= center.x;
+            model.position.y -= box.min.y;
+            model.position.z -= center.z;
 
             const wrapper = new THREE.Group();
             wrapper.add(model);
+            wrapper.updateMatrixWorld(true);
+
+            // Move the wrapper pivot to the visual center without changing the
+            // robot's world-space position. Rotate and scale now operate around
+            // the same point used by the controls.
+            const groundedBounds = new THREE.Box3().setFromObject(wrapper);
+            groundedBounds.getCenter(characterHomePosition);
+            model.position.sub(characterHomePosition);
+            wrapper.position.copy(characterHomePosition);
+            wrapper.updateMatrixWorld(true);
+
+            const localBounds = new THREE.Box3().setFromObject(wrapper);
+            localBounds.translate(wrapper.position.clone().negate());
+            const localSize = localBounds.getSize(new THREE.Vector3());
+            localBounds.getCenter(characterLocalCenter);
+            characterHeight = localSize.y;
+            characterControlRadius = Math.max(characterHeight * 0.5, 0.25);
 
             scene.add(wrapper);
             character = wrapper;
@@ -897,9 +929,11 @@
         // keep gizmo arrows attached to character position each frame
         function updateArrowPositions() {
             if (!character) return;
+            const center = getCharacterCenterWorld();
+            const factor = getCharacterControlScale();
             allArrows.forEach(a => {
-                a.position.copy(character.position);
-                a.scale.copy(character.scale);
+                a.position.copy(center);
+                a.scale.set(factor, factor, factor);
             });
         }
 
@@ -938,12 +972,13 @@
         /* pulse an arrow (scale 1→1.25→1) to draw attention */
         function pulseArrow(arrow, duration = 600) {
             const start = performance.now();
+            const factor = getCharacterControlScale();
             function tick() {
                 const t = clamp((performance.now() - start) / duration, 0, 1);
-                const s = 1 + 0.25 * Math.sin(t * Math.PI);
+                const s = (1 + 0.25 * Math.sin(t * Math.PI)) * factor;
                 arrow.scale.setScalar(s);
                 if (t < 1) requestAnimationFrame(tick);
-                else arrow.scale.setScalar(1);
+                else arrow.scale.setScalar(factor);
             }
             tick();
         }
@@ -998,18 +1033,18 @@
 
         function updateRotateHandlePos() {
             if (!character) return;
-            const p = character.position.clone();
-            p.y += characterHeight * character.scale.y * 0.25;
-            rotateHandle.position.copy(p);
-            rotateHandle.scale.copy(character.scale);
+            const factor = getCharacterControlScale();
+            rotateHandle.position.copy(getCharacterCenterWorld());
+            rotateHandle.scale.set(factor, factor, factor);
         }
 
         function updateScaleHandlePos() {
             if (!character) return;
-            const p = character.position.clone();
-            p.y += characterHeight * character.scale.y * 0.75 + 0.1 * character.scale.y;
+            const factor = getCharacterControlScale();
+            const p = getCharacterCenterWorld();
+            p.y += characterHeight * character.scale.y * 0.5 + factor * 0.2;
             scaleHandle.position.copy(p);
-            scaleHandle.scale.copy(character.scale);
+            scaleHandle.scale.set(factor, factor, factor);
         }
 
         /* UI action for free play mode switch */
@@ -1060,7 +1095,7 @@
 
             beatLocked = true;
             animate01(0.6, t => {
-                character.position.lerpVectors(startP, V3(0, 0, 0), t);
+                character.position.lerpVectors(startP, characterHomePosition, t);
                 character.scale.setScalar(lerp(startS, 1, t));
                 character.quaternion.slerp(new THREE.Quaternion(), t);
                 updateArrowPositions();
@@ -1558,14 +1593,15 @@
                     setCaption(10, 'Rotate', 'The <span class="co">rotate tool</span> controls orientation. Drag any of the three rings to spin Gizmo.', 'spin gizmo using the rotation rings');
                     showWatch();
                     beatLocked = true;
+                    const rotRadius = 0.75 * getCharacterControlScale();
                     runSequence([
-                        { duration: 0.5, fn: t => { if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); } updateRotateHandlePos(); const p = character.position.clone(); p.y += characterHeight / 2; p.z += 1.2; updateDemoCursor3D(p); } },
+                        { duration: 0.5, fn: t => { if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); } updateRotateHandlePos(); const p = getCharacterCenterWorld(); p.z += rotRadius; updateDemoCursor3D(p); } },
                         {
                             duration: 1.5, fn: t => {
                                 if (t === 0) setDemoCursorDown(true);
                                 if (character) character.rotation.y = lerp(0, Math.PI, t);
                                 updateRotateHandlePos();
-                                const p = character.position.clone(); p.y += characterHeight / 2; p.z += Math.cos(Math.PI * t) * 1.2; p.x += Math.sin(Math.PI * t) * 1.2; updateDemoCursor3D(p);
+                                const p = getCharacterCenterWorld(); p.z += Math.cos(Math.PI * t) * rotRadius; p.x += Math.sin(Math.PI * t) * rotRadius; updateDemoCursor3D(p);
                             }
                         },
                         { duration: 0.8, fn: t => { if (t === 0) setDemoCursorDown(false); updateRotateHandlePos(); } },
@@ -1574,7 +1610,7 @@
                                 if (t === 0) setDemoCursorDown(true);
                                 if (character) character.rotation.y = lerp(Math.PI, 0, t);
                                 updateRotateHandlePos();
-                                const p = character.position.clone(); p.y += characterHeight / 2; p.z += Math.cos(Math.PI * (1 - t)) * 1.2; p.x += Math.sin(Math.PI * (1 - t)) * 1.2; updateDemoCursor3D(p);
+                                const p = getCharacterCenterWorld(); p.z += Math.cos(Math.PI * (1 - t)) * rotRadius; p.x += Math.sin(Math.PI * (1 - t)) * rotRadius; updateDemoCursor3D(p);
                             }
                         },
                     ], () => {
@@ -1764,7 +1800,11 @@
                     character.position.copy(charPosStart.clone().add(ax.clone().multiplyScalar(move)));
                     // clamp position
                     character.position.x = clamp(character.position.x, -4, 4);
-                    character.position.y = clamp(character.position.y, -1, 5);
+                    character.position.y = clamp(
+                        character.position.y,
+                        characterHomePosition.y - 1,
+                        characterHomePosition.y + 5
+                    );
                     character.position.z = clamp(character.position.z, -4, 4);
 
                     // track which axis was dragged and how far

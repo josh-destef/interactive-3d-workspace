@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Physics Playground - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <style>
+    .physics-readout { display:grid; grid-template-columns:1fr auto; gap:8px 12px; padding:12px; background:#f7f8f6; border-radius:9px; color:var(--muted); font-size:10px; }
+    .physics-readout strong { color:var(--ink); font-family:var(--mono); }
+    .legend { display:flex; flex-wrap:wrap; gap:8px; color:var(--muted); font-size:9px; }
+    .legend span { display:flex; align-items:center; gap:5px; }
+    .legend i { width:9px; height:9px; border-radius:3px; }
+  </style>
+</head>
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+      <header>
+        <p class="eyebrow">Playable systems 01</p>
+        <h1>Physics Playground</h1>
+        <p class="lede">The mesh is what you see. The rigid body stores motion. The collider decides contact. Tune the hidden system and predict the result.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Material behavior</h2>
+        <div class="control">
+          <div class="control-head"><span>Mass</span><span id="massValue" class="value">1.0 kg</span></div>
+          <input id="mass" type="range" min="2" max="50" value="10">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Restitution / bounce</span><span id="bounceValue" class="value">0.35</span></div>
+          <input id="bounce" type="range" min="0" max="100" value="35">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Friction</span><span id="frictionValue" class="value">0.30</span></div>
+          <input id="friction" type="range" min="0" max="100" value="30">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Gravity</span><span id="gravityValue" class="value">-9.8</span></div>
+          <input id="gravity" type="range" min="-160" max="-20" value="-98">
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Experiment</h2>
+        <div class="button-grid">
+          <button id="drop" class="wide-btn primary">Drop ball</button>
+          <button id="launch" class="wide-btn">Launch at blocks</button>
+          <button id="rain" class="wide-btn">Object rain</button>
+          <button id="advance" class="wide-btn">Advance 2 seconds</button>
+          <button id="reset" class="wide-btn danger">Reset world</button>
+        </div>
+        <button id="colliders" class="wide-btn" style="margin-top:8px">Collider view off</button>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Last body</h2>
+        <div class="physics-readout">
+          <span>Speed</span><strong id="speedReadout">0.0 m/s</strong>
+          <span>Height</span><strong id="heightReadout">0.0 m</strong>
+          <span>Peak after bounce</span><strong id="peakReadout">0.0 m</strong>
+          <span>Contacts</span><strong id="contactReadout">0</strong>
+          <span>Simulation bodies</span><strong id="bodyReadout">0</strong>
+        </div>
+        <div class="legend" style="margin-top:10px">
+          <span><i style="background:#ff9022"></i>render mesh</span>
+          <span><i style="background:#13b8a6"></i>collider</span>
+        </div>
+      </section>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Prediction challenge</div>
+        <h2 class="challenge-title">Make the second bounce reach 4 meters</h2>
+        <p class="challenge-copy">Tune restitution above 0.7, then drop a ball. Mass alone will not make it bounce higher.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">No bounce measured</span></div>
+      </section>
+    </aside>
+
+    <section class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="hud">
+        <span class="hud-pill">Cannon-es physics</span>
+        <span class="hud-pill">60 Hz fixed step</span>
+      </div>
+      <div class="help">Drag to orbit · launch experiments from the panel</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/","cannon-es":"https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"}}
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import * as CANNON from "cannon-es";
+
+    const canvas = document.querySelector("canvas");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf4f4ef);
+    const camera = new THREE.PerspectiveCamera(46, 1, 0.1, 100);
+    camera.position.set(10, 7, 12);
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    const orbit = new OrbitControls(camera, canvas);
+    orbit.target.set(0, 2.2, 0);
+    orbit.enableDamping = true;
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x555d70, 2));
+    const sun = new THREE.DirectionalLight(0xffffff, 3.2);
+    sun.position.set(5, 10, 6);
+    sun.castShadow = true;
+    scene.add(sun);
+
+    const world = new CANNON.World({ gravity: new CANNON.Vec3(0, -9.8, 0) });
+    world.broadphase = new CANNON.SAPBroadphase(world);
+    world.allowSleep = true;
+    const groundMaterial = new CANNON.Material("ground");
+    const objectMaterial = new CANNON.Material("objects");
+    const contactMaterial = new CANNON.ContactMaterial(groundMaterial, objectMaterial, { friction: 0.3, restitution: 0.35 });
+    world.addContactMaterial(contactMaterial);
+
+    const visuals = [];
+    let latest = null;
+    let contacts = 0;
+    let bounceStarted = false;
+    let peakAfterBounce = 0;
+    let showColliders = false;
+
+    function createStaticBox(size, position, color = 0xdfe2dc) {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z), new THREE.MeshStandardMaterial({ color, roughness: 0.75 }));
+      mesh.position.copy(position);
+      mesh.receiveShadow = true;
+      mesh.castShadow = true;
+      scene.add(mesh);
+      const body = new CANNON.Body({ mass: 0, material: groundMaterial, shape: new CANNON.Box(new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2)) });
+      body.position.set(position.x, position.y, position.z);
+      world.addBody(body);
+      return { mesh, body, permanent: true };
+    }
+
+    createStaticBox(new THREE.Vector3(18, 0.4, 12), new THREE.Vector3(0, -0.2, 0));
+    createStaticBox(new THREE.Vector3(0.7, 3, 5), new THREE.Vector3(5.8, 1.5, 0), 0xe7e7e1);
+
+    function createBlocks() {
+      for (let y = 0; y < 3; y++) {
+        for (let z = -1; z <= 1; z++) {
+          addBox(new THREE.Vector3(0.8, 0.8, 0.8), new THREE.Vector3(3.9, 0.45 + y * 0.82, z * 0.85), 0x3a6fa8, 0.7);
+        }
+      }
+    }
+
+    function currentSettings() {
+      return {
+        mass: Number(document.getElementById("mass").value) / 10,
+        restitution: Number(document.getElementById("bounce").value) / 100,
+        friction: Number(document.getElementById("friction").value) / 100
+      };
+    }
+
+    function attachVisual(body, mesh, collider) {
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+      collider.visible = showColliders;
+      scene.add(collider);
+      const item = { body, mesh, collider, permanent: false };
+      item.previousVelocityY = body.velocity.y;
+      visuals.push(item);
+      body.addEventListener("collide", () => {
+        if (body === latest?.body) {
+          contacts++;
+        }
+      });
+      return item;
+    }
+
+    function addBall(position, velocity = new THREE.Vector3()) {
+      const settings = currentSettings();
+      const radius = 0.55;
+      const body = new CANNON.Body({
+        mass: settings.mass,
+        material: objectMaterial,
+        shape: new CANNON.Sphere(radius),
+        position: new CANNON.Vec3(position.x, position.y, position.z)
+      });
+      body.velocity.set(velocity.x, velocity.y, velocity.z);
+      world.addBody(body);
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 28, 18), new THREE.MeshStandardMaterial({ color: 0xff9022, roughness: 0.3 }));
+      const collider = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.03, 12, 8), new THREE.MeshBasicMaterial({ color: 0x13b8a6, wireframe: true, transparent: true, opacity: 0.8 }));
+      latest = attachVisual(body, mesh, collider);
+      contacts = 0;
+      bounceStarted = false;
+      peakAfterBounce = 0;
+      return latest;
+    }
+
+    function addBox(size, position, color = 0xffda22, mass = null) {
+      const settings = currentSettings();
+      const body = new CANNON.Body({
+        mass: mass ?? settings.mass,
+        material: objectMaterial,
+        shape: new CANNON.Box(new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2)),
+        position: new CANNON.Vec3(position.x, position.y, position.z)
+      });
+      world.addBody(body);
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z), new THREE.MeshStandardMaterial({ color, roughness: 0.42 }));
+      const collider = new THREE.Mesh(new THREE.BoxGeometry(size.x * 1.03, size.y * 1.03, size.z * 1.03), new THREE.MeshBasicMaterial({ color: 0x13b8a6, wireframe: true, transparent: true, opacity: 0.8 }));
+      return attachVisual(body, mesh, collider);
+    }
+
+    function clearDynamic() {
+      visuals.splice(0).forEach(item => {
+        world.removeBody(item.body);
+        scene.remove(item.mesh, item.collider);
+        item.mesh.geometry.dispose();
+        item.collider.geometry.dispose();
+      });
+      latest = null;
+      contacts = 0;
+      bounceStarted = false;
+      peakAfterBounce = 0;
+      createBlocks();
+      updateReadout();
+    }
+
+    function updateReadout() {
+      const speed = latest ? latest.body.velocity.length() : 0;
+      document.getElementById("speedReadout").textContent = `${speed.toFixed(1)} m/s`;
+      document.getElementById("heightReadout").textContent = `${latest ? latest.body.position.y.toFixed(1) : "0.0"} m`;
+      document.getElementById("peakReadout").textContent = `${peakAfterBounce.toFixed(1)} m`;
+      document.getElementById("contactReadout").textContent = contacts;
+      document.getElementById("bodyReadout").textContent = world.bodies.length;
+      const targetMet = peakAfterBounce >= 4;
+      document.getElementById("challenge").classList.toggle("complete", targetMet);
+      document.getElementById("challengeStatus").textContent = targetMet
+        ? `Second rise reached ${peakAfterBounce.toFixed(1)} m`
+        : peakAfterBounce > 0
+          ? `${peakAfterBounce.toFixed(1)} m reached — tune more bounce`
+          : "No bounce measured";
+    }
+
+    function syncVisuals() {
+      visuals.forEach(item => {
+        item.mesh.position.copy(item.body.position);
+        item.mesh.quaternion.copy(item.body.quaternion);
+        item.collider.position.copy(item.body.position);
+        item.collider.quaternion.copy(item.body.quaternion);
+      });
+    }
+
+    function measureLatest() {
+      if (!latest) return;
+      const currentVelocityY = latest.body.velocity.y;
+      if (!bounceStarted && latest.body.position.y < 1.25) {
+        bounceStarted = true;
+        contacts = Math.max(contacts, 1);
+      }
+      if (bounceStarted && currentVelocityY > 0) {
+        peakAfterBounce = Math.max(peakAfterBounce, latest.body.position.y);
+      }
+      latest.previousVelocityY = currentVelocityY;
+    }
+
+    document.getElementById("drop").addEventListener("click", () => addBall(new THREE.Vector3(-2.5, 7, 0)));
+    document.getElementById("launch").addEventListener("click", () => addBall(new THREE.Vector3(-4.5, 1, 0), new THREE.Vector3(11, 2.5, 0)));
+    document.getElementById("rain").addEventListener("click", () => {
+      for (let index = 0; index < 8; index++) {
+        if (index % 2) addBall(new THREE.Vector3(-3 + Math.random() * 6, 5 + index * 0.65, -2 + Math.random() * 4));
+        else addBox(new THREE.Vector3(0.7, 0.7, 0.7), new THREE.Vector3(-3 + Math.random() * 6, 5 + index * 0.65, -2 + Math.random() * 4));
+      }
+    });
+    document.getElementById("advance").addEventListener("click", () => {
+      for (let step = 0; step < 120; step++) {
+        world.step(1 / 60);
+        measureLatest();
+      }
+      syncVisuals();
+      updateReadout();
+    });
+    document.getElementById("reset").addEventListener("click", clearDynamic);
+    document.getElementById("colliders").addEventListener("click", event => {
+      showColliders = !showColliders;
+      visuals.forEach(item => { item.collider.visible = showColliders; });
+      event.currentTarget.textContent = `Collider view ${showColliders ? "on" : "off"}`;
+      event.currentTarget.classList.toggle("active", showColliders);
+    });
+
+    const controls = {
+      mass: value => `${(value / 10).toFixed(1)} kg`,
+      bounce: value => (value / 100).toFixed(2),
+      friction: value => (value / 100).toFixed(2),
+      gravity: value => (value / 10).toFixed(1)
+    };
+    Object.entries(controls).forEach(([id, format]) => {
+      document.getElementById(id).addEventListener("input", event => {
+        const value = Number(event.target.value);
+        document.getElementById(`${id === "bounce" ? "bounce" : id}Value`).textContent = format(value);
+        const settings = currentSettings();
+        contactMaterial.restitution = settings.restitution;
+        contactMaterial.friction = settings.friction;
+        world.gravity.y = Number(document.getElementById("gravity").value) / 10;
+      });
+    });
+
+    createBlocks();
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      renderer.setSize(rect.width, rect.height, false);
+      camera.aspect = rect.width / rect.height;
+      camera.updateProjectionMatrix();
+    }
+    addEventListener("resize", resize);
+    resize();
+    let previous = performance.now() / 1000;
+    renderer.setAnimationLoop(() => {
+      const now = performance.now() / 1000;
+      const delta = Math.min(now - previous, 0.05);
+      previous = now;
+      world.step(1 / 60, delta, 4);
+      syncVisuals();
+      measureLatest();
+      updateReadout();
+      orbit.update();
+      renderer.render(scene, camera);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shape Forge - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <style>
+    .primitive-btn {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      align-items: center;
+      gap: 8px;
+      min-height: 48px;
+      padding: 6px 9px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .primitive-icon {
+      display: grid;
+      width: 31px;
+      height: 31px;
+      place-items: center;
+      color: var(--orange);
+      background: #fff4e8;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    .selection-name {
+      max-width: 180px;
+      overflow: hidden;
+      color: var(--orange);
+      font-family: var(--mono);
+      font-size: 10px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .empty-selection {
+      padding: 13px;
+      color: var(--muted);
+      background: #f7f8f6;
+      border-radius: 9px;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .shortcut-list {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 6px 10px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    kbd {
+      min-width: 24px;
+      padding: 2px 5px;
+      color: var(--ink);
+      background: #f4f4f0;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      box-shadow: 0 1px 0 rgba(23, 32, 51, 0.12);
+      font-family: var(--mono);
+      font-size: 9px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html" aria-label="Back to labs">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+
+      <header>
+        <p class="eyebrow">Modeling lab 01</p>
+        <h1>Shape Forge</h1>
+        <p class="lede">Complex models often begin as simple forms. Add primitives, combine their silhouettes, and build something that did not exist before.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Add a primitive</h2>
+        <div class="button-grid">
+          <button class="tool-btn primitive-btn" data-add="box"><span class="primitive-icon">&#9632;</span>Cube</button>
+          <button class="tool-btn primitive-btn" data-add="sphere"><span class="primitive-icon">&#9679;</span>Sphere</button>
+          <button class="tool-btn primitive-btn" data-add="cylinder"><span class="primitive-icon">&#9646;</span>Cylinder</button>
+          <button class="tool-btn primitive-btn" data-add="cone"><span class="primitive-icon">&#9650;</span>Cone</button>
+          <button class="tool-btn primitive-btn" data-add="torus"><span class="primitive-icon">&#9711;</span>Torus</button>
+          <button class="tool-btn primitive-btn" data-add="capsule"><span class="primitive-icon">&#9645;</span>Capsule</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Transform <span id="selectionName" class="selection-name">nothing selected</span></h2>
+        <div id="selectionEmpty" class="empty-selection">Click an object in the scene, then choose how you want to transform it.</div>
+        <div id="selectionTools" hidden>
+          <div class="mode-row">
+            <button class="mode-btn active" data-mode="translate">Move</button>
+            <button class="mode-btn" data-mode="rotate">Rotate</button>
+            <button class="mode-btn" data-mode="scale">Scale</button>
+          </div>
+          <div class="control">
+            <div class="control-head"><span>Grid snapping</span><span id="snapValue" class="value">off</span></div>
+            <input id="snap" type="range" min="0" max="4" step="1" value="0">
+          </div>
+          <div class="inline-row" style="margin-top:12px">
+            <button id="duplicate" class="wide-btn">Duplicate</button>
+            <button id="remove" class="wide-btn danger">Delete</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Color</h2>
+        <div class="swatches" id="swatches">
+          <button class="swatch active" data-color="#ff9022" style="background:#ff9022" aria-label="Orange"></button>
+          <button class="swatch" data-color="#00aa00" style="background:#00aa00" aria-label="Green"></button>
+          <button class="swatch" data-color="#3a6fa8" style="background:#3a6fa8" aria-label="Blue"></button>
+          <button class="swatch" data-color="#c0453a" style="background:#c0453a" aria-label="Red"></button>
+          <button class="swatch" data-color="#ffda22" style="background:#ffda22" aria-label="Yellow"></button>
+          <button class="swatch" data-color="#b78bea" style="background:#b78bea" aria-label="Purple"></button>
+          <button class="swatch" data-color="#eeeeea" style="background:#eeeeea" aria-label="White"></button>
+          <button class="swatch" data-color="#243047" style="background:#243047" aria-label="Navy"></button>
+        </div>
+      </section>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Creative challenge <span id="challengeNumber">1 / 4</span></div>
+        <h2 id="challengeTitle" class="challenge-title">Build a tiny character</h2>
+        <p id="challengeCopy" class="challenge-copy">Use at least five shapes and three different primitive types.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">0 of 5 shapes</span></div>
+        <button id="nextChallenge" class="wide-btn" style="position:relative;z-index:1;margin-top:12px;background:transparent;color:#fff;border-color:rgba(255,255,255,.2)">Next challenge</button>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Scene</h2>
+        <div class="stats">
+          <div class="stat"><strong id="objectCount">0</strong><span>objects</span></div>
+          <div class="stat"><strong id="typeCount">0</strong><span>types</span></div>
+          <div class="stat"><strong id="colorCount">0</strong><span>colors</span></div>
+        </div>
+        <button id="clearScene" class="wide-btn danger" style="margin-top:10px">Clear scene</button>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Shortcuts</h2>
+        <div class="shortcut-list">
+          <kbd>W</kbd><span>Move</span>
+          <kbd>E</kbd><span>Rotate</span>
+          <kbd>R</kbd><span>Scale</span>
+          <kbd>Ctrl+D</kbd><span>Duplicate</span>
+          <kbd>Del</kbd><span>Delete</span>
+        </div>
+      </section>
+    </aside>
+
+    <section id="viewport" class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="hud">
+        <span class="hud-pill">click to select</span>
+        <span class="hud-pill">drag empty space to orbit</span>
+      </div>
+      <div class="help">Combine big forms first. Details come later.</div>
+      <div id="toast" class="toast"></div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{
+      "three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",
+      "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"
+    }}
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { TransformControls } from "three/addons/controls/TransformControls.js";
+
+    const viewport = document.getElementById("viewport");
+    const canvas = viewport.querySelector("canvas");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf4f4ef);
+    scene.fog = new THREE.Fog(0xf4f4ef, 13, 25);
+
+    const camera = new THREE.PerspectiveCamera(43, 1, 0.05, 100);
+    camera.position.set(7, 5.5, 8);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+
+    const orbit = new OrbitControls(camera, canvas);
+    orbit.enableDamping = true;
+    orbit.dampingFactor = 0.08;
+    orbit.target.set(0, 1, 0);
+    orbit.minDistance = 3;
+    orbit.maxDistance = 18;
+    orbit.maxPolarAngle = Math.PI * 0.49;
+
+    const transform = new TransformControls(camera, canvas);
+    transform.setSize(0.82);
+    scene.add(transform);
+    transform.addEventListener("dragging-changed", event => {
+      orbit.enabled = !event.value;
+    });
+    transform.addEventListener("objectChange", () => {
+      if (selectionBox.visible) selectionBox.update();
+      evaluateChallenge();
+    });
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x596273, 2.3));
+    const key = new THREE.DirectionalLight(0xffffff, 3.2);
+    key.position.set(5, 9, 6);
+    key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.camera.left = -10;
+    key.shadow.camera.right = 10;
+    key.shadow.camera.top = 10;
+    key.shadow.camera.bottom = -10;
+    scene.add(key);
+
+    const rim = new THREE.DirectionalLight(0x91a9ff, 1.5);
+    rim.position.set(-5, 4, -6);
+    scene.add(rim);
+
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(30, 30),
+      new THREE.MeshStandardMaterial({ color: 0xe9e9e4, roughness: 0.92, metalness: 0 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    const grid = new THREE.GridHelper(20, 20, 0x596273, 0x596273);
+    grid.material.opacity = 0.13;
+    grid.material.transparent = true;
+    scene.add(grid);
+
+    const objects = [];
+    let selected = null;
+    let currentColor = "#ff9022";
+    let objectSerial = 0;
+    let pointerDown = null;
+
+    const selectionBox = new THREE.BoxHelper(undefined, 0xff9022);
+    selectionBox.material.depthTest = false;
+    selectionBox.material.transparent = true;
+    selectionBox.material.opacity = 0.8;
+    selectionBox.renderOrder = 10;
+    selectionBox.visible = false;
+    scene.add(selectionBox);
+
+    const geometryFactories = {
+      box: () => new THREE.BoxGeometry(1.5, 1.5, 1.5),
+      sphere: () => new THREE.SphereGeometry(0.92, 32, 20),
+      cylinder: () => new THREE.CylinderGeometry(0.72, 0.72, 1.8, 32),
+      cone: () => new THREE.ConeGeometry(0.9, 1.8, 32),
+      torus: () => new THREE.TorusGeometry(0.82, 0.26, 18, 42),
+      capsule: () => new THREE.CapsuleGeometry(0.54, 1.05, 8, 18)
+    };
+
+    const labels = {
+      box: "Cube",
+      sphere: "Sphere",
+      cylinder: "Cylinder",
+      cone: "Cone",
+      torus: "Torus",
+      capsule: "Capsule"
+    };
+
+    function makeMaterial(color) {
+      return new THREE.MeshStandardMaterial({
+        color,
+        roughness: 0.58,
+        metalness: 0.04
+      });
+    }
+
+    function addPrimitive(type, position = null) {
+      const mesh = new THREE.Mesh(geometryFactories[type](), makeMaterial(currentColor));
+      const spread = objects.length % 5;
+      mesh.position.copy(position || new THREE.Vector3((spread - 2) * 0.35, 1, (objects.length % 3 - 1) * 0.25));
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.userData.type = type;
+      mesh.userData.label = `${labels[type]} ${++objectSerial}`;
+      scene.add(mesh);
+      objects.push(mesh);
+      setSelected(mesh);
+      flash(`${mesh.userData.label} added`);
+      evaluateChallenge();
+    }
+
+    function setSelected(object) {
+      selected = object;
+      if (selected) {
+        transform.attach(selected);
+        selectionBox.setFromObject(selected);
+        selectionBox.visible = true;
+        document.getElementById("selectionName").textContent = selected.userData.label;
+        document.getElementById("selectionEmpty").hidden = true;
+        document.getElementById("selectionTools").hidden = false;
+        setActiveSwatch(`#${selected.material.color.getHexString()}`);
+      } else {
+        transform.detach();
+        selectionBox.visible = false;
+        document.getElementById("selectionName").textContent = "nothing selected";
+        document.getElementById("selectionEmpty").hidden = false;
+        document.getElementById("selectionTools").hidden = true;
+      }
+    }
+
+    function duplicateSelected() {
+      if (!selected) return;
+      const copy = selected.clone();
+      copy.geometry = selected.geometry.clone();
+      copy.material = selected.material.clone();
+      copy.position.add(new THREE.Vector3(0.5, 0.25, 0.5));
+      copy.userData = { ...selected.userData, label: `${labels[selected.userData.type]} ${++objectSerial}` };
+      scene.add(copy);
+      objects.push(copy);
+      setSelected(copy);
+      flash("Duplicate created");
+      evaluateChallenge();
+    }
+
+    function deleteSelected() {
+      if (!selected) return;
+      const index = objects.indexOf(selected);
+      const removed = selected;
+      setSelected(null);
+      scene.remove(removed);
+      removed.geometry.dispose();
+      removed.material.dispose();
+      if (index >= 0) objects.splice(index, 1);
+      flash("Object deleted");
+      evaluateChallenge();
+    }
+
+    function clearScene() {
+      setSelected(null);
+      while (objects.length) {
+        const object = objects.pop();
+        scene.remove(object);
+        object.geometry.dispose();
+        object.material.dispose();
+      }
+      flash("Scene cleared");
+      evaluateChallenge();
+    }
+
+    function setMode(mode) {
+      transform.setMode(mode);
+      document.querySelectorAll("[data-mode]").forEach(button => {
+        button.classList.toggle("active", button.dataset.mode === mode);
+      });
+    }
+
+    const snapSteps = [0, 0.1, 0.25, 0.5, 1];
+    function updateSnap() {
+      const step = snapSteps[Number(document.getElementById("snap").value)];
+      transform.setTranslationSnap(step || null);
+      transform.setRotationSnap(step ? THREE.MathUtils.degToRad(step === 1 ? 45 : step === 0.5 ? 30 : 15) : null);
+      transform.setScaleSnap(step || null);
+      document.getElementById("snapValue").textContent = step ? `${step} units` : "off";
+    }
+
+    function setActiveSwatch(color) {
+      currentColor = color;
+      document.querySelectorAll(".swatch").forEach(swatch => {
+        swatch.classList.toggle("active", swatch.dataset.color.toLowerCase() === color.toLowerCase());
+      });
+    }
+
+    document.querySelectorAll("[data-add]").forEach(button => {
+      button.addEventListener("click", () => addPrimitive(button.dataset.add));
+    });
+    document.querySelectorAll("[data-mode]").forEach(button => {
+      button.addEventListener("click", () => setMode(button.dataset.mode));
+    });
+    document.querySelectorAll(".swatch").forEach(swatch => {
+      swatch.addEventListener("click", () => {
+        const color = swatch.dataset.color;
+        setActiveSwatch(color);
+        if (selected) {
+          selected.material.color.set(color);
+          evaluateChallenge();
+        }
+      });
+    });
+
+    document.getElementById("duplicate").addEventListener("click", duplicateSelected);
+    document.getElementById("remove").addEventListener("click", deleteSelected);
+    document.getElementById("clearScene").addEventListener("click", clearScene);
+    document.getElementById("snap").addEventListener("input", updateSnap);
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    canvas.addEventListener("pointerdown", event => {
+      pointerDown = { x: event.clientX, y: event.clientY };
+    });
+    canvas.addEventListener("pointerup", event => {
+      if (!pointerDown || Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y) > 5) return;
+      const rect = canvas.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      const hit = raycaster.intersectObjects(objects, false)[0];
+      setSelected(hit ? hit.object : null);
+    });
+
+    window.addEventListener("keydown", event => {
+      if (event.target instanceof HTMLInputElement) return;
+      const key = event.key.toLowerCase();
+      if (key === "w") setMode("translate");
+      if (key === "e") setMode("rotate");
+      if (key === "r") setMode("scale");
+      if ((event.ctrlKey || event.metaKey) && key === "d") {
+        event.preventDefault();
+        duplicateSelected();
+      }
+      if (event.key === "Delete" || event.key === "Backspace") deleteSelected();
+    });
+
+    const challenges = [
+      {
+        title: "Build a tiny character",
+        copy: "Use at least five shapes and three different primitive types.",
+        progress: () => `${Math.min(objects.length, 5)} of 5 shapes`,
+        complete: () => objects.length >= 5 && new Set(objects.map(o => o.userData.type)).size >= 3
+      },
+      {
+        title: "Design a vehicle",
+        copy: "Use two or more toruses or cylinders as wheels, plus a body raised above the floor.",
+        progress: () => `${objects.filter(o => ["torus", "cylinder"].includes(o.userData.type)).length} wheel forms`,
+        complete: () => objects.filter(o => ["torus", "cylinder"].includes(o.userData.type)).length >= 2 && objects.some(o => o.position.y > 1.4)
+      },
+      {
+        title: "Make a balanced sculpture",
+        copy: "Use at least six objects. Rotate three of them and include objects on both sides of the origin.",
+        progress: () => `${objects.filter(o => Math.abs(o.rotation.x) + Math.abs(o.rotation.y) + Math.abs(o.rotation.z) > 0.2).length} rotated`,
+        complete: () => objects.length >= 6 &&
+          objects.filter(o => Math.abs(o.rotation.x) + Math.abs(o.rotation.y) + Math.abs(o.rotation.z) > 0.2).length >= 3 &&
+          objects.some(o => o.position.x < -0.5) && objects.some(o => o.position.x > 0.5)
+      },
+      {
+        title: "Create a color family",
+        copy: "Build with at least seven objects and four surface colors.",
+        progress: () => `${new Set(objects.map(o => o.material.color.getHexString())).size} of 4 colors`,
+        complete: () => objects.length >= 7 && new Set(objects.map(o => o.material.color.getHexString())).size >= 4
+      }
+    ];
+    let challengeIndex = 0;
+
+    function evaluateChallenge() {
+      const challenge = challenges[challengeIndex];
+      const types = new Set(objects.map(object => object.userData.type));
+      const colors = new Set(objects.map(object => object.material.color.getHexString()));
+      document.getElementById("objectCount").textContent = objects.length;
+      document.getElementById("typeCount").textContent = types.size;
+      document.getElementById("colorCount").textContent = colors.size;
+      document.getElementById("challengeStatus").textContent = challenge.complete() ? "Challenge complete" : challenge.progress();
+      document.getElementById("challenge").classList.toggle("complete", challenge.complete());
+    }
+
+    function showChallenge() {
+      const challenge = challenges[challengeIndex];
+      document.getElementById("challengeNumber").textContent = `${challengeIndex + 1} / ${challenges.length}`;
+      document.getElementById("challengeTitle").textContent = challenge.title;
+      document.getElementById("challengeCopy").textContent = challenge.copy;
+      evaluateChallenge();
+    }
+
+    document.getElementById("nextChallenge").addEventListener("click", () => {
+      challengeIndex = (challengeIndex + 1) % challenges.length;
+      showChallenge();
+    });
+
+    let toastTimer;
+    function flash(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 1300);
+    }
+
+    function resize() {
+      const width = viewport.clientWidth;
+      const height = viewport.clientHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      orbit.update();
+      if (selectionBox.visible) selectionBox.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    addPrimitive("box", new THREE.Vector3(0, 0.75, 0));
+    showChallenge();
+  </script>
+</body>
+
+</html>

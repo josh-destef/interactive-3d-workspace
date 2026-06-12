@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hierarchy Machine - CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="studio.css">
+  <style>
+    .tree {
+      display: grid;
+      gap: 5px;
+      font-family: var(--mono);
+      font-size: 10px;
+    }
+
+    .tree-node {
+      position: relative;
+      min-height: 32px;
+      padding: 0 10px;
+      text-align: left;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      cursor: pointer;
+    }
+
+    .tree-node::before {
+      margin-right: 7px;
+      color: var(--muted);
+      content: "└";
+    }
+
+    .tree-node[data-depth="0"] {
+      margin-left: 0;
+    }
+
+    .tree-node[data-depth="1"] {
+      margin-left: 15px;
+    }
+
+    .tree-node[data-depth="2"] {
+      margin-left: 30px;
+    }
+
+    .tree-node[data-depth="3"] {
+      margin-left: 45px;
+    }
+
+    .tree-node.active {
+      color: #fff;
+      background: var(--ink);
+      border-color: var(--ink);
+    }
+
+    .transform-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 9px;
+    }
+
+    .transform-table th,
+    .transform-table td {
+      padding: 7px 5px;
+      border-bottom: 1px solid var(--line);
+      text-align: right;
+    }
+
+    .transform-table th:first-child,
+    .transform-table td:first-child {
+      color: var(--muted);
+      text-align: left;
+    }
+
+    .transform-table th {
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .concept {
+      padding: 13px;
+      color: #4c3d16;
+      background: #fff9d9;
+      border-left: 3px solid var(--yellow);
+      border-radius: 0 10px 10px 0;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .distance-track {
+      height: 8px;
+      overflow: hidden;
+      background: #eceeea;
+      border-radius: 999px;
+    }
+
+    .distance-fill {
+      height: 100%;
+      width: 0;
+      background: var(--orange);
+      border-radius: inherit;
+      transition: width 0.18s ease, background 0.18s ease;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="lab">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <a class="home-link" href="index.html">&#8592; Labs</a>
+        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+      </div>
+
+      <header>
+        <p class="eyebrow">Scene hierarchy lab</p>
+        <h1>Hierarchy Machine</h1>
+        <p class="lede">A child stores its transform relative to a parent. Moving one parent can reposition an entire branch of the scene.</p>
+      </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Scene tree</h2>
+        <p class="panel-note">Select a node to inspect the coordinate system it owns.</p>
+        <div class="tree">
+          <button class="tree-node active" data-node="base" data-depth="0">Base</button>
+          <button class="tree-node" data-node="shoulder" data-depth="1">Shoulder joint</button>
+          <button class="tree-node" data-node="elbow" data-depth="2">Elbow joint</button>
+          <button class="tree-node" data-node="wrist" data-depth="3">Wrist + gripper</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Joint controls</h2>
+        <div class="control">
+          <div class="control-head"><span>Base turn</span><span id="baseValue" class="value">0°</span></div>
+          <input id="baseAngle" type="range" min="-90" max="90" value="0">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Shoulder</span><span id="shoulderValue" class="value">0°</span></div>
+          <input id="shoulderAngle" type="range" min="-110" max="110" value="0">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Elbow</span><span id="elbowValue" class="value">0°</span></div>
+          <input id="elbowAngle" type="range" min="-140" max="140" value="0">
+        </div>
+        <div class="control">
+          <div class="control-head"><span>Wrist</span><span id="wristValue" class="value">0°</span></div>
+          <input id="wristAngle" type="range" min="-100" max="100" value="0">
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Selected node <span id="selectedName" class="value">Base</span></h2>
+        <table class="transform-table">
+          <thead>
+            <tr><th>Position</th><th class="x">X</th><th class="y">Y</th><th class="z">Z</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Local</td><td id="localX">0.0</td><td id="localY">0.0</td><td id="localZ">0.0</td></tr>
+            <tr><td>World</td><td id="worldX">0.0</td><td id="worldY">0.0</td><td id="worldZ">0.0</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Pose recipes</h2>
+        <div class="button-grid">
+          <button class="tool-btn" data-preset="straight">Straight</button>
+          <button class="tool-btn" data-preset="folded">Folded</button>
+          <button class="tool-btn" data-preset="wave">Wave</button>
+          <button class="tool-btn" data-preset="near">Near target</button>
+        </div>
+        <button id="parentDemo" class="wide-btn" style="margin-top:8px">Animate one parent</button>
+      </section>
+
+      <div id="concept" class="concept">The shoulder is a parent of the elbow and wrist. Rotating the shoulder changes all three world positions even though the children's local positions stay fixed.</div>
+
+      <section id="challenge" class="challenge">
+        <div class="challenge-label">Hierarchy challenge</div>
+        <h2 class="challenge-title">Reach the target</h2>
+        <p class="challenge-copy">Coordinate at least the shoulder and elbow to place the gripper inside the glowing target.</p>
+        <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">4.2 units away</span></div>
+        <div class="distance-track" style="position:relative;z-index:1;margin-top:12px"><div id="distanceFill" class="distance-fill"></div></div>
+      </section>
+    </aside>
+
+    <section id="viewport" class="viewport">
+      <canvas class="webgl"></canvas>
+      <div class="hud">
+        <span class="hud-pill">axes show selected local space</span>
+        <span class="hud-pill">drag to orbit</span>
+      </div>
+      <div class="help">Move a parent joint and watch every descendant follow.</div>
+    </section>
+  </main>
+
+  <script type="importmap">
+    {"imports":{
+      "three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",
+      "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"
+    }}
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    const viewport = document.getElementById("viewport");
+    const canvas = viewport.querySelector("canvas");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf2f2ed);
+    scene.fog = new THREE.Fog(0xf2f2ed, 18, 36);
+
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 100);
+    camera.position.set(8, 6, 9);
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
+    const orbit = new OrbitControls(camera, canvas);
+    orbit.enableDamping = true;
+    orbit.target.set(0, 2.4, 0);
+    orbit.minDistance = 5;
+    orbit.maxDistance = 18;
+    orbit.maxPolarAngle = Math.PI * 0.49;
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x566176, 2.2));
+    const key = new THREE.DirectionalLight(0xffffff, 3.5);
+    key.position.set(6, 10, 7);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    scene.add(key);
+
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(24, 24),
+      new THREE.MeshStandardMaterial({ color: 0xe2e3dd, roughness: 0.95 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+    const grid = new THREE.GridHelper(24, 24, 0x5d687c, 0x5d687c);
+    grid.material.opacity = 0.12;
+    grid.material.transparent = true;
+    scene.add(grid);
+
+    function material(color, roughness = 0.45) {
+      return new THREE.MeshStandardMaterial({ color, roughness, metalness: 0.08 });
+    }
+
+    function jointMesh(radius, color) {
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 26, 16), material(color, 0.32));
+      mesh.castShadow = true;
+      return mesh;
+    }
+
+    function armMesh(length, width, color) {
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(width, length, width),
+        material(color, 0.42)
+      );
+      mesh.position.y = length / 2;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    const base = new THREE.Group();
+    const baseTurn = new THREE.Group();
+    const shoulder = new THREE.Group();
+    const elbow = new THREE.Group();
+    const wrist = new THREE.Group();
+    scene.add(base);
+    base.add(baseTurn);
+    baseTurn.add(shoulder);
+    shoulder.add(elbow);
+    elbow.add(wrist);
+
+    const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.1, 0.55, 40), material(0x26334c, 0.4));
+    pedestal.position.y = 0.275;
+    pedestal.castShadow = true;
+    base.add(pedestal);
+
+    shoulder.position.y = 0.55;
+    shoulder.add(jointMesh(0.42, 0xff9022));
+    shoulder.add(armMesh(2.25, 0.48, 0xf0f0eb));
+
+    elbow.position.y = 2.25;
+    elbow.add(jointMesh(0.36, 0x3a6fa8));
+    elbow.add(armMesh(1.85, 0.42, 0xd7dbe2));
+
+    wrist.position.y = 1.85;
+    wrist.add(jointMesh(0.3, 0x00aa00));
+    const palm = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.58, 0.52), material(0x26334c, 0.38));
+    palm.position.y = 0.45;
+    palm.castShadow = true;
+    wrist.add(palm);
+    const fingerA = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.78, 0.18), material(0xff9022, 0.38));
+    fingerA.position.set(-0.28, 1, 0);
+    const fingerB = fingerA.clone();
+    fingerB.material = fingerA.material.clone();
+    fingerB.position.x = 0.28;
+    wrist.add(fingerA, fingerB);
+
+    const tip = new THREE.Object3D();
+    tip.position.y = 1.4;
+    wrist.add(tip);
+
+    const targetPosition = new THREE.Vector3(2.75, 3.15, 0);
+    const target = new THREE.Mesh(
+      new THREE.SphereGeometry(0.48, 30, 18),
+      new THREE.MeshStandardMaterial({
+        color: 0xffda22,
+        emissive: 0x6f5700,
+        emissiveIntensity: 1.1,
+        transparent: true,
+        opacity: 0.72,
+        roughness: 0.3
+      })
+    );
+    target.position.copy(targetPosition);
+    scene.add(target);
+    const targetLight = new THREE.PointLight(0xffda22, 2.4, 5);
+    targetLight.position.copy(targetPosition);
+    scene.add(targetLight);
+
+    const nodes = { base: baseTurn, shoulder, elbow, wrist };
+    const labels = { base: "Base", shoulder: "Shoulder", elbow: "Elbow", wrist: "Wrist" };
+    let selectedNode = "base";
+    const selectedAxes = new THREE.AxesHelper(1.25);
+    nodes[selectedNode].add(selectedAxes);
+
+    function updateArm() {
+      baseTurn.rotation.y = THREE.MathUtils.degToRad(Number(document.getElementById("baseAngle").value));
+      shoulder.rotation.z = THREE.MathUtils.degToRad(Number(document.getElementById("shoulderAngle").value));
+      elbow.rotation.z = THREE.MathUtils.degToRad(Number(document.getElementById("elbowAngle").value));
+      wrist.rotation.z = THREE.MathUtils.degToRad(Number(document.getElementById("wristAngle").value));
+      document.getElementById("baseValue").textContent = `${document.getElementById("baseAngle").value}°`;
+      document.getElementById("shoulderValue").textContent = `${document.getElementById("shoulderAngle").value}°`;
+      document.getElementById("elbowValue").textContent = `${document.getElementById("elbowAngle").value}°`;
+      document.getElementById("wristValue").textContent = `${document.getElementById("wristAngle").value}°`;
+      scene.updateMatrixWorld(true);
+      updateReadout();
+      evaluateChallenge();
+    }
+
+    function selectNode(name) {
+      nodes[selectedNode].remove(selectedAxes);
+      selectedNode = name;
+      nodes[selectedNode].add(selectedAxes);
+      document.querySelectorAll("[data-node]").forEach(button => {
+        button.classList.toggle("active", button.dataset.node === selectedNode);
+      });
+      document.getElementById("selectedName").textContent = labels[selectedNode];
+      const descriptions = {
+        base: "The base is the root. Turning it rotates the entire arm because every other joint is inside its hierarchy.",
+        shoulder: "The shoulder is a parent of the elbow and wrist. Its local origin is fixed on top of the base.",
+        elbow: "The elbow's local position stays at the end of the upper arm, while its world position changes whenever an ancestor moves.",
+        wrist: "The wrist is the deepest child. Its final world transform combines the base, shoulder, elbow, and wrist transforms."
+      };
+      document.getElementById("concept").textContent = descriptions[selectedNode];
+      updateReadout();
+    }
+
+    function updateReadout() {
+      const node = nodes[selectedNode];
+      const world = node.getWorldPosition(new THREE.Vector3());
+      document.getElementById("localX").textContent = node.position.x.toFixed(1);
+      document.getElementById("localY").textContent = node.position.y.toFixed(1);
+      document.getElementById("localZ").textContent = node.position.z.toFixed(1);
+      document.getElementById("worldX").textContent = world.x.toFixed(1);
+      document.getElementById("worldY").textContent = world.y.toFixed(1);
+      document.getElementById("worldZ").textContent = world.z.toFixed(1);
+    }
+
+    function evaluateChallenge() {
+      const tipPosition = tip.getWorldPosition(new THREE.Vector3());
+      const distance = tipPosition.distanceTo(targetPosition);
+      const complete = distance < 0.48;
+      document.getElementById("challenge").classList.toggle("complete", complete);
+      document.getElementById("challengeStatus").textContent = complete
+        ? "Target reached"
+        : `${distance.toFixed(1)} units away`;
+      const progress = THREE.MathUtils.clamp(1 - distance / 5, 0, 1);
+      const fill = document.getElementById("distanceFill");
+      fill.style.width = `${progress * 100}%`;
+      fill.style.background = complete ? "#42d17f" : progress > 0.65 ? "#ffda22" : "#ff9022";
+    }
+
+    const presets = {
+      straight: [0, 0, 0, 0],
+      folded: [0, -50, 110, -65],
+      wave: [32, -25, -45, 65],
+      near: [0, -92, 85, 0]
+    };
+
+    function applyPreset(name) {
+      const values = presets[name];
+      ["baseAngle", "shoulderAngle", "elbowAngle", "wristAngle"].forEach((id, index) => {
+        document.getElementById(id).value = values[index];
+      });
+      updateArm();
+    }
+
+    let demoRunning = false;
+    function demoParent() {
+      if (demoRunning) return;
+      demoRunning = true;
+      const original = Number(document.getElementById("shoulderAngle").value);
+      const start = performance.now();
+      function tick(now) {
+        const t = Math.min((now - start) / 1800, 1);
+        document.getElementById("shoulderAngle").value = original + Math.sin(t * Math.PI * 2) * 35;
+        updateArm();
+        if (t < 1) requestAnimationFrame(tick);
+        else {
+          document.getElementById("shoulderAngle").value = original;
+          updateArm();
+          demoRunning = false;
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+
+    ["baseAngle", "shoulderAngle", "elbowAngle", "wristAngle"].forEach(id => {
+      document.getElementById(id).addEventListener("input", updateArm);
+    });
+    document.querySelectorAll("[data-node]").forEach(button => {
+      button.addEventListener("click", () => selectNode(button.dataset.node));
+    });
+    document.querySelectorAll("[data-preset]").forEach(button => {
+      button.addEventListener("click", () => applyPreset(button.dataset.preset));
+    });
+    document.getElementById("parentDemo").addEventListener("click", demoParent);
+
+    function resize() {
+      const width = viewport.clientWidth;
+      const height = viewport.clientHeight;
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener("resize", resize);
+    resize();
+    updateArm();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      target.scale.setScalar(1 + Math.sin(performance.now() * 0.004) * 0.08);
+      orbit.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+
+</html>
