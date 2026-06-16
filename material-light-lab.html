@@ -101,6 +101,55 @@
       font-size: 11px;
       line-height: 1.55;
     }
+
+    .match-label {
+      position: absolute;
+      z-index: 3;
+      min-width: 112px;
+      padding: 8px 10px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(23, 32, 51, 0.08);
+      border-radius: 999px;
+      box-shadow: 0 6px 18px rgba(23, 32, 51, 0.08);
+      font-family: var(--mono);
+      font-size: 9px;
+      text-align: center;
+      text-transform: uppercase;
+      backdrop-filter: blur(10px);
+      pointer-events: none;
+    }
+
+    .match-divider {
+      position: absolute;
+      inset: 0 auto 0 50%;
+      z-index: 2;
+      width: 1px;
+      background: linear-gradient(transparent, rgba(23, 32, 51, 0.24), transparent);
+      pointer-events: none;
+    }
+
+    .match-leaders {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .match-leaders line {
+      stroke: rgba(23, 32, 51, 0.58);
+      stroke-width: 1.5;
+      stroke-dasharray: 4 4;
+    }
+
+    .match-only[hidden],
+    .match-divider[hidden],
+    .match-leaders[hidden],
+    .match-label[hidden] {
+      display: none;
+    }
   </style>
 </head>
 
@@ -117,6 +166,14 @@
         <h1>Material + Light</h1>
         <p class="lede">A material describes how a surface reacts. A light reveals that reaction. Change both sides of the relationship and read the highlights.</p>
       </header>
+
+      <section class="panel">
+        <h2 class="panel-title">Lab mode</h2>
+        <div class="mode-row">
+          <button class="mode-btn active" data-lab-mode="free">Free play</button>
+          <button class="mode-btn" data-lab-mode="match">Match recipe</button>
+        </div>
+      </section>
 
       <section class="panel">
         <h2 class="panel-title">Test object</h2>
@@ -159,6 +216,19 @@
         </div>
       </section>
 
+      <section id="matchPanel" class="panel match-only" hidden>
+        <h2 class="panel-title">Match target</h2>
+        <p class="panel-note">Pick a recipe for the left reference, then tune your material until it matches.</p>
+        <div class="material-presets">
+          <button class="preset" data-target-material="clay"><span class="preset-ball" style="background:#c66f48"></span>Clay</button>
+          <button class="preset" data-target-material="plastic"><span class="preset-ball" style="background:#ff9022"></span>Plastic</button>
+          <button class="preset" data-target-material="chrome"><span class="preset-ball" style="background:#d8e0e8"></span>Chrome</button>
+          <button class="preset" data-target-material="gold"><span class="preset-ball" style="background:#d6a526"></span>Gold</button>
+          <button class="preset" data-target-material="rubber"><span class="preset-ball" style="background:#22252b"></span>Rubber</button>
+          <button class="preset" data-target-material="paint"><span class="preset-ball" style="background:#3a6fa8"></span>Car paint</button>
+        </div>
+      </section>
+
       <section class="panel">
         <h2 class="panel-title">Three-light rig</h2>
         <p class="panel-note">Key defines form, fill controls contrast, and rim separates the silhouette.</p>
@@ -198,14 +268,21 @@
 
       <section id="challenge" class="challenge">
         <div class="challenge-label">Look-dev challenge</div>
-        <h2 class="challenge-title">Make brushed metal</h2>
-        <p class="challenge-copy">Use high metalness, medium roughness, and move the key light until the highlight clearly describes the form.</p>
+        <h2 id="challengeTitle" class="challenge-title">Explore material response</h2>
+        <p id="challengeCopy" class="challenge-copy">Try roughness, metalness, clear coat, and light position to see how the surface changes.</p>
         <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">Tune the material</span></div>
       </section>
     </aside>
 
     <section id="viewport" class="viewport">
       <canvas class="webgl"></canvas>
+      <div id="matchDivider" class="match-divider" hidden></div>
+      <svg id="matchLeaders" class="match-leaders" hidden aria-hidden="true">
+        <line id="targetLeader"></line>
+        <line id="studentLeader"></line>
+      </svg>
+      <div id="targetLabel" class="match-label target" hidden>target</div>
+      <div id="studentLabel" class="match-label student" hidden>your material</div>
       <div class="hud">
         <span class="hud-pill">drag to orbit</span>
         <span id="materialHud" class="hud-pill">plastic-like</span>
@@ -213,6 +290,13 @@
       <div class="help">Watch the highlight, not just the base color.</div>
     </section>
   </main>
+
+  <script>
+    if (new URLSearchParams(window.location.search).get("from") === "test") {
+      const homeLink = document.querySelector(".home-link");
+      if (homeLink) homeLink.href = "test-labs.html";
+    }
+  </script>
 
   <script type="importmap">
     {"imports":{
@@ -264,23 +348,31 @@
       clearcoatRoughness: 0.18,
       envMapIntensity: 0.8
     });
+    const targetMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xd8e0e8,
+      roughness: 0.08,
+      metalness: 1,
+      clearcoat: 0,
+      clearcoatRoughness: 0.18,
+      envMapIntensity: 0.8
+    });
 
     const modelRoot = new THREE.Group();
-    modelRoot.position.y = 1.45;
+    modelRoot.position.set(0, 1.45, 0);
     scene.add(modelRoot);
+    const targetRoot = new THREE.Group();
+    targetRoot.position.set(-1.7, 1.45, 0);
+    scene.add(targetRoot);
     let model;
+    let targetModel;
     let objectType = "sphere";
+    let labMode = "free";
+    let targetRecipe = "chrome";
 
-    function createModel(type) {
-      if (model) {
-        modelRoot.remove(model);
-        model.geometry.dispose();
-      }
-      let geometry;
-      if (type === "torus") {
-        geometry = new THREE.TorusKnotGeometry(1.05, 0.38, 180, 28, 2, 3);
-      } else if (type === "monkey") {
-        geometry = new THREE.SphereGeometry(1.35, 64, 32);
+    function createGeometry(type) {
+      if (type === "torus") return new THREE.TorusKnotGeometry(1.05, 0.38, 180, 28, 2, 3);
+      if (type === "monkey") {
+        const geometry = new THREE.SphereGeometry(1.35, 64, 32);
         const positions = geometry.attributes.position;
         for (let i = 0; i < positions.count; i++) {
           const x = positions.getX(i);
@@ -290,13 +382,29 @@
           positions.setXYZ(i, x * forehead * 0.92, y * 1.08, z * (1 - 0.08 * Math.max(0, -y)));
         }
         geometry.computeVertexNormals();
-      } else {
-        geometry = new THREE.SphereGeometry(1.45, 64, 36);
+        return geometry;
       }
+      return new THREE.SphereGeometry(1.45, 64, 36);
+    }
+
+    function createModel(type) {
+      if (model) {
+        modelRoot.remove(model);
+        model.geometry.dispose();
+      }
+      if (targetModel) {
+        targetRoot.remove(targetModel);
+        targetModel.geometry.dispose();
+      }
+      const geometry = createGeometry(type);
       model = new THREE.Mesh(geometry, material);
       model.castShadow = true;
       model.receiveShadow = true;
       modelRoot.add(model);
+      targetModel = new THREE.Mesh(createGeometry(type), targetMaterial);
+      targetModel.castShadow = true;
+      targetModel.receiveShadow = true;
+      targetRoot.add(targetModel);
     }
 
     const floor = new THREE.Mesh(
@@ -403,6 +511,26 @@
       evaluateChallenge();
     }
 
+    function updateLabMode() {
+      const matching = labMode === "match";
+      modelRoot.position.x = matching ? 1.7 : 0;
+      targetRoot.visible = matching;
+      document.getElementById("matchPanel").hidden = !matching;
+      document.getElementById("matchDivider").hidden = !matching;
+      document.getElementById("matchLeaders").hidden = !matching;
+      document.getElementById("targetLabel").hidden = !matching;
+      document.getElementById("studentLabel").hidden = !matching;
+      document.getElementById("challengeTitle").textContent = matching ? "Match the target material" : "Explore material response";
+      document.getElementById("challengeCopy").textContent = matching
+        ? "Pick a recipe for the left reference, then tune color, metalness, roughness, and clear coat until your material matches."
+        : "Try roughness, metalness, clear coat, and light position to see how the surface changes.";
+      document.querySelectorAll("[data-lab-mode]").forEach(button => {
+        button.classList.toggle("active", button.dataset.labMode === labMode);
+      });
+      evaluateChallenge();
+      updateMatchLabels();
+    }
+
     function selectLight(name) {
       selectedLight = name;
       document.querySelectorAll("[data-light]").forEach(button => button.classList.toggle("active", button.dataset.light === name));
@@ -425,6 +553,34 @@
       updateMaterial();
     }
 
+    const labelWorldPosition = new THREE.Vector3();
+    const labelScreenPosition = new THREE.Vector3();
+    function placeMatchLabel(root, label, line, offsetX) {
+      root.getWorldPosition(labelWorldPosition);
+      labelWorldPosition.y += 1.75;
+      labelScreenPosition.copy(labelWorldPosition).project(camera);
+      const width = viewport.clientWidth;
+      const height = viewport.clientHeight;
+      const anchorX = (labelScreenPosition.x * 0.5 + 0.5) * width;
+      const anchorY = (-labelScreenPosition.y * 0.5 + 0.5) * height;
+      const labelX = THREE.MathUtils.clamp(anchorX + offsetX, 12, width - label.offsetWidth - 12);
+      const labelY = THREE.MathUtils.clamp(anchorY - 72, 14, height - label.offsetHeight - 14);
+      label.style.left = `${labelX}px`;
+      label.style.top = `${labelY}px`;
+      line.setAttribute("x1", anchorX.toFixed(1));
+      line.setAttribute("y1", anchorY.toFixed(1));
+      line.setAttribute("x2", (labelX + label.offsetWidth / 2).toFixed(1));
+      line.setAttribute("y2", (labelY + label.offsetHeight).toFixed(1));
+    }
+
+    function updateMatchLabels() {
+      if (labMode !== "match" || !model || !targetModel) return;
+      const svg = document.getElementById("matchLeaders");
+      svg.setAttribute("viewBox", `0 0 ${viewport.clientWidth} ${viewport.clientHeight}`);
+      placeMatchLabel(targetRoot, document.getElementById("targetLabel"), document.getElementById("targetLeader"), -70);
+      placeMatchLabel(modelRoot, document.getElementById("studentLabel"), document.getElementById("studentLeader"), 70);
+    }
+
     function updateLightLabels() {
       const config = lightConfigs[selectedLight];
       document.getElementById("intensityValue").textContent = config.intensity.toFixed(1);
@@ -439,11 +595,33 @@
     }
 
     function evaluateChallenge() {
+      if (labMode !== "match") {
+        document.getElementById("challenge").classList.remove("complete");
+        document.getElementById("challengeStatus").textContent = "Free play mode";
+        return;
+      }
       const roughness = material.roughness;
       const metalness = material.metalness;
-      const complete = metalness >= 0.8 && roughness >= 0.25 && roughness <= 0.58 && lightConfigs.key.intensity >= 2.5;
+      const clearcoat = material.clearcoat;
+      const preset = materialPresets[targetRecipe];
+      const targetColor = new THREE.Color(preset.color);
+      const colorDiff = Math.hypot(
+        material.color.r - targetColor.r,
+        material.color.g - targetColor.g,
+        material.color.b - targetColor.b
+      );
+      const roughnessDiff = Math.abs(roughness - preset.roughness / 100);
+      const metalnessDiff = Math.abs(metalness - preset.metalness / 100);
+      const clearcoatDiff = Math.abs(clearcoat - preset.clearcoat / 100);
+      const complete = colorDiff < 0.18 && roughnessDiff < 0.09 && metalnessDiff < 0.12 && clearcoatDiff < 0.14;
       document.getElementById("challenge").classList.toggle("complete", complete);
-      document.getElementById("challengeStatus").textContent = complete ? "Brushed metal achieved" : "Metalness > .80, roughness .25 to .58";
+      let status = `Match ${targetRecipe}`;
+      if (metalnessDiff >= 0.12) status = `Metalness target: ${(preset.metalness / 100).toFixed(2)}`;
+      else if (roughnessDiff >= 0.09) status = `Roughness target: ${(preset.roughness / 100).toFixed(2)}`;
+      else if (colorDiff >= 0.18) status = "Adjust the base color";
+      else if (clearcoatDiff >= 0.14) status = `Clear coat target: ${(preset.clearcoat / 100).toFixed(2)}`;
+      if (complete) status = "Material match achieved";
+      document.getElementById("challengeStatus").textContent = status;
     }
 
     const materialPresets = {
@@ -455,6 +633,19 @@
       paint: { color: "#3a6fa8", roughness: 28, metalness: 12, clearcoat: 90 }
     };
 
+    function setTargetRecipe(name) {
+      targetRecipe = name;
+      const preset = materialPresets[name];
+      targetMaterial.color.set(preset.color);
+      targetMaterial.roughness = preset.roughness / 100;
+      targetMaterial.metalness = preset.metalness / 100;
+      targetMaterial.clearcoat = preset.clearcoat / 100;
+      document.querySelectorAll("[data-target-material]").forEach(button => {
+        button.classList.toggle("active", button.dataset.targetMaterial === name);
+      });
+      evaluateChallenge();
+    }
+
     document.querySelectorAll("[data-material]").forEach(button => {
       button.addEventListener("click", () => {
         const preset = materialPresets[button.dataset.material];
@@ -463,6 +654,17 @@
         document.getElementById("metalness").value = preset.metalness;
         document.getElementById("clearcoat").value = preset.clearcoat;
         updateMaterial();
+      });
+    });
+
+    document.querySelectorAll("[data-target-material]").forEach(button => {
+      button.addEventListener("click", () => setTargetRecipe(button.dataset.targetMaterial));
+    });
+
+    document.querySelectorAll("[data-lab-mode]").forEach(button => {
+      button.addEventListener("click", () => {
+        labMode = button.dataset.labMode;
+        updateLabMode();
       });
     });
 
@@ -507,17 +709,22 @@
       renderer.setSize(width, height, false);
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
+      updateMatchLabels();
     }
     window.addEventListener("resize", resize);
     resize();
     createModel("sphere");
+    setTargetRecipe("chrome");
+    updateLabMode();
     updateMaterial();
     selectLight("key");
 
     function animate() {
       requestAnimationFrame(animate);
       modelRoot.rotation.y += 0.002;
+      targetRoot.rotation.y = modelRoot.rotation.y;
       orbit.update();
+      updateMatchLabels();
       renderer.render(scene, camera);
     }
     animate();

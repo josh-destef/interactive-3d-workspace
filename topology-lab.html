@@ -159,6 +159,13 @@
     </section>
   </main>
 
+  <script>
+    if (new URLSearchParams(window.location.search).get("from") === "test") {
+      const homeLink = document.querySelector(".home-link");
+      if (homeLink) homeLink.href = "test-labs.html";
+    }
+  </script>
+
   <script type="importmap">
     {"imports":{
       "three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",

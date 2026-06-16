@@ -151,6 +151,10 @@
           <div class="control-head"><span>Wrist</span><span id="wristValue" class="value">0°</span></div>
           <input id="wristAngle" type="range" min="-100" max="100" value="0">
         </div>
+        <div class="control">
+          <div class="control-head"><span>Claw grip</span><span id="gripValue" class="value">0%</span></div>
+          <input id="gripAmount" type="range" min="0" max="100" value="0">
+        </div>
       </section>
 
       <section class="panel">
@@ -181,8 +185,8 @@
 
       <section id="challenge" class="challenge">
         <div class="challenge-label">Hierarchy challenge</div>
-        <h2 class="challenge-title">Reach the target</h2>
-        <p class="challenge-copy">Coordinate at least the shoulder and elbow to place the gripper inside the glowing target.</p>
+        <h2 class="challenge-title">Pick up the target object</h2>
+        <p class="challenge-copy">Coordinate the arm to place the claw around the object, then close the grip to pick it up.</p>
         <div class="challenge-status"><span class="status-dot"></span><span id="challengeStatus">4.2 units away</span></div>
         <div class="distance-track" style="position:relative;z-index:1;margin-top:12px"><div id="distanceFill" class="distance-fill"></div></div>
       </section>
@@ -197,6 +201,13 @@
       <div class="help">Move a parent joint and watch every descendant follow.</div>
     </section>
   </main>
+
+  <script>
+    if (new URLSearchParams(window.location.search).get("from") === "test") {
+      const homeLink = document.querySelector(".home-link");
+      if (homeLink) homeLink.href = "test-labs.html";
+    }
+  </script>
 
   <script type="importmap">
     {"imports":{
@@ -299,12 +310,17 @@
     palm.position.y = 0.45;
     palm.castShadow = true;
     wrist.add(palm);
+    const fingerRootA = new THREE.Group();
+    const fingerRootB = new THREE.Group();
+    fingerRootA.position.set(-0.42, 0.72, 0);
+    fingerRootB.position.set(0.42, 0.72, 0);
     const fingerA = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.78, 0.18), material(0xff9022, 0.38));
-    fingerA.position.set(-0.28, 1, 0);
+    fingerA.position.y = 0.38;
     const fingerB = fingerA.clone();
     fingerB.material = fingerA.material.clone();
-    fingerB.position.x = 0.28;
-    wrist.add(fingerA, fingerB);
+    fingerRootA.add(fingerA);
+    fingerRootB.add(fingerB);
+    wrist.add(fingerRootA, fingerRootB);
 
     const tip = new THREE.Object3D();
     tip.position.y = 1.4;
@@ -327,6 +343,15 @@
     const targetLight = new THREE.PointLight(0xffda22, 2.4, 5);
     targetLight.position.copy(targetPosition);
     scene.add(targetLight);
+    const pickupObject = new THREE.Mesh(
+      new THREE.BoxGeometry(0.42, 0.42, 0.42),
+      material(0x3a6fa8, 0.25)
+    );
+    pickupObject.position.copy(targetPosition);
+    pickupObject.castShadow = true;
+    pickupObject.receiveShadow = true;
+    scene.add(pickupObject);
+    let objectHeld = false;
 
     const nodes = { base: baseTurn, shoulder, elbow, wrist };
     const labels = { base: "Base", shoulder: "Shoulder", elbow: "Elbow", wrist: "Wrist" };
@@ -339,13 +364,40 @@
       shoulder.rotation.z = THREE.MathUtils.degToRad(Number(document.getElementById("shoulderAngle").value));
       elbow.rotation.z = THREE.MathUtils.degToRad(Number(document.getElementById("elbowAngle").value));
       wrist.rotation.z = THREE.MathUtils.degToRad(Number(document.getElementById("wristAngle").value));
+      updateClaw();
       document.getElementById("baseValue").textContent = `${document.getElementById("baseAngle").value}°`;
       document.getElementById("shoulderValue").textContent = `${document.getElementById("shoulderAngle").value}°`;
       document.getElementById("elbowValue").textContent = `${document.getElementById("elbowAngle").value}°`;
       document.getElementById("wristValue").textContent = `${document.getElementById("wristAngle").value}°`;
+      document.getElementById("gripValue").textContent = `${document.getElementById("gripAmount").value}%`;
       scene.updateMatrixWorld(true);
+      updatePickup();
       updateReadout();
       evaluateChallenge();
+    }
+
+    function updateClaw() {
+      const grip = Number(document.getElementById("gripAmount").value) / 100;
+      const offset = THREE.MathUtils.lerp(0.42, 0.24, grip);
+      fingerRootA.position.x = -offset;
+      fingerRootB.position.x = offset;
+      fingerRootA.rotation.z = 0;
+      fingerRootB.rotation.z = 0;
+    }
+
+    function updatePickup() {
+      const grip = Number(document.getElementById("gripAmount").value) / 100;
+      const tipPosition = tip.getWorldPosition(new THREE.Vector3());
+      const objectPosition = pickupObject.getWorldPosition(new THREE.Vector3());
+      if (!objectHeld && grip > 0.72 && tipPosition.distanceTo(objectPosition) < 0.62) {
+        pickupObject.updateMatrixWorld(true);
+        wrist.attach(pickupObject);
+        pickupObject.position.set(0, 1.22, 0);
+        objectHeld = true;
+      } else if (objectHeld && grip < 0.28) {
+        scene.attach(pickupObject);
+        objectHeld = false;
+      }
     }
 
     function selectNode(name) {
@@ -379,11 +431,12 @@
 
     function evaluateChallenge() {
       const tipPosition = tip.getWorldPosition(new THREE.Vector3());
-      const distance = tipPosition.distanceTo(targetPosition);
-      const complete = distance < 0.48;
+      const objectPosition = pickupObject.getWorldPosition(new THREE.Vector3());
+      const distance = tipPosition.distanceTo(objectPosition);
+      const complete = objectHeld;
       document.getElementById("challenge").classList.toggle("complete", complete);
       document.getElementById("challengeStatus").textContent = complete
-        ? "Target reached"
+        ? "Object picked up"
         : `${distance.toFixed(1)} units away`;
       const progress = THREE.MathUtils.clamp(1 - distance / 5, 0, 1);
       const fill = document.getElementById("distanceFill");
@@ -392,15 +445,15 @@
     }
 
     const presets = {
-      straight: [0, 0, 0, 0],
-      folded: [0, -50, 110, -65],
-      wave: [32, -25, -45, 65],
-      near: [0, -92, 85, 0]
+      straight: [0, 0, 0, 0, 0],
+      folded: [0, -50, 110, -65, 35],
+      wave: [32, -25, -45, 65, 0],
+      near: [0, -92, 85, 0, 80]
     };
 
     function applyPreset(name) {
       const values = presets[name];
-      ["baseAngle", "shoulderAngle", "elbowAngle", "wristAngle"].forEach((id, index) => {
+      ["baseAngle", "shoulderAngle", "elbowAngle", "wristAngle", "gripAmount"].forEach((id, index) => {
         document.getElementById(id).value = values[index];
       });
       updateArm();
@@ -426,7 +479,7 @@
       requestAnimationFrame(tick);
     }
 
-    ["baseAngle", "shoulderAngle", "elbowAngle", "wristAngle"].forEach(id => {
+    ["baseAngle", "shoulderAngle", "elbowAngle", "wristAngle", "gripAmount"].forEach(id => {
       document.getElementById(id).addEventListener("input", updateArm);
     });
     document.querySelectorAll("[data-node]").forEach(button => {
