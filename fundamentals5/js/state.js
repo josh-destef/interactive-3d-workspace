@@ -23,5 +23,6 @@ export const state = {
     axesUsed: new Set(),            // which axes dragged (beat 8)
     scaledUp: false,                // scale > 1.2 achieved (beat 9)
     scaledDown: false,              // scale < 0.85 achieved (beat 9)
-    rotatedAxis: new Set(),         // rotated any axis (beat 10)
+    axisScaleUsed: new Set(),       // which axes stretched (beat 10)
+    rotatedAxis: new Set(),         // rotated any axis (beat 11)
 };

@@ -102,15 +102,16 @@ export function pulseArrow(arrow, duration = 600) {
     tick();
 }
 
-/* ── scale handle: a simple box above the character ── */
+/* ── scale handle: center sphere (uniform scale) ── */
 export const scaleHandle = new THREE.Group();
 
 export const sBox = new THREE.Mesh(
-    new THREE.BoxGeometry(0.3, 0.3, 0.3),
-    new THREE.MeshBasicMaterial({ color: 0x00cccc, depthWrite: false })
+    new THREE.SphereGeometry(0.18, 12, 8),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, depthWrite: false })
 );
+sBox.renderOrder = 999;
 const sHit = new THREE.Mesh(
-    new THREE.BoxGeometry(0.8, 0.8, 0.8),
+    new THREE.SphereGeometry(0.5, 8, 6),
     new THREE.MeshBasicMaterial({ visible: false })
 );
 scaleHandle.add(sBox, sHit);
@@ -119,11 +120,67 @@ scene.add(scaleHandle);
 
 export function updateScaleHandlePos() {
     if (!state.character) return;
-    const factor = getCharacterControlScale();
-    const p = getCharacterCenterWorld();
-    p.y += state.characterHeight * state.character.scale.y * 0.5 + factor * 0.2;
-    scaleHandle.position.copy(p);
-    scaleHandle.scale.set(factor, factor, factor);
+    const sc = state.character.scale;
+    const factor = state.characterControlRadius * Math.cbrt(sc.x * sc.y * sc.z);
+    scaleHandle.position.copy(getCharacterCenterWorld());
+    scaleHandle.scale.setScalar(factor);
+}
+
+/* ── axis scale handles: one per axis, shaft + box head ── */
+function makeScaleAxisHandle(color, dir) {
+    const g = new THREE.Group();
+    const norm = new THREE.Vector3().copy(dir).normalize();
+
+    const shaft = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.028, 0.028, 1.0, 8),
+        new THREE.MeshBasicMaterial({ color, depthWrite: false })
+    );
+    shaft.position.y = 0.5;
+
+    const box = new THREE.Mesh(
+        new THREE.BoxGeometry(0.28, 0.28, 0.28),
+        new THREE.MeshBasicMaterial({ color, depthWrite: false })
+    );
+    box.position.y = 1.13;
+
+    const hit = new THREE.Mesh(
+        new THREE.BoxGeometry(0.6, 0.6, 0.6),
+        new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hit.position.y = 1.13;
+    hit._isScaleAxisHit = true;
+
+    g.add(shaft, box, hit);
+    g.quaternion.setFromUnitVectors(V3(0, 1, 0), norm);
+    g._axKey = Math.abs(norm.x) > 0.5 ? 'x' : Math.abs(norm.y) > 0.5 ? 'y' : 'z';
+    g._color = color;
+    g._visMeshes = [shaft, box];
+    g.visible = false;
+    scene.add(g);
+    return g;
+}
+
+export const scaleAxisX = makeScaleAxisHandle(AXIS_COLORS.x, V3(1, 0, 0));
+export const scaleAxisY = makeScaleAxisHandle(AXIS_COLORS.y, V3(0, 1, 0));
+export const scaleAxisZ = makeScaleAxisHandle(AXIS_COLORS.z, V3(0, 0, 1));
+export const allScaleAxisHandles = [scaleAxisX, scaleAxisY, scaleAxisZ];
+
+export function showScaleAxes() {
+    allScaleAxisHandles.forEach(h => { h.visible = true; });
+}
+export function hideScaleAxes() {
+    allScaleAxisHandles.forEach(h => { h.visible = false; });
+}
+export function updateScaleAxisPos() {
+    if (!state.character) return;
+    const sc = state.character.scale;
+    const base = state.characterControlRadius;
+    const center = getCharacterCenterWorld();
+    allScaleAxisHandles.forEach(h => {
+        h.position.copy(center);
+        // each handle scales along its own axis so it tracks the actual distortion
+        h.scale.setScalar(Math.max(base * sc[h._axKey] * 1.8, 0.25));
+    });
 }
 
 /* ── rotate handle: three rings for X, Y, Z rotation ── */
@@ -163,10 +220,12 @@ export function updateRotateHandlePos() {
 /* restore a hovered/dragged gizmo to its resting color */
 export function restoreColor(obj) {
     if (!obj) return;
-    if (obj._meshes) { // arrow
+    if (obj._meshes) { // move arrow
         obj._meshes.forEach(m => m.material.color.setHex(obj._color));
     } else if (obj === scaleHandle) {
-        sBox.material.color.setHex(0x00cccc);
+        sBox.material.color.setHex(0xffffff);
+    } else if (allScaleAxisHandles.includes(obj)) { // axis scale handle
+        obj._visMeshes.forEach(m => m.material.color.setHex(obj._color));
     } else if (obj.parent === rotateHandle) { // rotation ring
         obj.material.color.setHex(obj.children[0]._color);
     }

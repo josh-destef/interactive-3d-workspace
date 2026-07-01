@@ -12,6 +12,7 @@ import { runSequence, clearAnims } from './anim.js';
 import {
     arrows, showArrows, hideAllArrows, pulseArrow,
     scaleHandle, rotateHandle, updateScaleHandlePos, updateRotateHandlePos,
+    showScaleAxes, hideScaleAxes, updateScaleAxisPos,
 } from './gizmos.js';
 import { getCharacterCenterWorld, getCharacterControlScale } from './character.js';
 import {
@@ -22,6 +23,7 @@ import {
     setCaption, setHint, clearHint, setMode,
     showWatch, hideWatch, showContinue, hideContinue,
     setProgress, setFreePlayMode,
+    centerPanel, dockPanel, showFinishButton,
 } from './ui.js';
 import { buildMouseDiagram } from './mouseDiagram.js';
 
@@ -36,7 +38,9 @@ export function runBeat(idx) {
     state.orbitAccum = 0; state.zoomMin = 999; state.panAccum = 0;
     state.axisDrag = { x: 0, y: 0, z: 0 };
     state.axesUsed = new Set();
+    state.axisScaleUsed = new Set();
     state.scaledUp = false; state.scaledDown = false;
+    hideScaleAxes();
 
     setProgress(idx);
 
@@ -66,6 +70,7 @@ export function runBeat(idx) {
         ───────────────────────────────────────── */
         case 1: {
             orbitCtrl.enabled = false;
+            dockPanel();
             setCaption(1, 'Orbit', 'Drag to look around Gizmo from any angle.' + buildMouseDiagram('orbit'));
             showWatch();
             state.beatLocked = true;
@@ -89,7 +94,7 @@ export function runBeat(idx) {
                     hideWatch();
                     state.beatLocked = false;
                     orbitCtrl.enabled = true;
-                    setCaption(1, 'Orbit', 'Drag to look around Gizmo from any angle.' + buildMouseDiagram('orbit'), 'orbit at least once around');
+                    setCaption(1, 'Orbit', 'Drag to look around Gizmo from any angle.' + buildMouseDiagram('orbit'), 'Orbit at least once around');
                 });
             });
             break;
@@ -97,7 +102,7 @@ export function runBeat(idx) {
 
         case 2: {
             orbitCtrl.enabled = true;
-            setCaption(2, 'Zoom', 'Scroll to zoom in and out. Get close enough to see Gizmo\'s face.' + buildMouseDiagram('zoom'), 'zoom in close');
+            setCaption(2, 'Zoom', 'Scroll to zoom in and out. Get close enough to see Gizmo\'s face.' + buildMouseDiagram('zoom'), 'Zoom in close');
             showWatch();
             state.beatLocked = true;
             state.camLocked = true;
@@ -136,7 +141,7 @@ export function runBeat(idx) {
 
         case 3: {
             orbitCtrl.enabled = true;
-            setCaption(3, 'Pan', 'Slide the camera sideways or up/down to shift your view.' + buildMouseDiagram('pan'), 'pan the camera');
+            setCaption(3, 'Pan', 'Slide the camera sideways or up/down to shift your view.' + buildMouseDiagram('pan'), 'Pan the camera');
             showWatch();
             state.beatLocked = true;
             state.camLocked = true;
@@ -184,7 +189,7 @@ export function runBeat(idx) {
         case 5: {
             orbitCtrl.enabled = true;
             showArrows(['x']);
-            setCaption(5, 'Move - Red Arrow', 'The <span class="cx">red arrow</span> controls left and right — the <b>X axis</b>.' + buildMouseDiagram('move-x'), 'drag the red arrow');
+            setCaption(5, 'Move - Red Arrow', 'The <span class="cx">red arrow</span> controls left and right — the <b>X axis</b>.' + buildMouseDiagram('move-x'), 'Drag the red arrow');
             showWatch();
             state.beatLocked = true;
             state.camLocked = true;
@@ -230,7 +235,7 @@ export function runBeat(idx) {
         case 6: {
             orbitCtrl.enabled = true;
             showArrows(['x', 'y']);
-            setCaption(6, 'Move - Green Arrow', 'The <span class="cy">green arrow</span> controls up and down — the <b>Y axis</b>.' + buildMouseDiagram('move-y'), 'drag the green arrow');
+            setCaption(6, 'Move - Green Arrow', 'The <span class="cy">green arrow</span> controls up and down — the <b>Y axis</b>.' + buildMouseDiagram('move-y'), 'Drag the green arrow');
             showWatch();
             state.beatLocked = true;
             state.camLocked = true;
@@ -265,7 +270,7 @@ export function runBeat(idx) {
         case 7: {
             orbitCtrl.enabled = true;
             showArrows(['x', 'y', 'z']);
-            setCaption(7, 'Move - Blue Arrow', 'The <span class="cz">blue arrow</span> controls forward and back — the <b>Z axis</b>.' + buildMouseDiagram('move-z'), 'drag the blue arrow');
+            setCaption(7, 'Move - Blue Arrow', 'The <span class="cz">blue arrow</span> controls forward and back — the <b>Z axis</b>.' + buildMouseDiagram('move-z'), 'Drag the blue arrow');
             showWatch();
             state.beatLocked = true;
             state.camLocked = true;
@@ -302,7 +307,7 @@ export function runBeat(idx) {
             showArrows(['x', 'y', 'z']);
             clearHint();
             setMode('interact');
-            setCaption(8, 'Move Gizmo anywhere', 'Use any arrow to move it. Orbit to see where it ends up.' + buildMouseDiagram('move-any'), 'use at least 2 different axes');
+            setCaption(8, 'Move Gizmo anywhere', 'Use any arrow to move it. Orbit to see where it ends up.' + buildMouseDiagram('move-any'), 'Use at least 2 different axes');
             break;
 
         case 9: {
@@ -311,7 +316,7 @@ export function runBeat(idx) {
             if (state.character) state.character.scale.setScalar(1);
             scaleHandle.visible = true;
             updateScaleHandlePos();
-            setCaption(9, 'Scale', 'The <span class="co">scale tool</span> controls size. Drag up to grow, down to shrink.' + buildMouseDiagram('scale'), 'drag scale up and down');
+            setCaption(9, 'Scale', 'The <span class="co">scale tool</span> controls size. Drag up to grow, down to shrink.' + buildMouseDiagram('scale'), 'Drag scale up and down');
             showWatch();
             state.beatLocked = true;
             runSequence([
@@ -354,11 +359,67 @@ export function runBeat(idx) {
         case 10: {
             orbitCtrl.enabled = true;
             hideAllArrows();
+            if (state.character) state.character.scale.setScalar(1);
+            scaleHandle.visible = true;
+            rotateHandle.visible = false;
+            updateScaleHandlePos();
+            setCaption(10, 'One Axis vs. Uniform Scale',
+                'Scaling a <b>single axis</b> stretches or squishes the model — the proportions break. <b>Uniform scale</b> (the white sphere) keeps everything in proportion. Watch the difference:');
+            showWatch();
+            state.beatLocked = true;
+            runSequence([
+                { duration: 0.7, fn: () => { updateScaleHandlePos(); } },
+                // Y-axis only: tall and lanky (wrong)
+                {
+                    duration: 1.8, fn: t => {
+                        if (state.character) state.character.scale.set(1, lerp(1, 2.4, t), 1);
+                        updateScaleHandlePos();
+                    }
+                },
+                { duration: 1.1, fn: () => { updateScaleHandlePos(); } },
+                {
+                    duration: 1.0, fn: t => {
+                        if (state.character) state.character.scale.set(1, lerp(2.4, 1, t), 1);
+                        updateScaleHandlePos();
+                    }
+                },
+                { duration: 0.7, fn: () => { updateScaleHandlePos(); } },
+                // Uniform: grows evenly (right)
+                {
+                    duration: 1.5, fn: t => {
+                        if (state.character) state.character.scale.setScalar(lerp(1, 1.8, t));
+                        updateScaleHandlePos();
+                    }
+                },
+                { duration: 0.9, fn: () => { updateScaleHandlePos(); } },
+                {
+                    duration: 1.0, fn: t => {
+                        if (state.character) state.character.scale.setScalar(lerp(1.8, 1, t));
+                        updateScaleHandlePos();
+                    }
+                },
+            ], () => {
+                if (state.character) state.character.scale.setScalar(1);
+                updateScaleHandlePos();
+                showScaleAxes();
+                updateScaleAxisPos();
+                hideWatch();
+                state.beatLocked = false;
+                setCaption(10, 'One Axis vs. Uniform Scale',
+                    'Now try it. Use the <span class="cx">red</span>, <span class="cy">green</span>, or <span class="cz">blue</span> handle to stretch on one axis. Drag the white sphere at the center to scale uniformly.',
+                    'Stretch on one axis');
+            });
+            break;
+        }
+
+        case 11: {
+            orbitCtrl.enabled = true;
+            hideAllArrows();
             scaleHandle.visible = false;
             rotateHandle.visible = true;
             if (state.character) state.character.rotation.set(0, 0, 0);
             updateRotateHandlePos();
-            setCaption(10, 'Rotate', 'The <span class="co">rotate tool</span> controls orientation. Drag any ring to spin Gizmo.' + buildMouseDiagram('rotate'), 'drag any rotation ring');
+            setCaption(11, 'Rotate', 'The <span class="co">rotate tool</span> controls orientation. Drag any ring to spin Gizmo.' + buildMouseDiagram('rotate'), 'Drag any rotation ring');
             showWatch();
             state.beatLocked = true;
             const rotRadius = 0.75 * getCharacterControlScale();
@@ -390,15 +451,20 @@ export function runBeat(idx) {
             break;
         }
 
-        case 11:
+        case 12:
             orbitCtrl.enabled = true;
             orbitCtrl.target.copy(camTgtL);
             orbitCtrl.update();
             clearHint();
             setMode('interact');
-            setCaption('', 'You can navigate 3D space', 'Orbit to look around. Zoom to get close. Pan to shift your view. Move on X, Y, and Z. Scale to resize. And rotate to turn. These are the fundamental tools in every 3D software.');
+            setCaption('',
+                '<span class="cap-celebrate-icon">🎉</span>You can navigate 3D space!',
+                'Orbit · Zoom · Pan · Move · Scale · Rotate: these are the core tools in <b>every</b> 3D app. You have the foundation. Now keep exploring!',
+            );
+            document.getElementById('panel').classList.add('panel-celebrate');
             document.getElementById('free-play-widget').style.display = 'flex';
             setFreePlayMode('move');
+            setTimeout(() => showFinishButton(), 300);
             break;
     }
 }
@@ -421,7 +487,8 @@ export function checkBeatComplete() {
         case 7: if (state.axisDrag.z > 1.0) { showContinue(); } break;
         case 8: if (state.axesUsed.size >= 2) { showContinue(); } break;
         case 9: if (state.scaledUp && state.scaledDown) { showContinue(); } break;
-        case 10: if (state.rotatedAxis.size > 0) { showContinue(); } break;
+        case 10: if (state.axisScaleUsed.size > 0) { showContinue(); } break;
+        case 11: if (state.rotatedAxis.size > 0) { showContinue(); } break;
     }
 }
 
