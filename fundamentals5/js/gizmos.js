@@ -6,7 +6,7 @@
 import * as THREE from 'three';
 import { clamp, V3 } from './utils.js';
 import { AXIS_COLORS } from './config.js';
-import { scene } from './stage.js';
+import { scene, camera } from './stage.js';
 import { state } from './state.js';
 import { getCharacterCenterWorld, getCharacterControlScale } from './character.js';
 
@@ -102,19 +102,27 @@ export function pulseArrow(arrow, duration = 600) {
     tick();
 }
 
-/* ── scale handle: center sphere (uniform scale) ── */
+/* ── uniform scale: an outer ring that encircles the model (Blender-style) ──
+   A camera-facing circle around the object. Grab it and drag outward to grow,
+   inward to shrink. Reads as "resize the whole thing" far better than a dot at
+   the center, and matches the convention in Blender / Maya / Unity. */
 export const scaleHandle = new THREE.Group();
+const UNIFORM_RING_R = 1.35;              // local radius (× control factor)
+const SCALE_UNIFORM_COLOR = 0x5f6672;     // resting neutral ring color (slate grey)
 
-export const sBox = new THREE.Mesh(
-    new THREE.SphereGeometry(0.18, 12, 8),
-    new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, depthWrite: false })
+export const scaleUniformMesh = new THREE.Mesh(
+    new THREE.TorusGeometry(UNIFORM_RING_R, 0.025, 12, 100),
+    new THREE.MeshBasicMaterial({
+        color: SCALE_UNIFORM_COLOR, depthTest: false, depthWrite: false,
+        transparent: true, opacity: 0.95,
+    })
 );
-sBox.renderOrder = 999;
-const sHit = new THREE.Mesh(
-    new THREE.SphereGeometry(0.5, 8, 6),
+scaleUniformMesh.renderOrder = 998;
+const uHit = new THREE.Mesh(
+    new THREE.TorusGeometry(UNIFORM_RING_R, 0.14, 8, 50),
     new THREE.MeshBasicMaterial({ visible: false })
 );
-scaleHandle.add(sBox, sHit);
+scaleHandle.add(scaleUniformMesh, uHit);
 scaleHandle.visible = false;
 scene.add(scaleHandle);
 
@@ -124,6 +132,18 @@ export function updateScaleHandlePos() {
     const factor = state.characterControlRadius * Math.cbrt(sc.x * sc.y * sc.z);
     scaleHandle.position.copy(getCharacterCenterWorld());
     scaleHandle.scale.setScalar(factor);
+    scaleHandle.quaternion.copy(camera.quaternion); // billboard: always face the camera
+}
+
+/* world position of the ring's screen-right edge — used to aim the demo cursor */
+const _edgeOff = new THREE.Vector3();
+export function getScaleRingEdgeWorld(target = new THREE.Vector3()) {
+    getCharacterCenterWorld(target);
+    if (!state.character) return target;
+    const sc = state.character.scale;
+    const r = state.characterControlRadius * Math.cbrt(sc.x * sc.y * sc.z) * UNIFORM_RING_R;
+    _edgeOff.set(1, 0, 0).applyQuaternion(camera.quaternion).multiplyScalar(r);
+    return target.add(_edgeOff);
 }
 
 /* ── axis scale handles: one per axis, shaft + box head ── */
@@ -132,26 +152,32 @@ function makeScaleAxisHandle(color, dir) {
     const norm = new THREE.Vector3().copy(dir).normalize();
 
     const shaft = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.028, 0.028, 1.0, 8),
-        new THREE.MeshBasicMaterial({ color, depthWrite: false })
+        new THREE.CylinderGeometry(0.022, 0.022, 0.9, 10),
+        new THREE.MeshBasicMaterial({ color, depthTest: false, depthWrite: false })
     );
-    shaft.position.y = 0.5;
+    shaft.position.y = 0.45;
+    shaft.renderOrder = 998;
 
     const box = new THREE.Mesh(
-        new THREE.BoxGeometry(0.28, 0.28, 0.28),
-        new THREE.MeshBasicMaterial({ color, depthWrite: false })
+        new THREE.BoxGeometry(0.16, 0.16, 0.16),
+        new THREE.MeshBasicMaterial({ color, depthTest: false, depthWrite: false })
     );
-    box.position.y = 1.13;
+    box.position.y = 1.0;
+    box.renderOrder = 999;
 
     const hit = new THREE.Mesh(
-        new THREE.BoxGeometry(0.6, 0.6, 0.6),
+        new THREE.BoxGeometry(0.4, 0.4, 0.4),
         new THREE.MeshBasicMaterial({ visible: false })
     );
-    hit.position.y = 1.13;
+    hit.position.y = 1.0;
     hit._isScaleAxisHit = true;
 
     g.add(shaft, box, hit);
     g.quaternion.setFromUnitVectors(V3(0, 1, 0), norm);
+    // base orientation (local +Y → this axis); the model's rotation is applied
+    // on top each frame so the handle points along the model's *local* axis —
+    // which is the direction the scale actually stretches.
+    g._baseQuat = g.quaternion.clone();
     g._axKey = Math.abs(norm.x) > 0.5 ? 'x' : Math.abs(norm.y) > 0.5 ? 'y' : 'z';
     g._color = color;
     g._visMeshes = [shaft, box];
@@ -176,37 +202,68 @@ export function updateScaleAxisPos() {
     const sc = state.character.scale;
     const base = state.characterControlRadius;
     const center = getCharacterCenterWorld();
+    const modelQuat = state.character.quaternion;
     allScaleAxisHandles.forEach(h => {
         h.position.copy(center);
+        // rotate the handle with the model so it lines up with the local axis
+        // the scale distorts along
+        h.quaternion.multiplyQuaternions(modelQuat, h._baseQuat);
         // each handle scales along its own axis so it tracks the actual distortion
-        h.scale.setScalar(Math.max(base * sc[h._axKey] * 1.8, 0.25));
+        h.scale.setScalar(Math.max(base * sc[h._axKey] * 1.15, 0.25));
     });
 }
 
-/* ── rotate handle: three rings for X, Y, Z rotation ── */
+/* ── rotate handle: three rings for X, Y, Z rotation ──
+   Thin crisp tubes drawn on top (so they're always visible and grabbable),
+   over a faint sphere so the three rings read as one cohesive ball. */
 export const rotateHandle = new THREE.Group();
-const rMatX = new THREE.MeshBasicMaterial({ color: AXIS_COLORS.x, depthWrite: false, transparent: true, opacity: 0.85 });
-const rMatY = new THREE.MeshBasicMaterial({ color: AXIS_COLORS.y, depthWrite: false, transparent: true, opacity: 0.85 });
-const rMatZ = new THREE.MeshBasicMaterial({ color: AXIS_COLORS.z, depthWrite: false, transparent: true, opacity: 0.85 });
+const ROT_R = 0.85; // ring radius (local; × control factor)
 
-const rX = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.05, 16, 64), rMatX);
+function rotRingMat(color) {
+    // depthTest ON so the solid robot mesh occludes the arcs that pass behind
+    // it — a real depth cue instead of flat rings floating on top. Only the
+    // robot writes depth here (the orb, hit rings, floor and grid don't), so
+    // nothing else can hide the rings. depthWrite stays off so the three rings
+    // blend over each other rather than z-fighting.
+    return new THREE.MeshBasicMaterial({
+        color, depthTest: true, depthWrite: false, transparent: true, opacity: 0.82,
+    });
+}
+const rMatX = rotRingMat(AXIS_COLORS.x);
+const rMatY = rotRingMat(AXIS_COLORS.y);
+const rMatZ = rotRingMat(AXIS_COLORS.z);
+
+// faint inner sphere backing — groups the rings into one "orb"
+const rotOrb = new THREE.Mesh(
+    new THREE.SphereGeometry(ROT_R * 0.97, 32, 24),
+    new THREE.MeshBasicMaterial({ color: 0x8a8a8a, transparent: true, opacity: 0.05, depthWrite: false })
+);
+rotOrb.renderOrder = 996;
+
+function makeHitRing(axis, visMesh, color) {
+    const h = new THREE.Mesh(
+        new THREE.TorusGeometry(ROT_R, 0.18, 8, 40),
+        new THREE.MeshBasicMaterial({ visible: false })
+    );
+    h._axis = axis; h._visMesh = visMesh; h._color = color;
+    return h;
+}
+
+const rX = new THREE.Mesh(new THREE.TorusGeometry(ROT_R, 0.02, 16, 128), rMatX);
 rX.rotation.y = Math.PI / 2;
-const hRX = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.25, 8, 32), new THREE.MeshBasicMaterial({ visible: false }));
-hRX._axis = 'x'; hRX._visMesh = rX; hRX._color = AXIS_COLORS.x;
-rX.add(hRX);
+rX.renderOrder = 997;
+rX.add(makeHitRing('x', rX, AXIS_COLORS.x));
 
-const rY = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.05, 16, 64), rMatY);
+const rY = new THREE.Mesh(new THREE.TorusGeometry(ROT_R, 0.02, 16, 128), rMatY);
 rY.rotation.x = Math.PI / 2;
-const hRY = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.25, 8, 32), new THREE.MeshBasicMaterial({ visible: false }));
-hRY._axis = 'y'; hRY._visMesh = rY; hRY._color = AXIS_COLORS.y;
-rY.add(hRY);
+rY.renderOrder = 997;
+rY.add(makeHitRing('y', rY, AXIS_COLORS.y));
 
-const rZ = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.05, 16, 64), rMatZ);
-const hRZ = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.25, 8, 32), new THREE.MeshBasicMaterial({ visible: false }));
-hRZ._axis = 'z'; hRZ._visMesh = rZ; hRZ._color = AXIS_COLORS.z;
-rZ.add(hRZ);
+const rZ = new THREE.Mesh(new THREE.TorusGeometry(ROT_R, 0.02, 16, 128), rMatZ);
+rZ.renderOrder = 997;
+rZ.add(makeHitRing('z', rZ, AXIS_COLORS.z));
 
-rotateHandle.add(rX, rY, rZ);
+rotateHandle.add(rotOrb, rX, rY, rZ);
 rotateHandle.visible = false;
 scene.add(rotateHandle);
 
@@ -223,7 +280,7 @@ export function restoreColor(obj) {
     if (obj._meshes) { // move arrow
         obj._meshes.forEach(m => m.material.color.setHex(obj._color));
     } else if (obj === scaleHandle) {
-        sBox.material.color.setHex(0xffffff);
+        scaleUniformMesh.material.color.setHex(SCALE_UNIFORM_COLOR);
     } else if (allScaleAxisHandles.includes(obj)) { // axis scale handle
         obj._visMeshes.forEach(m => m.material.color.setHex(obj._color));
     } else if (obj.parent === rotateHandle) { // rotation ring

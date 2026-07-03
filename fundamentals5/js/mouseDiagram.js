@@ -62,8 +62,8 @@ export function buildMouseDiagram(type) {
         'move-y': { left: true,  right: false, scroll: false, color: '#267326', motion: 'updown', label: 'Click + drag' },
         'move-z': { left: true,  right: false, scroll: false, color: '#3a6fa8', motion: 'lr',    label: 'Click + drag' },
         'move-any':{ left: true, right: false, scroll: false, color: '#666',    motion: 'all',   label: 'Click any arrow + drag' },
-        scale:    { left: true,  right: false, scroll: false, color: '#FF9022', motion: 'updown', label: 'Click + drag up or down' },
-        rotate:   { left: true,  right: false, scroll: false, color: '#FF9022', motion: 'arc',   label: 'Click + drag the ring' },
+        scale:    { left: true,  right: false, scroll: false, color: '#FF9022', motion: 'all',   label: 'Drag out to grow, in to shrink' },
+        rotate:   { left: true,  right: false, scroll: false, color: '#FF9022', motion: 'arc',   label: 'Drag the ring around' },
     };
 
     const cfg = defs[type];

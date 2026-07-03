@@ -12,9 +12,9 @@ import { runSequence, clearAnims } from './anim.js';
 import {
     arrows, showArrows, hideAllArrows, pulseArrow,
     scaleHandle, rotateHandle, updateScaleHandlePos, updateRotateHandlePos,
-    showScaleAxes, hideScaleAxes, updateScaleAxisPos,
+    showScaleAxes, hideScaleAxes, updateScaleAxisPos, getScaleRingEdgeWorld,
 } from './gizmos.js';
-import { getCharacterCenterWorld, getCharacterControlScale } from './character.js';
+import { getCharacterCenterWorld, getCharacterControlScale, characterHomePosition } from './character.js';
 import {
     toggleDemoCursor, updateDemoCursor, updateDemoCursor3D,
     setDemoCursorDown, getArrowHeadPos,
@@ -23,9 +23,46 @@ import {
     setCaption, setHint, clearHint, setMode,
     showWatch, hideWatch, showContinue, hideContinue,
     setProgress, setFreePlayMode,
-    centerPanel, dockPanel, showFinishButton,
+    centerPanel, dockPanel, showFinishButton, pulseUtilBar,
 } from './ui.js';
 import { buildMouseDiagram } from './mouseDiagram.js';
+
+/* A runSequence step that eases the camera from wherever it is to a preset, so
+   every "Watch" demo opens from a framing that shows the tool clearly. Requires
+   orbit already disabled and state.camLocked = true (set at the top of the beat)
+   so nothing fights the scripted move.
+
+   If the camera is already close to the preset (common — e.g. Move Y/Z right
+   after Move X already framed to iso), it snaps instantly instead of adding a
+   pointless slow sweep that reads as lag. Real sweeps are capped short. */
+function camMoveStep(presetKey, duration = 0.6) {
+    const cam = CAMS[presetKey];
+    const alreadyFramed = camera.position.distanceTo(cam.pos) < 0.75;
+    const dur = alreadyFramed ? 0.001 : Math.min(duration, 0.6);
+    let startP = null, startL = null;
+    return {
+        duration: dur, fn: t => {
+            if (t === 0 || !startP) {
+                startP = camera.position.clone();
+                startL = orbitCtrl.target.clone();
+            }
+            camCurP.lerpVectors(startP, cam.pos, t);
+            camCurL.lerpVectors(startL, cam.look, t);
+            camera.position.copy(camCurP);
+            camera.lookAt(camCurL);
+            orbitCtrl.target.copy(camCurL);
+        },
+    };
+}
+
+/* Hand camera control back to the student once a Watch demo finishes: re-enable
+   free orbit around the tool's look point. */
+function releaseCameraToOrbit(lookKey = 'iso') {
+    orbitCtrl.target.copy(CAMS[lookKey].look);
+    state.camLocked = false;
+    orbitCtrl.enabled = true;
+    orbitCtrl.update();
+}
 
 export function runBeat(idx) {
     state.beatIdx = idx;
@@ -101,17 +138,18 @@ export function runBeat(idx) {
         }
 
         case 2: {
-            orbitCtrl.enabled = true;
+            orbitCtrl.enabled = false; // no orbit/zoom/pan while watching
             setCaption(2, 'Zoom', 'Scroll to zoom in and out. Get close enough to see Gizmo\'s face.' + buildMouseDiagram('zoom'), 'Zoom in close');
             showWatch();
             state.beatLocked = true;
             state.camLocked = true;
             toggleDemoCursor(true, 'scroll');
             updateDemoCursor(0.5, 0.5, false);
-            const zStart = camera.position.clone();
-            const zLook = V3(0, 1, 0);
+            const zStart = CAMS.front.pos.clone();
+            const zLook = CAMS.front.look.clone();
             const zoomDir = zStart.clone().sub(zLook).normalize();
             runSequence([
+                camMoveStep('front', 0.8), // settle to a clean front view first
                 {
                     duration: 1.5, fn: t => {
                         const d = lerp(7, 3.5, t);
@@ -131,8 +169,7 @@ export function runBeat(idx) {
                 },
             ], () => {
                 toggleDemoCursor(false);
-                state.camLocked = false;
-                orbitCtrl.update();
+                releaseCameraToOrbit('front');
                 hideWatch();
                 state.beatLocked = false;
             });
@@ -140,15 +177,16 @@ export function runBeat(idx) {
         }
 
         case 3: {
-            orbitCtrl.enabled = true;
+            orbitCtrl.enabled = false; // no orbit/zoom/pan while watching
             setCaption(3, 'Pan', 'Slide the camera sideways or up/down to shift your view.' + buildMouseDiagram('pan'), 'Pan the camera');
             showWatch();
             state.beatLocked = true;
             state.camLocked = true;
-            const pStartP = camera.position.clone();
-            const pStartT = orbitCtrl.target.clone();
-            const sideDir = V3(1, 0, 0).applyQuaternion(camera.quaternion).setY(0).normalize();
+            const pStartP = CAMS.front.pos.clone();
+            const pStartT = CAMS.front.look.clone();
+            const sideDir = V3(1, 0, 0); // screen-right at the front view
             runSequence([
+                camMoveStep('front', 0.8), // settle to a clean front view first
                 { duration: 0.8, fn: t => { if (t === 0) toggleDemoCursor(true); updateDemoCursor(0.5, 0.5, false); } },
                 {
                     duration: 1.5, fn: t => {
@@ -170,8 +208,7 @@ export function runBeat(idx) {
                 }
             ], () => {
                 toggleDemoCursor(false);
-                state.camLocked = false;
-                orbitCtrl.update();
+                releaseCameraToOrbit('front');
                 hideWatch();
                 state.beatLocked = false;
             });
@@ -187,7 +224,7 @@ export function runBeat(idx) {
             break;
 
         case 5: {
-            orbitCtrl.enabled = true;
+            orbitCtrl.enabled = false; // no orbit/zoom/pan while watching
             showArrows(['x']);
             setCaption(5, 'Move - Red Arrow', 'The <span class="cx">red arrow</span> controls left and right — the <b>X axis</b>.' + buildMouseDiagram('move-x'), 'Drag the red arrow');
             showWatch();
@@ -233,7 +270,7 @@ export function runBeat(idx) {
         }
 
         case 6: {
-            orbitCtrl.enabled = true;
+            orbitCtrl.enabled = false; // no orbit/zoom/pan while watching
             showArrows(['x', 'y']);
             setCaption(6, 'Move - Green Arrow', 'The <span class="cy">green arrow</span> controls up and down — the <b>Y axis</b>.' + buildMouseDiagram('move-y'), 'Drag the green arrow');
             showWatch();
@@ -241,6 +278,7 @@ export function runBeat(idx) {
             state.camLocked = true;
             const yOrigin = state.character.position.clone();
             runSequence([
+                camMoveStep('iso', 0.7), // frame the tool before the demo
                 { duration: 0.5, fn: t => { if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); } updateDemoCursor3D(getArrowHeadPos('y')); } },
                 {
                     duration: 1.2, fn: t => {
@@ -260,7 +298,7 @@ export function runBeat(idx) {
             ], () => {
                 toggleDemoCursor(false);
                 state.character.position.y = yOrigin.y;
-                state.camLocked = false;
+                releaseCameraToOrbit('iso');
                 hideWatch();
                 state.beatLocked = false;
             });
@@ -268,7 +306,7 @@ export function runBeat(idx) {
         }
 
         case 7: {
-            orbitCtrl.enabled = true;
+            orbitCtrl.enabled = false; // no orbit/zoom/pan while watching
             showArrows(['x', 'y', 'z']);
             setCaption(7, 'Move - Blue Arrow', 'The <span class="cz">blue arrow</span> controls forward and back — the <b>Z axis</b>.' + buildMouseDiagram('move-z'), 'Drag the blue arrow');
             showWatch();
@@ -276,6 +314,7 @@ export function runBeat(idx) {
             state.camLocked = true;
             const zOrigin = state.character.position.clone();
             runSequence([
+                camMoveStep('iso', 0.7), // frame the tool before the demo
                 { duration: 0.5, fn: t => { if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); } updateDemoCursor3D(getArrowHeadPos('z')); } },
                 {
                     duration: 1.2, fn: t => {
@@ -295,7 +334,7 @@ export function runBeat(idx) {
             ], () => {
                 toggleDemoCursor(false);
                 state.character.position.z = zOrigin.z;
-                state.camLocked = false;
+                releaseCameraToOrbit('iso');
                 hideWatch();
                 state.beatLocked = false;
             });
@@ -307,49 +346,55 @@ export function runBeat(idx) {
             showArrows(['x', 'y', 'z']);
             clearHint();
             setMode('interact');
-            setCaption(8, 'Move Gizmo anywhere', 'Use any arrow to move it. Orbit to see where it ends up.' + buildMouseDiagram('move-any'), 'Use at least 2 different axes');
+            setCaption(8, 'Move Gizmo anywhere',
+                'Use any arrow to move it. Orbit to see where it ends up.<br><span class="cap-tip">Lost Gizmo or left it at an awkward angle? Use <b>Reset View</b> or <b>Reset Gizmo</b> in the bottom-right corner anytime.</span>' + buildMouseDiagram('move-any'),
+                'Use at least 2 different axes');
+            pulseUtilBar(); // flash the reset buttons so students notice them
             break;
 
         case 9: {
-            orbitCtrl.enabled = true;
+            orbitCtrl.enabled = false; // no orbit/zoom/pan while watching
             hideAllArrows();
-            if (state.character) state.character.scale.setScalar(1);
+            if (state.character) { state.character.scale.setScalar(1); state.character.position.copy(characterHomePosition); }
             scaleHandle.visible = true;
             updateScaleHandlePos();
-            setCaption(9, 'Scale', 'The <span class="co">scale tool</span> controls size. Drag up to grow, down to shrink.' + buildMouseDiagram('scale'), 'Drag scale up and down');
+            setCaption(9, 'Scale', 'The <span class="co">scale tool</span> controls size. Grab the <span class="co">outer ring</span> and drag outward to grow, inward to shrink.' + buildMouseDiagram('scale'), 'Grow it, then shrink it');
             showWatch();
             state.beatLocked = true;
+            state.camLocked = true;
             runSequence([
-                { duration: 0.5, fn: t => { if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); } updateScaleHandlePos(); updateDemoCursor3D(scaleHandle.position); } },
+                camMoveStep('front', 0.8), // frame the tool before the demo
+                { duration: 0.5, fn: t => { if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); } updateScaleHandlePos(); updateDemoCursor3D(getScaleRingEdgeWorld()); } },
                 {
                     duration: 1.5, fn: t => {
                         if (t === 0) setDemoCursorDown(true);
                         if (state.character) state.character.scale.setScalar(lerp(1.0, 1.8, t));
                         updateScaleHandlePos();
-                        updateDemoCursor3D(scaleHandle.position);
+                        updateDemoCursor3D(getScaleRingEdgeWorld());
                     }
                 },
-                { duration: 0.8, fn: t => { if (t === 0) setDemoCursorDown(false); updateScaleHandlePos(); updateDemoCursor3D(scaleHandle.position); } },
+                { duration: 0.8, fn: t => { if (t === 0) setDemoCursorDown(false); updateScaleHandlePos(); updateDemoCursor3D(getScaleRingEdgeWorld()); } },
                 {
                     duration: 1.5, fn: t => {
                         if (t === 0) setDemoCursorDown(true);
                         if (state.character) state.character.scale.setScalar(lerp(1.8, 0.6, t));
                         updateScaleHandlePos();
-                        updateDemoCursor3D(scaleHandle.position);
+                        updateDemoCursor3D(getScaleRingEdgeWorld());
                     }
                 },
-                { duration: 0.8, fn: t => { if (t === 0) setDemoCursorDown(false); updateScaleHandlePos(); updateDemoCursor3D(scaleHandle.position); } },
+                { duration: 0.8, fn: t => { if (t === 0) setDemoCursorDown(false); updateScaleHandlePos(); updateDemoCursor3D(getScaleRingEdgeWorld()); } },
                 {
                     duration: 1.0, fn: t => {
                         if (t === 0) setDemoCursorDown(true);
                         if (state.character) state.character.scale.setScalar(lerp(0.6, 1.0, t));
                         updateScaleHandlePos();
-                        updateDemoCursor3D(scaleHandle.position);
+                        updateDemoCursor3D(getScaleRingEdgeWorld());
                     }
                 },
             ], () => {
                 toggleDemoCursor(false);
                 if (state.character) state.character.scale.setScalar(1);
+                releaseCameraToOrbit('front');
                 hideWatch();
                 state.beatLocked = false;
             });
@@ -357,45 +402,56 @@ export function runBeat(idx) {
         }
 
         case 10: {
-            orbitCtrl.enabled = true;
+            orbitCtrl.enabled = false; // no orbit/zoom/pan while watching
             hideAllArrows();
-            if (state.character) state.character.scale.setScalar(1);
+            if (state.character) { state.character.scale.setScalar(1); state.character.position.copy(characterHomePosition); }
             scaleHandle.visible = true;
             rotateHandle.visible = false;
             updateScaleHandlePos();
+            // Show the per-axis cube handles alongside the uniform ring so the
+            // student can see which handle drives the single-axis stretch as it
+            // happens (they track the distortion frame by frame below).
+            showScaleAxes();
+            updateScaleAxisPos();
             setCaption(10, 'One Axis vs. Uniform Scale',
-                'Scaling a <b>single axis</b> stretches or squishes the model — the proportions break. <b>Uniform scale</b> (the white sphere) keeps everything in proportion. Watch the difference:');
+                'Scaling a <b>single axis</b> stretches or squishes the model — the proportions break. <b>Uniform scale</b> (the outer ring) keeps everything in proportion. Watch the difference:');
             showWatch();
             state.beatLocked = true;
+            state.camLocked = true;
             runSequence([
-                { duration: 0.7, fn: () => { updateScaleHandlePos(); } },
+                camMoveStep('iso', 0.8), // frame the tool before the demo
+                { duration: 0.7, fn: () => { updateScaleHandlePos(); updateScaleAxisPos(); } },
                 // Y-axis only: tall and lanky (wrong)
                 {
                     duration: 1.8, fn: t => {
                         if (state.character) state.character.scale.set(1, lerp(1, 2.4, t), 1);
                         updateScaleHandlePos();
+                        updateScaleAxisPos();
                     }
                 },
-                { duration: 1.1, fn: () => { updateScaleHandlePos(); } },
+                { duration: 1.1, fn: () => { updateScaleHandlePos(); updateScaleAxisPos(); } },
                 {
                     duration: 1.0, fn: t => {
                         if (state.character) state.character.scale.set(1, lerp(2.4, 1, t), 1);
                         updateScaleHandlePos();
+                        updateScaleAxisPos();
                     }
                 },
-                { duration: 0.7, fn: () => { updateScaleHandlePos(); } },
+                { duration: 0.7, fn: () => { updateScaleHandlePos(); updateScaleAxisPos(); } },
                 // Uniform: grows evenly (right)
                 {
                     duration: 1.5, fn: t => {
                         if (state.character) state.character.scale.setScalar(lerp(1, 1.8, t));
                         updateScaleHandlePos();
+                        updateScaleAxisPos();
                     }
                 },
-                { duration: 0.9, fn: () => { updateScaleHandlePos(); } },
+                { duration: 0.9, fn: () => { updateScaleHandlePos(); updateScaleAxisPos(); } },
                 {
                     duration: 1.0, fn: t => {
                         if (state.character) state.character.scale.setScalar(lerp(1.8, 1, t));
                         updateScaleHandlePos();
+                        updateScaleAxisPos();
                     }
                 },
             ], () => {
@@ -403,27 +459,30 @@ export function runBeat(idx) {
                 updateScaleHandlePos();
                 showScaleAxes();
                 updateScaleAxisPos();
+                releaseCameraToOrbit('iso');
                 hideWatch();
                 state.beatLocked = false;
                 setCaption(10, 'One Axis vs. Uniform Scale',
-                    'Now try it. Use the <span class="cx">red</span>, <span class="cy">green</span>, or <span class="cz">blue</span> handle to stretch on one axis. Drag the white sphere at the center to scale uniformly.',
+                    'Now try it. Use the <span class="cx">red</span>, <span class="cy">green</span>, or <span class="cz">blue</span> cube handle to stretch on one axis. Drag the outer ring to scale uniformly.',
                     'Stretch on one axis');
             });
             break;
         }
 
         case 11: {
-            orbitCtrl.enabled = true;
+            orbitCtrl.enabled = false; // no orbit/zoom/pan while watching
             hideAllArrows();
             scaleHandle.visible = false;
             rotateHandle.visible = true;
-            if (state.character) state.character.rotation.set(0, 0, 0);
+            if (state.character) { state.character.rotation.set(0, 0, 0); state.character.position.copy(characterHomePosition); }
             updateRotateHandlePos();
             setCaption(11, 'Rotate', 'The <span class="co">rotate tool</span> controls orientation. Drag any ring to spin Gizmo.' + buildMouseDiagram('rotate'), 'Drag any rotation ring');
             showWatch();
             state.beatLocked = true;
+            state.camLocked = true;
             const rotRadius = 0.75 * getCharacterControlScale();
             runSequence([
+                camMoveStep('iso', 0.8), // frame the tool before the demo
                 { duration: 0.5, fn: t => { if (t === 0) { toggleDemoCursor(true); setDemoCursorDown(false); } updateRotateHandlePos(); const p = getCharacterCenterWorld(); p.z += rotRadius; updateDemoCursor3D(p); } },
                 {
                     duration: 1.5, fn: t => {
@@ -445,6 +504,7 @@ export function runBeat(idx) {
             ], () => {
                 toggleDemoCursor(false);
                 if (state.character) state.character.rotation.set(0, 0, 0);
+                releaseCameraToOrbit('iso');
                 hideWatch();
                 state.beatLocked = false;
             });

@@ -106,40 +106,24 @@ export function setProgress(idx) {
     document.getElementById('prog-fill').style.width = pct + '%';
 }
 
-/* ── panel position helpers ── */
+/* ── panel position helpers ──
+   The panel is now permanently docked in the bottom-left corner via CSS and is
+   not draggable, so these are no-ops kept only so existing call sites (and any
+   future ones) stay valid. */
 
-export function centerPanel() {
-    const panel = document.getElementById('panel');
-    panel.style.transition = 'box-shadow .4s ease';
-    panel.style.bottom = 'auto';
-    panel.style.top = '50%';
-    panel.style.left = '50%';
-    panel.style.transform = 'translate(-50%, -50%)';
-    panel.classList.remove('panel-docked', 'panel-celebrate');
-}
+export function centerPanel() { /* panel is fixed-docked — nothing to do */ }
 
-export function dockPanel() {
-    const panel = document.getElementById('panel');
-    const rect = panel.getBoundingClientRect();
+export function dockPanel() { /* panel is fixed-docked — nothing to do */ }
 
-    // Freeze at exact current rendered position (no transition)
-    panel.style.transition = 'none';
-    panel.style.top = 'auto';
-    panel.style.bottom = (window.innerHeight - rect.bottom) + 'px';
-    panel.style.left = rect.left + 'px';
-    panel.style.transform = 'none';
-
-    // Force reflow so the browser registers the starting position
-    panel.offsetHeight; // eslint-disable-line no-unused-expressions
-
-    // Spring-animate to docked corner
-    panel.style.transition = [
-        'left .7s cubic-bezier(.34,1.2,.64,1)',
-        'bottom .7s cubic-bezier(.34,1.2,.64,1)',
-        'box-shadow .4s ease',
-    ].join(',');
-    panel.style.left = '24px';
-    panel.style.bottom = '24px';
+/* Briefly animate the Reset View / Reset Gizmo buttons to draw attention when a
+   beat calls them out. Auto-clears so it can be retriggered later. */
+export function pulseUtilBar() {
+    const util = document.getElementById('util-bar');
+    if (!util) return;
+    util.classList.remove('callout');
+    void util.offsetWidth; // restart the CSS animation
+    util.classList.add('callout');
+    setTimeout(() => util.classList.remove('callout'), 3600);
 }
 
 /* ── celebration helpers ── */
