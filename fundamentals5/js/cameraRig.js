@@ -56,10 +56,11 @@ export function arcCamera(fromAngle, toAngle, radius, height, lookAt, duration, 
         camera.lookAt(camCurL);
 
         if (state.beatIdx === 1) {
-            const cycle = (t * 3.5) % 1;
-            if (cycle < 0.1) setDemoCursorDown(false);
-            else if (cycle < 0.2) { setDemoCursorDown(true); updateDemoCursor(0.3, 0); }
-            else { updateDemoCursor(0.3 - (cycle - 0.2) * 0.8, 0); }
+            // one swift press-drag-release matching the real orbit gesture:
+            // a single leftward drag sweeps the camera around
+            if (t === 0) setDemoCursorDown(true);
+            updateDemoCursor(0.3 - t * 0.65, 0);
+            if (t >= 1) setDemoCursorDown(false);
         }
     }, () => {
         camTgtP.copy(camCurP);

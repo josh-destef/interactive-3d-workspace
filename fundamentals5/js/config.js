@@ -10,7 +10,7 @@ export const GIZMO_URL = '../gizmo.glb';
 /* total beats in the lesson (beats 0-12) */
 export const TOTAL_BEATS = 13;
 
-/* axis colors — X red, Y green, Z blue (industry convention) */
+/* axis colors - X red, Y green, Z blue (industry convention) */
 export const AXIS_COLORS = { x: 0xc0453a, y: 0x2e8b2e, z: 0x3a6fa8 };
 
 /* camera presets */

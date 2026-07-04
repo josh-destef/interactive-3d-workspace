@@ -17,6 +17,14 @@ export function tickAnims(dt) {
     for (let i = runningAnims.length - 1; i >= 0; i--) {
         const a = runningAnims[i];
         if (a.done) { runningAnims.splice(i, 1); continue; }
+        // First tick delivers exactly t = 0. Without this, elapsed += dt before
+        // the first call meant fn never saw 0, so every `if (t === 0) …` setup
+        // gate in the beat demos (show cursor, press "mouse" down) never ran.
+        if (!a.started) {
+            a.started = true;
+            a.fn(0);
+            continue;
+        }
         a.elapsed += dt;
         const t = clamp(a.elapsed / a.duration, 0, 1);
         a.fn(easeInOut(t));

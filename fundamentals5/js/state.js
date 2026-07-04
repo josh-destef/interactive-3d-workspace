@@ -15,7 +15,7 @@ export const state = {
     characterHeight: 2.0,
     characterControlRadius: 1.0,
 
-    /* per-beat interaction tracking — reset each beat */
+    /* per-beat interaction tracking - reset each beat */
     orbitAccum: 0,                  // accumulated orbit degrees (beat 1)
     zoomMin: 999,                   // closest zoom reached (beat 2)
     panAccum: 0,                    // accumulated pan distance (beat 3)

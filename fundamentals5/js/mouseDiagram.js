@@ -28,7 +28,7 @@ function mouseSVG({ left, right, scroll, color, motion }) {
         <rect x="19" y="10" width="14" height="20" rx="7" fill="${a}" opacity="0.42"/>
         <rect x="19" y="10" width="14" height="20" rx="7" fill="none" stroke="${a}" stroke-width="1" opacity="0.55"/>` : '';
 
-    /* motion arrow groups — CSS classes drive the bobbing animation */
+    /* motion arrow groups - CSS classes drive the bobbing animation */
     const aUp    = `<g class="arr-up">${p('M26,-4 L26,-16 M21,-12 L26,-17 L31,-12', a)}</g>`;
     const aDown  = `<g class="arr-down">${p('M26,84 L26,96 M21,91 L26,97 L31,91', a)}</g>`;
     const aLeft  = `<g class="arr-left">${p('M-4,38 L-16,38 M-12,33 L-17,38 L-12,43', a)}</g>`;

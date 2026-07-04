@@ -12,7 +12,7 @@ import {
     scaleHandle, rotateHandle,
 } from './gizmos.js';
 import { state } from './state.js';
-import { runBeat, nextBeat } from './beats.js';
+import { runBeat, nextBeat, replayBeat } from './beats.js';
 import { resetCamera, resetGizmo } from './interaction.js';
 import { setFreePlayMode } from './ui.js';
 
@@ -23,6 +23,7 @@ if (new URLSearchParams(window.location.search).get('from') === 'test') {
 }
 
 /* wire up controls (no inline onclick handlers) */
+document.getElementById('btn-replay').addEventListener('click', replayBeat);
 document.getElementById('btn-reset-view').addEventListener('click', resetCamera);
 document.getElementById('btn-reset-gizmo').addEventListener('click', resetGizmo);
 document.getElementById('btn-continue').addEventListener('click', nextBeat);

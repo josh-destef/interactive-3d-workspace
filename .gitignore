@@ -1,0 +1,32 @@
+# ── Claude Code / agent tooling (not part of the lessons) ──
+.claude/
+.mcp.json
+.playwright-mcp/
+CLAUDE.md
+
+# ── dependencies & build output ──
+node_modules/
+dist/
+build/
+
+# ── logs & temp ──
+*.log
+npm-debug.log*
+yarn-error.log*
+*.tmp
+.cache/
+
+# ── environment / secrets ──
+.env
+.env.*
+
+# ── OS junk ──
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── editor / IDE ──
+.vscode/
+.idea/
+*.swp
+*.swo

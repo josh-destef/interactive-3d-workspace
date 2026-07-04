@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════
    GIZMOS
-   Move arrows, the scale handle, and the rotate rings —
+   Move arrows, the scale handle, and the rotate rings -
    plus the helpers that keep them pinned to the character.
 ═══════════════════════════════════════════════ */
 import * as THREE from 'three';
@@ -119,7 +119,9 @@ export const scaleUniformMesh = new THREE.Mesh(
 );
 scaleUniformMesh.renderOrder = 998;
 const uHit = new THREE.Mesh(
-    new THREE.TorusGeometry(UNIFORM_RING_R, 0.14, 8, 50),
+    // generous invisible grab zone - a near-miss on the thin ring should still
+    // scale, not fall through to orbit and spin the camera on a beginner
+    new THREE.TorusGeometry(UNIFORM_RING_R, 0.32, 8, 50),
     new THREE.MeshBasicMaterial({ visible: false })
 );
 scaleHandle.add(scaleUniformMesh, uHit);
@@ -129,19 +131,28 @@ scene.add(scaleHandle);
 export function updateScaleHandlePos() {
     if (!state.character) return;
     const sc = state.character.scale;
-    const factor = state.characterControlRadius * Math.cbrt(sc.x * sc.y * sc.z);
+    // floor the ring size so it stays grabbable even when the model has been
+    // shrunk to a speck - otherwise the student's only way back is Reset
+    const factor = Math.max(
+        state.characterControlRadius * Math.cbrt(sc.x * sc.y * sc.z),
+        0.3
+    );
     scaleHandle.position.copy(getCharacterCenterWorld());
     scaleHandle.scale.setScalar(factor);
     scaleHandle.quaternion.copy(camera.quaternion); // billboard: always face the camera
 }
 
-/* world position of the ring's screen-right edge — used to aim the demo cursor */
+/* world position of the ring's screen-right edge - used to aim the demo cursor */
 const _edgeOff = new THREE.Vector3();
 export function getScaleRingEdgeWorld(target = new THREE.Vector3()) {
     getCharacterCenterWorld(target);
     if (!state.character) return target;
     const sc = state.character.scale;
-    const r = state.characterControlRadius * Math.cbrt(sc.x * sc.y * sc.z) * UNIFORM_RING_R;
+    // same floored factor as updateScaleHandlePos so the cursor rides the ring
+    const r = Math.max(
+        state.characterControlRadius * Math.cbrt(sc.x * sc.y * sc.z),
+        0.3
+    ) * UNIFORM_RING_R;
     _edgeOff.set(1, 0, 0).applyQuaternion(camera.quaternion).multiplyScalar(r);
     return target.add(_edgeOff);
 }
@@ -175,7 +186,7 @@ function makeScaleAxisHandle(color, dir) {
     g.add(shaft, box, hit);
     g.quaternion.setFromUnitVectors(V3(0, 1, 0), norm);
     // base orientation (local +Y → this axis); the model's rotation is applied
-    // on top each frame so the handle points along the model's *local* axis —
+    // on top each frame so the handle points along the model's *local* axis -
     // which is the direction the scale actually stretches.
     g._baseQuat = g.quaternion.clone();
     g._axKey = Math.abs(norm.x) > 0.5 ? 'x' : Math.abs(norm.y) > 0.5 ? 'y' : 'z';
@@ -221,7 +232,7 @@ const ROT_R = 0.85; // ring radius (local; × control factor)
 
 function rotRingMat(color) {
     // depthTest ON so the solid robot mesh occludes the arcs that pass behind
-    // it — a real depth cue instead of flat rings floating on top. Only the
+    // it - a real depth cue instead of flat rings floating on top. Only the
     // robot writes depth here (the orb, hit rings, floor and grid don't), so
     // nothing else can hide the rings. depthWrite stays off so the three rings
     // blend over each other rather than z-fighting.
@@ -233,7 +244,7 @@ const rMatX = rotRingMat(AXIS_COLORS.x);
 const rMatY = rotRingMat(AXIS_COLORS.y);
 const rMatZ = rotRingMat(AXIS_COLORS.z);
 
-// faint inner sphere backing — groups the rings into one "orb"
+// faint inner sphere backing - groups the rings into one "orb"
 const rotOrb = new THREE.Mesh(
     new THREE.SphereGeometry(ROT_R * 0.97, 32, 24),
     new THREE.MeshBasicMaterial({ color: 0x8a8a8a, transparent: true, opacity: 0.05, depthWrite: false })

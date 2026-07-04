@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   INTERACTION — RAYCASTING + DRAG
+   INTERACTION - RAYCASTING + DRAG
    Priority: gizmo arrow > scale handle > orbit.
    Also hosts the wheel/keyboard handlers, the draggable
    panel, and the Reset View / Reset Gizmo actions.
@@ -51,7 +51,7 @@ function getAxisScreenDir(axKey) {
     return len > 0.0001 ? { x: sx / len, y: sy / len } : { x: 0, y: -1 };
 }
 
-/* Pivot (character center) projected to screen pixels — same client-space
+/* Pivot (character center) projected to screen pixels - same client-space
    coordinates as pointer events, so cursor deltas can be measured against it. */
 function getCenterScreen() {
     getCharacterCenterWorld(_projV).project(camera);
@@ -115,7 +115,7 @@ cv.addEventListener('pointerdown', e => {
     getNDC(e);
     raycaster.setFromCamera(pointerNDC, camera);
 
-    // 1. check axis scale handles first (small precise cubes — ratio along the axis)
+    // 1. check axis scale handles first (small precise cubes - ratio along the axis)
     for (const handle of allScaleAxisHandles) {
         if (!handle.visible) continue;
         const hitMeshes = handle.children.filter(c => c._isScaleAxisHit);
@@ -135,12 +135,12 @@ cv.addEventListener('pointerdown', e => {
             };
             handle._visMeshes.forEach(m => m.material.color.setHex(0xffffff));
             freezeCamera();
-            cv.style.cursor = 'nwse-resize';
+            cv.style.cursor = 'grabbing';
             return;
         }
     }
 
-    // 2. check the uniform scale ring (large outer target — radial from the pivot)
+    // 2. check the uniform scale ring (large outer target - radial from the pivot)
     if (scaleHandle.visible) {
         const hits = raycaster.intersectObjects(scaleHandle.children);
         if (hits.length) {
@@ -156,12 +156,12 @@ cv.addEventListener('pointerdown', e => {
             if (state.character) charScaleStartVec.copy(state.character.scale);
 
             freezeCamera();
-            cv.style.cursor = 'nwse-resize';
+            cv.style.cursor = 'grabbing';
             return;
         }
     }
 
-    // 4. check rotate handle (in-plane angular drag — the ring follows the cursor)
+    // 4. check rotate handle (in-plane angular drag - the ring follows the cursor)
     if (rotateHandle.visible) {
         const hits = raycaster.intersectObjects(rotateHandle.children, true);
         const validHit = hits.find(h => h.object._axis);
@@ -216,7 +216,7 @@ cv.addEventListener('pointermove', e => {
     if (state.beatLocked) return;
     getNDC(e);
 
-    // uniform scale drag (center sphere) — radial: the cursor's distance from
+    // uniform scale drag (center sphere) - radial: the cursor's distance from
     // the pivot sets the factor. Push it outward to grow, pull it toward/through
     // the pivot to shrink. All axes multiply together so any distortion is kept.
     if (dragScale && state.character) {
@@ -239,7 +239,7 @@ cv.addEventListener('pointermove', e => {
         return;
     }
 
-    // axis scale drag — ratio of the cursor's distance from the pivot along the
+    // axis scale drag - ratio of the cursor's distance from the pivot along the
     // axis vs. at grab time. Drag the handle outward to grow that axis, inward to shrink.
     if (dragScaleAxis && state.character) {
         const dx = e.clientX - dragScaleAxis.centerX;
@@ -261,7 +261,7 @@ cv.addEventListener('pointermove', e => {
         return;
     }
 
-    // rotate drag — spin about the world axis by the angle the cursor sweeps
+    // rotate drag - spin about the world axis by the angle the cursor sweeps
     // around the pivot on the rotation plane, so the grabbed ring tracks the mouse.
     // Computing it on the actual 3D plane makes the direction correct at any camera angle.
     if (dragRotate && state.character) {
@@ -356,7 +356,7 @@ cv.addEventListener('pointermove', e => {
                 else if (foundHover.type === 'scale') scaleUniformMesh.material.color.setHex(0xffff00);
                 else if (foundHover.type === 'scaleAxis') hoverObj._visMeshes.forEach(m => m.material.color.setHex(0xffff00));
                 else if (foundHover.type === 'rotate') hoverObj.material.color.setHex(0xffff00);
-                cv.style.cursor = 'pointer';
+                cv.style.cursor = 'grab';
             }
         } else {
             if (hoverObj) {
@@ -367,14 +367,17 @@ cv.addEventListener('pointermove', e => {
         }
     }
 
-    // orbit tracking for beat 1
-    if (state.beatIdx === 1 && orbitCtrl.enabled) {
+    // orbit tracking for beat 1 - only while actually dragging (left button),
+    // so just waving the mouse over the canvas doesn't complete the step
+    if (state.beatIdx === 1 && orbitCtrl.enabled && (e.buttons & 1)) {
         state.orbitAccum += Math.abs(e.movementX || 0) * 0.5;
         checkBeatComplete();
     }
 
-    // pan tracking for beat 3
-    if (state.beatIdx === 3 && orbitCtrl.enabled) {
+    // pan tracking for beat 3 - require a pan gesture: right/middle drag, or
+    // shift + left drag (matches OrbitControls' pan bindings)
+    const isPanGesture = (e.buttons & 6) || ((e.buttons & 1) && e.shiftKey);
+    if (state.beatIdx === 3 && orbitCtrl.enabled && isPanGesture) {
         state.panAccum += (Math.abs(e.movementX || 0) + Math.abs(e.movementY || 0)) * 0.5;
         checkBeatComplete();
     }
@@ -414,7 +417,7 @@ window.addEventListener('keydown', e => {
 });
 
 /* ═══════════════════════════════════════════════
-   UTILITY ACTIONS — Reset View / Reset Gizmo
+   UTILITY ACTIONS - Reset View / Reset Gizmo
 ═══════════════════════════════════════════════ */
 export function resetCamera() {
     if (state.beatLocked) return;
@@ -460,5 +463,5 @@ export function resetGizmo() {
 }
 
 /* The info panel is permanently docked (see #panel in styles.css) and is no
-   longer draggable — the old pointer-drag handlers were removed so it can't be
+   longer draggable - the old pointer-drag handlers were removed so it can't be
    knocked out of place. */

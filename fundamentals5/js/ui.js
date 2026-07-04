@@ -16,6 +16,15 @@ function tog(id, on) {
     if (el) el.classList.toggle('on', !!on);
 }
 
+/* Tracks whether the current beat ran a "watch" demo, so the Replay button is
+   only offered on beats that actually have something to replay. Set when the
+   demo starts (showWatch) and consumed when the student's turn begins
+   (hideWatch); reset whenever a new beat clears the mode (setMode(null)). */
+let currentBeatHadWatch = false;
+
+export function showReplay() { tog('btn-replay', true); }
+export function hideReplay() { tog('btn-replay', false); }
+
 export function setCaption(step, title, body, prompt = '') {
     const stepEl = document.getElementById('cap-step');
     const titleEl = document.getElementById('cap-title');
@@ -66,6 +75,10 @@ export function setMode(mode) {
         badge.classList.remove('on', 'watching', 'interacting');
         if (util) util.classList.remove('on');
         if (panel) panel.classList.remove('panel-watching', 'panel-interacting');
+        // fresh beat: forget any prior demo and hide the replay button until a
+        // new demo runs
+        currentBeatHadWatch = false;
+        hideReplay();
         return;
     }
     const isWatch = mode === 'watch';
@@ -82,13 +95,17 @@ export function setMode(mode) {
     if (taskEl) taskEl.classList.toggle('on', !isWatch && !!taskEl.textContent);
 }
 
-export function showWatch() { setMode('watch'); }
-export function hideWatch() { setMode('interact'); }
+export function showWatch() { currentBeatHadWatch = true; hideReplay(); setMode('watch'); }
+export function hideWatch() {
+    setMode('interact');
+    // demo just finished → let the student replay it if they missed something
+    if (currentBeatHadWatch) showReplay();
+}
 
 export function showContinue() {
     tog('btn-continue', true);
     tog('kbd-hint', true);
-    // task is done — hide the badge task prompt
+    // task is done - hide the badge task prompt
     const taskEl = document.getElementById('badge-task');
     if (taskEl) taskEl.classList.remove('on');
 }
@@ -111,9 +128,9 @@ export function setProgress(idx) {
    not draggable, so these are no-ops kept only so existing call sites (and any
    future ones) stay valid. */
 
-export function centerPanel() { /* panel is fixed-docked — nothing to do */ }
+export function centerPanel() { /* panel is fixed-docked - nothing to do */ }
 
-export function dockPanel() { /* panel is fixed-docked — nothing to do */ }
+export function dockPanel() { /* panel is fixed-docked - nothing to do */ }
 
 /* Briefly animate the Reset View / Reset Gizmo buttons to draw attention when a
    beat calls them out. Auto-clears so it can be retriggered later. */

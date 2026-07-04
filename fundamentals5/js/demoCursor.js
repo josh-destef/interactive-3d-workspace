@@ -11,10 +11,16 @@ const curEl = document.getElementById('demo-cursor');
 
 export function updateDemoCursor(x, y, isNDC = true) {
     if (!curEl) return;
-    let px = x, py = y;
+    let px, py;
     if (isNDC) {
         px = (x * 0.5 + 0.5) * W();
         py = (y * -0.5 + 0.5) * H();
+    } else {
+        // non-NDC coords are fractions of the canvas (0..1, y down) - every
+        // caller passes those. Treating them as raw pixels (the old behavior)
+        // pinned the cursor to the top-left corner during the zoom/pan demos.
+        px = x * W();
+        py = y * H();
     }
     curEl.style.transform = `translate(${px}px, ${py}px)`;
 }
@@ -26,21 +32,17 @@ export function updateDemoCursor3D(worldPos) {
     updateDemoCursor(p.x, p.y);
 }
 
-export function toggleDemoCursor(show, mode = 'arrow') {
+export function toggleDemoCursor(show) {
     if (!curEl) return;
-    if (show) {
-        curEl.classList.add('on');
-        curEl.className = mode === 'scroll' ? 'on scrolling' : 'on';
-    } else {
-        curEl.classList.remove('on');
-        curEl.classList.remove('down');
-    }
+    // full reset either way so no press/button classes leak between demos
+    curEl.className = show ? 'on' : '';
 }
 
-export function setDemoCursorDown(down) {
+/* press feedback: orange glow for left-button drags, green for right (pan) */
+export function setDemoCursorDown(down, button = 'left') {
     if (!curEl) return;
-    if (down) curEl.classList.add('down');
-    else curEl.classList.remove('down');
+    curEl.classList.toggle('down', !!down);
+    curEl.classList.toggle('right', !!down && button === 'right');
 }
 
 export function getArrowHeadPos(axisKey) {

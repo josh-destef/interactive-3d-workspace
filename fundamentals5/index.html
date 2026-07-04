@@ -4,7 +4,9 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <title>Navigating 3D Space — CreateAccess</title>
+    <title>Navigating 3D Space - CreateAccess</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22></text></svg>" />
     <link
         href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap"
         rel="stylesheet" />
@@ -54,20 +56,26 @@
                 <span class="badge-text">Watch</span>
             </div>
             <div id="badge-task"></div>
+            <!-- replay-demo button: sits under the "Your Turn" badge + task pill
+                 so a student who missed the demo can re-watch it -->
+            <button id="btn-replay">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <polygon points="10 8 16 12 10 16 10 8" />
+                </svg>
+                Replay demo
+            </button>
             <!-- loading overlay -->
             <div id="loading">loading gizmo...</div>
 
-            <!-- demo cursor -->
+            <!-- demo cursor (pixel-art pointer; each subpath is one run of pixels) -->
             <div id="demo-cursor">
-                <svg id="cursor-arrow" width="32" height="32" viewBox="0 0 24 24">
-                    <path d="M4 4l15 6.5-6.5 2.5 2.5 6.5-3 3-3-7-4.5 4.5z" fill="#fff" stroke="#1a1a2e"
-                        stroke-width="1.5" stroke-linejoin="round" />
-                </svg>
-                <div id="cursor-ring"></div>
-                <!-- scroll icon -->
-                <svg id="cursor-scroll" width="32" height="32" viewBox="0 0 24 24">
-                    <rect x="7" y="4" width="10" height="16" rx="5" fill="#fff" stroke="#1a1a2e" stroke-width="2" />
-                    <circle cx="12" cy="8" r="1.5" fill="#1a1a2e" />
+                <svg id="cursor-arrow" width="22" height="30" viewBox="0 0 11 15" shape-rendering="crispEdges">
+                    <path fill="#1a1a2e"
+                        d="M0 0h1v1h-1z M0 1h2v1h-2z M0 2h1v1h-1z M2 2h1v1h-1z M0 3h1v1h-1z M3 3h1v1h-1z M0 4h1v1h-1z M4 4h1v1h-1z M0 5h1v1h-1z M5 5h1v1h-1z M0 6h1v1h-1z M6 6h1v1h-1z M0 7h1v1h-1z M7 7h1v1h-1z M0 8h1v1h-1z M8 8h1v1h-1z M0 9h1v1h-1z M9 9h1v1h-1z M0 10h1v1h-1z M6 10h5v1h-5z M0 11h1v1h-1z M3 11h1v1h-1z M6 11h1v1h-1z M0 12h1v1h-1z M2 12h1v1h-1z M4 12h1v1h-1z M7 12h1v1h-1z M0 13h2v1h-2z M4 13h1v1h-1z M7 13h1v1h-1z M5 14h2v1h-2z" />
+                    <path fill="#ffffff"
+                        d="M1 2h1v1h-1z M1 3h2v1h-2z M1 4h3v1h-3z M1 5h4v1h-4z M1 6h5v1h-5z M1 7h6v1h-6z M1 8h7v1h-7z M1 9h8v1h-8z M1 10h5v1h-5z M1 11h2v1h-2z M4 11h2v1h-2z M1 12h1v1h-1z M5 12h2v1h-2z M5 13h2v1h-2z" />
                 </svg>
             </div>
         </div>
@@ -87,9 +95,10 @@
                 <div id="cap-prompt"></div>
                 <div class="continue-side">
                     <a id="btn-finish" href="../index.html">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                            <polyline points="9 22 9 12 15 12 15 22"/>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                            <polyline points="9 22 9 12 15 12 15 22" />
                         </svg>
                         Back to Home
                     </a>

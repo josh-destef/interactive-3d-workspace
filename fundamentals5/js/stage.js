@@ -25,8 +25,13 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 export const scene = new THREE.Scene();
 export const clock = new THREE.Clock();
 
-/* ── lighting: ambient fill + warm key + cool rim ── */
-scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+/* ── lighting: hemisphere fill + warm key + soft cool rim ──
+   Students orbit all the way around the model, so the back must read as well
+   as the front. A hemisphere fill keeps every angle modeled, and the rim is a
+   soft cool white rather than saturated blue (which used to tint the whole
+   back side purple). */
+scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+scene.add(new THREE.HemisphereLight(0xffffff, 0xd8d4cc, 0.45));
 
 const keyLight = new THREE.DirectionalLight(0xfff5e0, 1.2);
 keyLight.position.set(5, 8, 5);
@@ -35,7 +40,7 @@ keyLight.shadow.mapSize.width = 1024;
 keyLight.shadow.mapSize.height = 1024;
 scene.add(keyLight);
 
-const rimLight = new THREE.DirectionalLight(0x4060ff, 0.6);
+const rimLight = new THREE.DirectionalLight(0xdde4ff, 0.55);
 rimLight.position.set(-4, 2, -6);
 scene.add(rimLight);
 

@@ -69,7 +69,7 @@ body {
     transition: width 1s cubic-bezier(.4, 0, .2, 1);
 }
 
-/* mode badge — fixed top center over canvas */
+/* mode badge - fixed top center over canvas */
 #status-badge {
     position: absolute;
     top: 14px;
@@ -88,8 +88,8 @@ body {
     pointer-events: none;
     opacity: 0;
     transition: opacity .4s ease, background .4s, color .4s, box-shadow .4s,
-                transform .5s cubic-bezier(0.34, 1.56, 0.64, 1),
-                top .5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transform .5s cubic-bezier(0.34, 1.56, 0.64, 1),
+        top .5s cubic-bezier(0.34, 1.56, 0.64, 1);
     white-space: nowrap;
 }
 
@@ -102,7 +102,7 @@ body {
     color: #fff;
     box-shadow: 0 16px 48px rgba(0, 0, 0, .28);
     transform: translateX(-50%) scale(2.6);
-    top: 16%;
+    top: calc(10%);
 }
 
 #status-badge.interacting {
@@ -131,14 +131,23 @@ body {
 }
 
 @keyframes badge-pulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.7); opacity: .5; }
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.7);
+        opacity: .5;
+    }
 }
 
-/* task pill — sits below the status badge, outside the pill */
+/* task pill - sits below the status badge, outside the pill */
 #badge-task {
     position: absolute;
-    top: 82px;
+    top: 112px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 30;
@@ -153,16 +162,79 @@ body {
     padding: 4px 13px;
     border-radius: 20px;
     white-space: nowrap;
-    backdrop-filter: blur(6px);
     opacity: 0;
     transition: opacity .4s ease;
 }
 
 #badge-task.on {
     opacity: 1;
+    /* wait for the big Watch badge to shrink into place first, so the task
+       pill doesn't fade in behind/through it mid-transition */
+    transition-delay: .5s;
 }
 
-/* hint pill — top center of canvas, below badge */
+/* replay-demo pill - sits under the "Your Turn" badge + task pill, top center.
+   Only shown on beats that have a demo to replay, once the student's turn has
+   begun (toggled on via .on from ui.js). */
+#btn-replay {
+    position: absolute;
+    top: 72px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.05);
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .01em;
+    color: #1a1a2e;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .2s, border-color .2s, color .2s, transform .15s, box-shadow .2s;
+}
+
+#btn-replay.on {
+    display: inline-flex;
+    animation: replayIn .4s ease .55s backwards;
+}
+
+/* like continueIn but keeps the translateX(-50%) centering, so the pill fades
+   up in place instead of starting off-center and snapping to the middle */
+@keyframes replayIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+#btn-replay svg {
+    opacity: 0.75;
+}
+
+#btn-replay:hover {
+    color: var(--orange);
+    border-color: var(--orange);
+    box-shadow: 0 8px 22px rgba(255, 144, 34, 0.20), 0 1px 4px rgba(0, 0, 0, 0.06);
+    transform: translateX(-50%) translateY(-2px);
+}
+
+#btn-replay:hover svg {
+    opacity: 1;
+}
+
+/* hint pill - top center of canvas, below badge */
 #hint {
     position: absolute;
     top: 60px;
@@ -201,7 +273,7 @@ body {
     width: min(92%, 440px);
     /* Solid (was rgba .96 + blur). The blur was invisible at that opacity but
        forced a full backdrop-filter recomposite every frame the 3D scene moved
-       behind it — the main source of jank during the camera sweeps in Watch
+       behind it - the main source of jank during the camera sweeps in Watch
        demos. Dropping it keeps the look and smooths every camera move. */
     background: #fbfbfa;
     border: 1px solid rgba(0, 0, 0, 0.06);
@@ -233,7 +305,7 @@ body {
         0 4px 12px rgba(0, 0, 0, .03);
 }
 
-/* panel is fixed in place now — the drag grip is gone */
+/* panel is fixed in place now - the drag grip is gone */
 #drag-handle {
     display: none;
 }
@@ -392,9 +464,10 @@ body {
     display: none;
 }
 
-/* continue button */
+/* continue button - display:none while locked so the panel doesn't reserve a
+   big empty footer; fades/slides in via keyframes when it unlocks */
 #btn-continue {
-    display: inline-flex;
+    display: none;
     align-items: center;
     gap: 7px;
     padding: 12px 24px;
@@ -409,12 +482,28 @@ body {
     white-space: nowrap;
     opacity: 0;
     pointer-events: none;
-    transition: opacity .4s ease, transform .15s ease, background .15s;
+    transition: transform .15s ease, background .15s;
 }
 
 #btn-continue.on {
+    display: inline-flex;
     opacity: 1;
     pointer-events: all;
+    /* 'backwards' (not 'both') so the finished animation releases transform -
+       otherwise it would pin translateY(0) and break the hover lift */
+    animation: continueIn .45s cubic-bezier(.34, 1.3, .64, 1) backwards;
+}
+
+@keyframes continueIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 #btn-continue:hover {
@@ -435,17 +524,19 @@ body {
 }
 
 #kbd-hint {
+    display: none;
     font-family: var(--mono);
     font-size: 10px;
     color: var(--green);
     opacity: 0;
     pointer-events: none;
-    transition: opacity .4s ease;
     letter-spacing: .02em;
 }
 
 #kbd-hint.on {
+    display: block;
     opacity: 1;
+    animation: continueIn .45s ease .1s backwards;
 }
 
 #kbd-hint kbd {
@@ -470,7 +561,7 @@ body {
     transform: translate(0, 0);
     display: flex;
     align-items: flex-start;
-    filter: drop-shadow(0 0 8px rgba(255, 144, 34, 0.55));
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
 }
 
 #demo-cursor.on {
@@ -479,57 +570,16 @@ body {
 
 #cursor-arrow {
     display: block;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
-#demo-cursor.scrolling #cursor-arrow {
-    display: none;
+/* press feedback: a glow around the pointer - orange for left-click drags,
+   green for right-click (pan) drags */
+#demo-cursor.down {
+    filter: drop-shadow(0 0 5px rgba(255, 144, 34, 0.95)) drop-shadow(0 0 14px rgba(255, 144, 34, 0.55));
 }
 
-#cursor-scroll {
-    display: none;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-}
-
-#demo-cursor.scrolling #cursor-scroll {
-    display: block;
-}
-
-#demo-cursor.scrolling circle {
-    animation: scroll-anim 1s infinite ease-in-out;
-}
-
-@keyframes scroll-anim {
-    0% {
-        transform: translateY(0);
-        opacity: 1;
-    }
-
-    50% {
-        transform: translateY(4px);
-        opacity: 0;
-    }
-
-    100% {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-#cursor-ring {
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: rgba(0, 170, 0, 0.4);
-    transform: scale(0);
-    transition: transform 0.2s;
-}
-
-#demo-cursor.down #cursor-ring {
-    transform: scale(1.5);
+#demo-cursor.down.right {
+    filter: drop-shadow(0 0 5px rgba(0, 170, 0, 0.95)) drop-shadow(0 0 14px rgba(0, 170, 0, 0.55));
 }
 
 /* mouse interaction diagram */
@@ -549,38 +599,126 @@ body {
     text-transform: uppercase;
 }
 
-/* Arrow bob animations — applied to SVG <g> elements */
+/* Arrow bob animations - applied to SVG <g> elements */
 @keyframes arrBobUp {
-    0%, 100% { transform: translateY(0);  opacity: .6; }
-    50%       { transform: translateY(-5px); opacity: 1; }
-}
-@keyframes arrBobDown {
-    0%, 100% { transform: translateY(0); opacity: .6; }
-    50%       { transform: translateY(5px); opacity: 1; }
-}
-@keyframes arrBobLeft {
-    0%, 100% { transform: translateX(0);  opacity: .6; }
-    50%       { transform: translateX(-5px); opacity: 1; }
-}
-@keyframes arrBobRight {
-    0%, 100% { transform: translateX(0); opacity: .6; }
-    50%       { transform: translateX(5px); opacity: 1; }
-}
-@keyframes arrBobArcL {
-    0%, 100% { transform: translateX(0);  opacity: .6; }
-    50%       { transform: translateX(-4px); opacity: 1; }
-}
-@keyframes arrBobArcR {
-    0%, 100% { transform: translateX(0); opacity: .6; }
-    50%       { transform: translateX(4px); opacity: 1; }
+
+    0%,
+    100% {
+        transform: translateY(0);
+        opacity: .6;
+    }
+
+    50% {
+        transform: translateY(-5px);
+        opacity: 1;
+    }
 }
 
-.arr-up    { animation: arrBobUp    1.4s ease-in-out infinite;     transform-box: fill-box; transform-origin: center; }
-.arr-down  { animation: arrBobDown  1.4s ease-in-out infinite .7s; transform-box: fill-box; transform-origin: center; }
-.arr-left  { animation: arrBobLeft  1.4s ease-in-out infinite;     transform-box: fill-box; transform-origin: center; }
-.arr-right { animation: arrBobRight 1.4s ease-in-out infinite .7s; transform-box: fill-box; transform-origin: center; }
-.arr-arc-l { animation: arrBobArcL  1.6s ease-in-out infinite;     transform-box: fill-box; transform-origin: center; }
-.arr-arc-r { animation: arrBobArcR  1.6s ease-in-out infinite .8s; transform-box: fill-box; transform-origin: center; }
+@keyframes arrBobDown {
+
+    0%,
+    100% {
+        transform: translateY(0);
+        opacity: .6;
+    }
+
+    50% {
+        transform: translateY(5px);
+        opacity: 1;
+    }
+}
+
+@keyframes arrBobLeft {
+
+    0%,
+    100% {
+        transform: translateX(0);
+        opacity: .6;
+    }
+
+    50% {
+        transform: translateX(-5px);
+        opacity: 1;
+    }
+}
+
+@keyframes arrBobRight {
+
+    0%,
+    100% {
+        transform: translateX(0);
+        opacity: .6;
+    }
+
+    50% {
+        transform: translateX(5px);
+        opacity: 1;
+    }
+}
+
+@keyframes arrBobArcL {
+
+    0%,
+    100% {
+        transform: translateX(0);
+        opacity: .6;
+    }
+
+    50% {
+        transform: translateX(-4px);
+        opacity: 1;
+    }
+}
+
+@keyframes arrBobArcR {
+
+    0%,
+    100% {
+        transform: translateX(0);
+        opacity: .6;
+    }
+
+    50% {
+        transform: translateX(4px);
+        opacity: 1;
+    }
+}
+
+.arr-up {
+    animation: arrBobUp 1.4s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.arr-down {
+    animation: arrBobDown 1.4s ease-in-out infinite .7s;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.arr-left {
+    animation: arrBobLeft 1.4s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.arr-right {
+    animation: arrBobRight 1.4s ease-in-out infinite .7s;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.arr-arc-l {
+    animation: arrBobArcL 1.6s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.arr-arc-r {
+    animation: arrBobArcR 1.6s ease-in-out infinite .8s;
+    transform-box: fill-box;
+    transform-origin: center;
+}
 
 /* free play widget */
 #free-play-widget {
@@ -593,8 +731,8 @@ body {
     backdrop-filter: blur(16px);
     padding: 8px;
     border-radius: 16px;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0,0,0,0.06);
-    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     display: none;
     gap: 6px;
 }
@@ -663,12 +801,23 @@ body {
 }
 
 @keyframes utilCallout {
-    0%, 100% { transform: translateY(0); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06); }
-    45%      { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(255, 144, 34, 0.35), 0 2px 8px rgba(0, 0, 0, 0.10); border-color: var(--orange); }
+
+    0%,
+    100% {
+        transform: translateY(0);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
+    }
+
+    45% {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 30px rgba(255, 144, 34, 0.35), 0 2px 8px rgba(0, 0, 0, 0.10);
+        border-color: var(--orange);
+    }
 }
 
 .util-btn {
-    background: #ffffff; /* was rgba .97 + blur — blur invisible but costly per-frame */
+    background: #ffffff;
+    /* was rgba .97 + blur - blur invisible but costly per-frame */
     border: 1.5px solid rgba(0, 0, 0, 0.12);
     border-radius: 10px;
     padding: 12px 20px;
@@ -680,7 +829,7 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0,0,0,0.06);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
     transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
     white-space: nowrap;
 }
@@ -690,7 +839,7 @@ body {
     border-color: var(--orange);
     color: var(--orange);
     transform: translateY(-4px);
-    box-shadow: 0 10px 28px rgba(255, 144, 34, 0.22), 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: 0 10px 28px rgba(255, 144, 34, 0.22), 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .util-btn svg {
@@ -752,13 +901,44 @@ body {
 
 /* star burst / pop animation for celebration emoji */
 @keyframes celebPop {
-    0%   { transform: scale(0) rotate(-10deg); opacity: 0; }
-    60%  { transform: scale(1.15) rotate(4deg); opacity: 1; }
-    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    0% {
+        transform: scale(0) rotate(-10deg);
+        opacity: 0;
+    }
+
+    60% {
+        transform: scale(1.15) rotate(4deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
 }
 
 .cap-celebrate-icon {
     display: inline-block;
     animation: celebPop .55s cubic-bezier(.34, 1.56, .64, 1) both;
     margin-right: 6px;
+}
+
+/* ── small screens: trim the panel so it crowds Gizmo less ──
+   (kept last so these win over the base rules above) */
+@media (max-width: 1000px),
+(max-height: 720px) {
+    #panel {
+        width: min(88%, 380px);
+        padding: 14px 24px 20px;
+        gap: 10px;
+    }
+
+    #cap-body {
+        font-size: 13.5px;
+        line-height: 1.55;
+    }
+
+    #cap-title {
+        font-size: 17px;
+    }
 }
