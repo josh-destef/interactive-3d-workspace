@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="studio.css">
-  <link rel="stylesheet" href="advanced-lab.css">
+  <link rel="stylesheet" href="../shared/studio.css">
+  <link rel="stylesheet" href="../shared/advanced-lab.css">
   <style>
     .node-chain { display:flex; align-items:center; gap:5px; overflow-x:auto; padding-bottom:4px; }
     .node { min-width:64px; padding:8px 7px; text-align:center; color:var(--muted); background:#f7f8f6; border:1px solid var(--line); border-radius:8px; font-size:9px; }
@@ -20,8 +20,8 @@
   <main class="lab">
     <aside class="sidebar">
       <div class="brand-row">
-        <a class="home-link" href="index.html">&#8592; Labs</a>
-        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+        <a class="home-link" href="../index.html">&#8592; Labs</a>
+        <img class="brand" src="../assets/LogoWText.png" alt="CreateAccess">
       </div>
       <header>
         <p class="eyebrow">Procedural systems 01</p>
@@ -97,7 +97,7 @@
     {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}
   </script>
   <script type="module">
-    import { THREE, createLab, startLoop, bindRange, bindToggle, setChallenge } from "./advanced-lab-core.js";
+    import { THREE, createLab, startLoop, bindRange, bindToggle, setChallenge } from "../shared/advanced-lab-core.js";
 
     const lab = createLab({ cameraPosition: [6.2, 4.4, 7.5], target: [0, 1.5, 0] });
     const state = { coordinate: 0, scale: 5, noise: 0.25, threshold: 0.5, emission: false };

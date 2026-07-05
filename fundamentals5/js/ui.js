@@ -25,34 +25,21 @@ let currentBeatHadWatch = false;
 export function showReplay() { tog('btn-replay', true); }
 export function hideReplay() { tog('btn-replay', false); }
 
-export function setCaption(step, title, body, prompt = '') {
+export function setCaption(step, title, body) {
     const stepEl = document.getElementById('cap-step');
     const titleEl = document.getElementById('cap-title');
     const bodyEl = document.getElementById('cap-body');
-    const promptEl = document.getElementById('cap-prompt');
 
     // fade out
-    titleEl.classList.remove('on'); bodyEl.classList.remove('on'); promptEl.classList.remove('on');
+    titleEl.classList.remove('on'); bodyEl.classList.remove('on');
 
     setTimeout(() => {
         stepEl.textContent = step ? `Step ${step} of ${TOTAL_BEATS - 1}` : '';
         titleEl.innerHTML = title || '';
         bodyEl.innerHTML = body || '';
-        promptEl.innerHTML = prompt || '';
         stepEl.classList.toggle('on', !!step);
         if (title) titleEl.classList.add('on');
         if (body) bodyEl.classList.add('on');
-        if (prompt) promptEl.classList.add('on');
-
-        // keep badge-task in sync; auto-show if already in interact mode
-        const taskEl = document.getElementById('badge-task');
-        if (taskEl) {
-            taskEl.textContent = prompt || '';
-            const badge = document.getElementById('status-badge');
-            if (badge && badge.classList.contains('interacting')) {
-                taskEl.classList.toggle('on', !!prompt);
-            }
-        }
     }, 150);
 }
 
@@ -89,10 +76,6 @@ export function setMode(mode) {
         panel.classList.toggle('panel-interacting', !isWatch);
     }
     if (util) util.classList.toggle('on', mode === 'interact');
-
-    // show task text under "Your Turn" when interacting
-    const taskEl = document.getElementById('badge-task');
-    if (taskEl) taskEl.classList.toggle('on', !isWatch && !!taskEl.textContent);
 }
 
 export function showWatch() { currentBeatHadWatch = true; hideReplay(); setMode('watch'); }
@@ -105,9 +88,6 @@ export function hideWatch() {
 export function showContinue() {
     tog('btn-continue', true);
     tog('kbd-hint', true);
-    // task is done - hide the badge task prompt
-    const taskEl = document.getElementById('badge-task');
-    if (taskEl) taskEl.classList.remove('on');
 }
 export function hideContinue() {
     tog('btn-continue', false);

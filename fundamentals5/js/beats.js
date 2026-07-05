@@ -95,7 +95,7 @@ export function runBeat(idx) {
             if (state.character) state.character.scale.setScalar(1);
 
             setCaption('', 'Meet Gizmo',
-                'This is a 3D object. It exists in three-dimensional space. You are about to learn how to move around it.');
+                'This is Gizmo, a 3D object. Unlike a flat picture, Gizmo has depth: you can look at it from the front, the side, behind, anywhere. Let\'s learn how.');
 
             setCam('front', true);
             state.camLocked = false;
@@ -109,7 +109,7 @@ export function runBeat(idx) {
         case 1: {
             orbitCtrl.enabled = false;
             dockPanel();
-            setCaption(1, 'Orbit', 'Drag to look around Gizmo from any angle.' + buildMouseDiagram('orbit'));
+            setCaption(1, 'Orbit', 'Orbiting circles your camera around Gizmo, like walking around a statue. <b>Drag to orbit around Gizmo.</b>' + buildMouseDiagram('orbit'));
             showWatch();
             state.beatLocked = true;
             state.camLocked = true;
@@ -132,7 +132,6 @@ export function runBeat(idx) {
                     hideWatch();
                     state.beatLocked = false;
                     orbitCtrl.enabled = true;
-                    setCaption(1, 'Orbit', 'Drag to look around Gizmo from any angle.' + buildMouseDiagram('orbit'), 'Drag to orbit around Gizmo');
                 });
             });
             break;
@@ -140,7 +139,7 @@ export function runBeat(idx) {
 
         case 2: {
             orbitCtrl.enabled = false; // no orbit/zoom/pan while watching
-            setCaption(2, 'Zoom', 'Scroll to zoom in and out. Get close enough to see Gizmo\'s face.' + buildMouseDiagram('zoom'), 'Zoom in close');
+            setCaption(2, 'Zoom', 'Scroll to zoom in and out. <b>Zoom in until you\'re close enough to see Gizmo\'s face.</b>' + buildMouseDiagram('zoom'));
             showWatch();
             state.beatLocked = true;
             state.camLocked = true;
@@ -179,7 +178,7 @@ export function runBeat(idx) {
 
         case 3: {
             orbitCtrl.enabled = false; // no orbit/zoom/pan while watching
-            setCaption(3, 'Pan', 'Slide the camera sideways or up/down to shift your view.' + buildMouseDiagram('pan'), 'Pan the camera');
+            setCaption(3, 'Pan', 'Panning slides your view sideways or up and down, like stepping to the side instead of turning your head. <b>Hold right-click and drag to pan the camera.</b>' + buildMouseDiagram('pan'));
             showWatch();
             state.beatLocked = true;
             state.camLocked = true;
@@ -224,14 +223,14 @@ export function runBeat(idx) {
             orbitCtrl.enabled = true;
             clearHint();
             setMode('interact');
-            setCaption(4, 'Look around', 'Take a moment. Orbit, zoom, and pan around. This is your camera. You control exactly how you view the world.');
+            setCaption(4, 'Look around', 'Take a moment. Orbit, zoom, and pan around. Notice that Gizmo never moves; only your camera does. You control exactly how you view the world.');
             showContinue();
             break;
 
         case 5: {
             orbitCtrl.enabled = false; // no orbit/zoom/pan while watching
             showArrows(['x']);
-            setCaption(5, 'Move - Red Arrow', 'The <span class="cx">red arrow</span> controls left and right. This is the <b>X axis</b>.' + buildMouseDiagram('move-x'), 'Drag the red arrow');
+            setCaption(5, 'Move - Red Arrow', '<b>Drag the <span class="cx">red arrow</span> to slide Gizmo left and right.</b> In 3D, this direction is called the X axis.' + buildMouseDiagram('move-x'));
             showWatch();
             state.beatLocked = true;
             state.camLocked = true;
@@ -277,7 +276,7 @@ export function runBeat(idx) {
         case 6: {
             orbitCtrl.enabled = false; // no orbit/zoom/pan while watching
             showArrows(['x', 'y']);
-            setCaption(6, 'Move - Green Arrow', 'The <span class="cy">green arrow</span> controls up and down. This is the <b>Y axis</b>.' + buildMouseDiagram('move-y'), 'Drag the green arrow');
+            setCaption(6, 'Move - Green Arrow', '<b>Drag the <span class="cy">green arrow</span> to lift Gizmo up and down.</b> This direction is the Y axis.' + buildMouseDiagram('move-y'));
             showWatch();
             state.beatLocked = true;
             state.camLocked = true;
@@ -313,7 +312,7 @@ export function runBeat(idx) {
         case 7: {
             orbitCtrl.enabled = false; // no orbit/zoom/pan while watching
             showArrows(['x', 'y', 'z']);
-            setCaption(7, 'Move - Blue Arrow', 'The <span class="cz">blue arrow</span> controls forward and back. This is the <b>Z axis</b>.' + buildMouseDiagram('move-z'), 'Drag the blue arrow');
+            setCaption(7, 'Move - Blue Arrow', '<b>Drag the <span class="cz">blue arrow</span> to slide Gizmo closer and farther away.</b> This direction is the Z axis.' + buildMouseDiagram('move-z'));
             showWatch();
             state.beatLocked = true;
             state.camLocked = true;
@@ -352,8 +351,7 @@ export function runBeat(idx) {
             clearHint();
             setMode('interact');
             setCaption(8, 'Move Gizmo anywhere',
-                'Use any arrow to move it. Orbit to see where it ends up.<br><span class="cap-tip">Lost Gizmo or left it at an awkward angle? Use <b>Reset View</b> or <b>Reset Gizmo</b> in the bottom-right corner anytime.</span>' + buildMouseDiagram('move-any'),
-                'Use at least 2 different axes');
+                '<b>Move Gizmo using at least two different arrows.</b> Orbit to see where it ends up.<br><span class="cap-tip">Lost Gizmo or left it at an awkward angle? Use <b>Reset View</b> or <b>Reset Gizmo</b> in the bottom-right corner anytime.</span>' + buildMouseDiagram('move-any'));
             pulseUtilBar(); // flash the reset buttons so students notice them
             break;
 
@@ -363,7 +361,7 @@ export function runBeat(idx) {
             if (state.character) { state.character.scale.setScalar(1); state.character.position.copy(characterHomePosition); }
             scaleHandle.visible = true;
             updateScaleHandlePos();
-            setCaption(9, 'Scale', 'The <span class="co">scale tool</span> controls size. Grab the <span class="co">outer ring</span> and drag outward to grow, inward to shrink.' + buildMouseDiagram('scale'), 'Grow it, then shrink it');
+            setCaption(9, 'Scale', 'The <span class="co">scale tool</span> controls size. <b>Grab the <span class="co">outer ring</span> and drag outward to grow Gizmo, then inward to shrink it.</b>' + buildMouseDiagram('scale'));
             showWatch();
             state.beatLocked = true;
             state.camLocked = true;
@@ -418,8 +416,8 @@ export function runBeat(idx) {
             // happens (they track the distortion frame by frame below).
             showScaleAxes();
             updateScaleAxisPos();
-            setCaption(10, 'One Axis vs. Uniform Scale',
-                'Scaling a <b>single axis</b> stretches or squishes the model - the proportions break. <b>Uniform scale</b> (the outer ring) keeps everything in proportion. Watch the difference:');
+            setCaption(10, 'Two Ways to Scale',
+                'Scaling on one axis (the <span class="cx">red</span>, <span class="cy">green</span>, or <span class="cz">blue</span> cube handles) stretches or squishes Gizmo in a single direction, so it looks taller, wider, or flatter. Uniform scale (the outer ring) grows or shrinks the whole body evenly. <b>Drag a cube handle to stretch Gizmo in one direction.</b>');
             showWatch();
             state.beatLocked = true;
             state.camLocked = true;
@@ -467,9 +465,6 @@ export function runBeat(idx) {
                 releaseCameraToOrbit('iso');
                 hideWatch();
                 state.beatLocked = false;
-                setCaption(10, 'One Axis vs. Uniform Scale',
-                    'Now try it. Use the <span class="cx">red</span>, <span class="cy">green</span>, or <span class="cz">blue</span> cube handle to stretch on one axis. Drag the outer ring to scale uniformly.',
-                    'Stretch on one axis');
             });
             break;
         }
@@ -481,7 +476,7 @@ export function runBeat(idx) {
             rotateHandle.visible = true;
             if (state.character) { state.character.rotation.set(0, 0, 0); state.character.position.copy(characterHomePosition); }
             updateRotateHandlePos();
-            setCaption(11, 'Rotate', 'The <span class="co">rotate tool</span> controls orientation. Drag any ring to spin Gizmo.' + buildMouseDiagram('rotate'), 'Drag any rotation ring');
+            setCaption(11, 'Rotate', 'The <span class="co">rotate tool</span> turns Gizmo to face a different way. Each ring spins it in a different direction. <b>Drag any ring to rotate Gizmo.</b>' + buildMouseDiagram('rotate'));
             showWatch();
             state.beatLocked = true;
             state.camLocked = true;

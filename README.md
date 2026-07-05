@@ -40,6 +40,7 @@ Navigate to the lesson file in your browser after the server is running:
 
 ```
 fundamentals_of_3d/
+├── index.html                 # course landing page
 ├── fundamentals1.html         # standalone lesson pages
 ├── fundamentals2.html
 ├── fundamentals3.html
@@ -47,9 +48,10 @@ fundamentals_of_3d/
 ├── fundamentals5/             # lesson 5 (multi-file)
 │   ├── index.html
 │   ├── css/styles.css
-│   └── js/                   # main.js, stage.js, anim.js, etc.
-├── shape-forge.html
-├── coordinate-spaces-lab.html
-├── normals-detective.html
-└── gizmo.glb / gizmo2.glb    # shared 3D assets
+│   └── js/                    # main.js, stage.js, anim.js, etc.
+├── labs/                      # extra labs & mini-courses (+ test-labs.html)
+├── shared/                    # css/js shared by the lab pages
+├── assets/                    # logos and 3D models (gizmo.glb, …)
+├── docs/                      # roadmap / progress notes
+└── scripts/                   # QA scripts
 ```

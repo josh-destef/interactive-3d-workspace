@@ -144,36 +144,7 @@ body {
     }
 }
 
-/* task pill - sits below the status badge, outside the pill */
-#badge-task {
-    position: absolute;
-    top: 112px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 30;
-    pointer-events: none;
-    font-family: var(--mono);
-    font-size: 10px;
-    font-weight: 400;
-    letter-spacing: .06em;
-    color: rgba(26, 26, 46, 0.82);
-    background: rgba(255, 255, 255, 0.88);
-    border: 1px solid rgba(0, 0, 0, 0.07);
-    padding: 4px 13px;
-    border-radius: 20px;
-    white-space: nowrap;
-    opacity: 0;
-    transition: opacity .4s ease;
-}
-
-#badge-task.on {
-    opacity: 1;
-    /* wait for the big Watch badge to shrink into place first, so the task
-       pill doesn't fade in behind/through it mid-transition */
-    transition-delay: .5s;
-}
-
-/* replay-demo pill - sits under the "Your Turn" badge + task pill, top center.
+/* replay-demo pill - sits under the "Your Turn" badge, top center.
    Only shown on beats that have a demo to replay, once the student's turn has
    begun (toggled on via .on from ui.js). */
 #btn-replay {
@@ -288,19 +259,21 @@ body {
     z-index: 50;
     pointer-events: auto;
     cursor: default;
-    transition: box-shadow .4s ease;
+    transition: box-shadow .4s ease, border-color .4s ease;
 }
 
 #panel.panel-watching {
+    border-color: rgba(26, 26, 46, .55);
     box-shadow:
-        inset 3px 0 0 rgba(26, 26, 46, .55),
+        inset 0 0 0 1px rgba(26, 26, 46, .55),
         0 12px 32px rgba(0, 0, 0, .06),
         0 4px 12px rgba(0, 0, 0, .03);
 }
 
 #panel.panel-interacting {
+    border-color: var(--orange);
     box-shadow:
-        inset 3px 0 0 var(--orange),
+        inset 0 0 0 1px var(--orange),
         0 12px 32px rgba(0, 0, 0, .06),
         0 4px 12px rgba(0, 0, 0, .03);
 }
@@ -458,10 +431,6 @@ body {
     align-items: center;
     justify-content: space-between;
     margin-top: 6px;
-}
-
-#cap-prompt {
-    display: none;
 }
 
 /* continue button - display:none while locked so the panel doesn't reserve a

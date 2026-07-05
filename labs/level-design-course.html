@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="studio.css">
-  <link rel="stylesheet" href="course.css">
+  <link rel="stylesheet" href="../shared/studio.css">
+  <link rel="stylesheet" href="../shared/course.css">
   <style>
     :root { --course-accent:#3a6fa8; }
     .lesson-panel[hidden] { display:none; }
@@ -30,8 +30,8 @@
   <main class="course-shell">
     <aside class="course-sidebar">
       <div class="brand-row">
-        <a class="home-link" href="index.html">&#8592; Course library</a>
-        <img class="brand" src="LogoWText.png" alt="CreateAccess">
+        <a class="home-link" href="../index.html">&#8592; Course library</a>
+        <img class="brand" src="../assets/LogoWText.png" alt="CreateAccess">
       </div>
       <header style="margin-top:20px">
         <p class="eyebrow">Four-lesson course · level design</p>
@@ -128,7 +128,7 @@
   </main>
 
   <script type="importmap">
-    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/","course-progress":"./course-progress.js"}}
+    {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/","course-progress":"../shared/course-progress.js"}}
   </script>
   <script type="module">
     import * as THREE from "three";

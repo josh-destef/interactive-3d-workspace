@@ -74,7 +74,7 @@ const mockRuntime = `
   }
 `;
 
-const productionCore = fs.readFileSync(path.join(workspace, "advanced-lab-core.js"), "utf8");
+const productionCore = fs.readFileSync(path.join(workspace, "shared", "advanced-lab-core.js"), "utf8");
 const coreSource = productionCore
   .replace('import * as THREE from "three";', `import * as THREE from ${JSON.stringify(threeUrl)};\n${mockRuntime}`)
   .replace(/import \{ OrbitControls \} from "three\/addons\/controls\/OrbitControls\.js";\s*/, "")
@@ -282,7 +282,7 @@ const completeChallenge = {
 
 async function loadPage(file, width, height, exercise) {
   const errors = [];
-  const html = fs.readFileSync(path.join(workspace, file), "utf8");
+  const html = fs.readFileSync(path.join(workspace, "labs", file), "utf8");
   const dom = installDom(html, width, height, errors);
   const source = moduleScript(html);
   const moduleUrl = `data:text/javascript;base64,${Buffer.from(`${source}\n//# sourceURL=${file}`).toString("base64")}#${Date.now()}-${Math.random()}`;

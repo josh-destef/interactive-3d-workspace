@@ -5,7 +5,7 @@
 import { V3 } from './utils.js';
 
 /* path to the character model, relative to index.html */
-export const GIZMO_URL = '../gizmo.glb';
+export const GIZMO_URL = '../assets/gizmo.glb';
 
 /* total beats in the lesson (beats 0-12) */
 export const TOTAL_BEATS = 13;
