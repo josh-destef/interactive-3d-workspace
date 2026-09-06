@@ -668,7 +668,7 @@ body {
 }
 
 #btn-continue {
-    display: none;
+    display: inline-flex;
     align-items: center;
     gap: 7px;
     padding: var(--pad-btn);
@@ -681,11 +681,16 @@ body {
     color: #fff;
     cursor: pointer;
     white-space: nowrap;
-    transition: transform .15s ease, background .15s;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform .15s ease, background .15s, opacity .15s ease;
 }
 
 #btn-continue.on {
-    display: inline-flex;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
     /* 'backwards' not 'both' so the finished animation releases transform and
        the hover lift still works */
     animation: riseIn .45s cubic-bezier(.34, 1.3, .64, 1) backwards;
@@ -709,14 +714,17 @@ body {
 }
 
 #kbd-hint {
-    display: none;
+    display: block;
     font-family: var(--mono);
     font-size: 10px;
     color: var(--green);
+    opacity: 0;
+    visibility: hidden;
 }
 
 #kbd-hint.on {
-    display: block;
+    opacity: 1;
+    visibility: visible;
     animation: riseIn .45s ease .1s backwards;
 }
 
