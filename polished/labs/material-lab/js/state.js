@@ -22,6 +22,7 @@ export const state = {
        busy work. A decent sweep in either direction is enough. */
     explored: {},             // control key -> { min, max }
     colorsTried: new Set(),   // color beat: distinct swatches clicked
+    rgbLearned: false,        // optional side lesson was completed
 
     /* challenge */
     matchTarget: null,        // generated material the student is chasing

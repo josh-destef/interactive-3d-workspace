@@ -1,235 +1,143 @@
 /* ═══════════════════════════════════════════════
    BEAT SYSTEM
-   Each idea uses one learner-paced rhythm: read it, watch it, try it.
+   Each idea uses one learner-paced rhythm: read it, try it, notice it.
 
-   The first act builds a surface: color, RGB, roughness and metalness. The
+   The first act builds a surface: color, roughness and metalness. The
    second shows how light and emissive affect what the learner sees. The
    challenge combines those observations under one shared light.
 ═══════════════════════════════════════════════ */
-import { BEAT, TOTAL_BEATS, MATCH_PASS, START_MATERIAL, LIGHT_START, EXPLORE } from './config.js';
+import { BEAT, TOTAL_BEATS, START_MATERIAL, LIGHT_START, EXPLORE } from './config.js';
 import { state, trackSpan, span, resetExploration } from './state.js';
 import {
-    setCam, releaseCamera, orbitCtrl, setKeyAzimuth, setRoomLights,
-    setLightOrbVisible, lightOrbScreenPoint,
+    setCam, orbitCtrl, setKeyAzimuth, setRoomLights, setLightOrbVisible,
 } from './stage.js';
-import { runSequence, clearAnims } from './anim.js';
-import { lerp, hexToRgb } from './utils.js';
-import { values, resetValues, setValues } from './subject.js';
+import { clearAnims, runSequence } from './anim.js';
+import { values, resetValues, setValues, setTargetMaterial, setMatchLayout } from './subject.js';
 import { startMatch, endMatch, checkMatch, nextHint } from './match.js';
-import { startQuiz, endQuiz } from './quiz.js';
+import { hexToRgb, lerp } from './utils.js';
 import {
-    revealControls, hideDock, lockDock, flashControl,
-    demoSetSlider, demoSetRGB, demoSetLight, demoSetLightColor, demoSetRoom,
-    sliderThumbPoint, rgbThumbPoint, swatchPoint, roomPoint,
-    rgbChannels, syncFromValues, syncLight, syncRoom,
+    revealControls, hideDock, lockDock, flashControl, demoSetLightColor, demoSetRGB, setRgbExpanded,
+    rgbThumbPoint, syncFromValues, syncLight, syncRoom,
 } from './controls.js';
 import {
     toggleDemoCursor, moveDemoCursor, setDemoCursorDown, getDemoCursorPoint, centerPoint,
 } from './demoCursor.js';
 import {
-    setCaption, setMode, showWatch, hideWatch, showContinue, hideContinue,
-    setProgress, showFinishButton, showReadCard, dismissReadCard, readCardOpen,
+    setCaption, setMode, showWatch, showContinue, hideContinue,
+    setProgress, showFinishButton, showReadCard, dismissReadCard, readCardOpen, showChoice, setContinueLabel,
 } from './ui.js';
-
-/* ── demo building blocks ── */
-function cursorTo(getPoint, duration = 0.55) {
-    let from = null;
-    return {
-        duration,
-        fn: t => {
-            const to = getPoint();
-            if (!to) return;
-            if (t === 0 || !from) from = { ...getDemoCursorPoint() };
-            moveDemoCursor({ x: lerp(from.x, to.x, t), y: lerp(from.y, to.y, t) });
-        },
-    };
-}
-
-function dragSlider(key, from, to, duration = 1.5) {
-    return {
-        duration,
-        fn: t => {
-            if (t === 0) setDemoCursorDown(true);
-            demoSetSlider(key, Math.round(lerp(from, to, t)));
-            moveDemoCursor(sliderThumbPoint(key));
-        },
-    };
-}
-
-function dragRGB(ch, from, to, duration = 0.8) {
-    return {
-        duration,
-        fn: t => {
-            if (t === 0) setDemoCursorDown(true);
-            demoSetRGB(ch, Math.round(lerp(from, to, t)));
-            moveDemoCursor(rgbThumbPoint(ch));
-        },
-    };
-}
-
-function dragLight(from, to, duration = 1.6) {
-    return {
-        duration,
-        fn: t => {
-            if (t === 0) setDemoCursorDown(true);
-            demoSetLight(Math.round(lerp(from, to, t)));
-            moveDemoCursor(lightOrbScreenPoint());
-        },
-    };
-}
-
-function hold(getPoint, duration = 0.9) {
-    return {
-        duration,
-        fn: t => {
-            if (t === 0) setDemoCursorDown(false);
-            if (getPoint) moveDemoCursor(getPoint());
-        },
-    };
-}
-
-function clickSwatch(hex, duration = 0.55) {
-    return {
-        duration,
-        fn: t => {
-            if (t === 0) {
-                setDemoCursorDown(true, 'click');
-                setValues({ color: hex });
-                syncFromValues();
-            }
-            if (t > 0.6) setDemoCursorDown(false);
-        },
-    };
-}
-
-function clickRoom(on, duration = 0.55) {
-    return {
-        duration,
-        fn: t => {
-            if (t === 0) {
-                setDemoCursorDown(true, 'click');
-                demoSetRoom(on);
-            }
-            if (t > 0.6) setDemoCursorDown(false);
-        },
-    };
-}
-
-function playDemo(steps, { camKey = 'hero', release = 'hero', first = null } = {}) {
-    orbitCtrl.enabled = false;
-    state.beatLocked = true;
-    state.camLocked = true;
-    lockDock(true);
-    showWatch();
-    setCam(camKey);
-
-    const intro = [
-        {
-            duration: 0.8,
-            fn: t => {
-                if (t === 0) {
-                    toggleDemoCursor(true);
-                    setDemoCursorDown(false);
-                    moveDemoCursor(centerPoint());
-                }
-            },
-        },
-        cursorTo(() => (first ? first() : centerPoint()), 1),
-        { duration: 0.35, fn: () => { if (first) moveDemoCursor(first()); } },
-    ];
-
-    runSequence(intro.concat(steps), () => {
-        toggleDemoCursor(false);
-        setDemoCursorDown(false);
-        lockDock(false);
-        releaseCamera(release);
-        hideWatch();
-        state.beatLocked = false;
-    });
-}
 
 /* ── one idea and one action per beat ── */
 const COPY = {
     [BEAT.INTRO]: {
         step: '',
-        title: 'One model, many surfaces',
-        body: 'Gizmobot’s mesh gives it shape. Materials control how each surface looks under light.',
-        panel: '<b>Drag to orbit.</b> Find the shell, fixed details and face glow.',
-        cta: 'Start the lab',
+        title: 'Give Gizmobot a new look',
+        body: 'Gizmobot is wearing a light-colored shell. You will use materials to change the color and finish of that shell, then explore lighting and glow.',
+        panel: '<b>Take a look around.</b> Drag to orbit around Gizmobot. The light-colored outer suit is the shell you will customize.',
+        cta: 'Start customizing',
     },
     [BEAT.COLOR]: {
         step: 1,
-        title: 'Start with color',
-        body: 'Base color changes the shell paint. The bright highlight comes from the light, not from the color picker.',
-        panel: '<b>Choose two swatches.</b> Watch only Shell Paint change while the details stay fixed.',
-        cta: 'Show me',
+        title: 'Make it yours',
+        body: 'Pick a color for Gizmobot’s shell. Try a few. Keep your favorite.',
+        panel: '<b>Pick a color you like.</b> The bright spot stays bright because the light has not moved. Your choice is the material’s <b>base color</b>.',
+        cta: 'Choose a color',
     },
-    [BEAT.RGB]: {
-        step: 2,
+    [BEAT.RGB_WATCH]: {
+        step: 'Optional color lesson',
+        title: 'Three sliders, millions of colors',
+        body: 'Computers mix red, green, and blue to make digital colors. Equal amounts make gray. Watch what happens when one slider moves.',
+        panel: '<b>Watch the mouse.</b> It will move Red, Green, and Blue. Notice how Gizmobot’s shell changes.',
+        cta: 'Watch RGB',
+    },
+    [BEAT.RGB_MIX]: {
+        step: 'Optional color lesson',
         title: 'Mix a color',
-        body: 'Screens mix red, green and blue light. Equal amounts make a gray; different amounts make a color.',
-        panel: '<b>Move one RGB slider.</b> Then adjust another until you make a color you like.',
-        cta: 'Show me',
+        body: 'Now try it. Raise Red, mix Red and Blue, or bring all three sliders close together. Watch Gizmobot’s shell as you work.',
+        panel: '<b>Make a color you like.</b> Choose Use this color when it is ready.',
+        cta: 'My turn',
+    },
+    [BEAT.RGB_RETURN]: {
+        step: 'Back to materials',
+        title: 'Your color is ready',
+        body: 'RGB tells the computer which color to make. In a 3D material, that color becomes the base color. Your mix will stay on Gizmobot.',
+        panel: '<b>Next: Roughness.</b> Your color will stay with Gizmobot.',
+        cta: 'Next: Roughness',
     },
     [BEAT.ROUGHNESS]: {
-        step: 3,
-        title: 'Sharp or soft reflections',
-        body: 'Roughness controls how spread out a reflection becomes: low is sharp and polished; high is broad and chalky.',
-        panel: '<b>Sweep Roughness.</b> Compare one sharp highlight with one soft highlight.',
-        cta: 'Show me',
+        step: 2,
+        title: 'Shiny or dull?',
+        body: 'Move Roughness all the way down. Then move it all the way up. Watch the bright reflection on the shell.',
+        panel: '<b>Try both ends, then choose a finish.</b> Low roughness gives sharp reflections. High roughness makes them soft and spread out.',
+        cta: 'Try Roughness',
     },
     [BEAT.METALNESS]: {
-        step: 4,
-        title: 'Metal or not metal',
-        body: 'Every surface reflects. Metal uses its base color to tint reflections; non-metal keeps color beneath a mostly neutral highlight.',
-        panel: '<b>Move Metalness from 0 to 1.</b> Compare colored plastic with a tinted mirror.',
-        cta: 'Show me',
+        step: 3,
+        title: 'Plastic or metal?',
+        body: 'Drag Metalness from one end to the other. Watch what happens to the shell.',
+        panel: '<b>Try both ends, then choose a material.</b> At 0, the shell behaves like plastic. At 1, it behaves like metal. Roughness still controls how sharp the reflections look.',
+        cta: 'Try Metalness',
     },
     [BEAT.LIGHT]: {
-        step: 5,
-        title: 'Materials need light',
-        body: 'Moving or recolouring a light changes what you see without changing the material.',
-        panel: '<b>Drag the glowing orb.</b> Follow the shell highlight and floor shadow around Gizmobot.',
-        cta: 'Show me',
+        step: 4,
+        title: 'Move the light',
+        body: 'Drag the glowing light around Gizmobot. Follow the bright spot on the shell and the shadow on the floor.',
+        panel: '<b>Drag the orange light around the ring.</b> Then choose Warm, Daylight, or Cool. Which one suits your material?',
+        cta: 'Move the light',
     },
     [BEAT.EMISSIVE]: {
+        step: 5,
+        title: 'See the face glow',
+        body: 'Turn the room lights off. Gizmobot’s eyes and mouth stay visible because they are emissive.',
+        panel: '<b>Turn the room lights off.</b> The face stays visible. This effect is called <b>emission</b>.',
+        cta: 'Turn off the lights',
+    },
+    [BEAT.BODY_GLOW]: {
         step: 6,
-        title: 'Visible in the dark',
-        body: 'Emissive color stays visible without scene light. It looks self-lit, but does not automatically light nearby objects.',
-        panel: '<b>Raise Glow, then turn the room lights off.</b> Watch only the eyes and mouth stay visible.',
-        cta: 'Show me',
+        title: 'Make the body glow',
+        body: 'The face glows in the dark. Gizmobot’s shell can glow too.',
+        panel: '<b>Move Body glow.</b> Choose an amount you like.',
+        cta: 'Try body glow',
+    },
+    [BEAT.RGB_CHALLENGE]: {
+        step: 'Optional extra challenge',
+        title: 'Match this color with RGB',
+        body: 'The material and lighting are fixed. Use Red, Green, and Blue to match the reference color.',
+        panel: '<b>Compare the colors.</b> Is yours warmer, cooler, brighter, or darker?',
+        cta: 'Try the RGB match',
     },
     [BEAT.CHALLENGE]: {
         step: 'Challenge',
-        title: 'Match the reference',
-        body: 'Both robots share one pose and light. Check reflection color, highlight softness, then shell color.',
-        panel: '<b>Match the reference, then press Check match.</b> Reach ' + MATCH_PASS + '%. Use a hint whenever you need one.',
+        title: 'Can you recreate this material?',
+        body: 'Use Color, Roughness, and Metalness to match the reference.',
+        panel: '<b>Look closely.</b> Is the reflection sharp or soft? Does the shell look like plastic or metal? Is the color close?',
         cta: 'Start the challenge',
     },
-    [BEAT.QUIZ]: {
-        step: 'Check what you learned',
-        title: 'Four quick questions',
-        body: 'Choose an answer. If it misses, the explanation helps you try again.',
-    },
     [BEAT.DONE]: {
-        step: 'Done',
-        title: '<span class="cap-celebrate-icon">&#127881;</span>You built a material',
-        body: 'You can now separate surface color, reflection softness, metal response, lighting and emissive.',
-        panel: '<b>Try an example, then change one setting.</b> Say what changed before touching the next control.',
-        cta: 'Play with everything',
+        step: '',
+        title: 'You now understand 3D materials!',
+        body: 'When you look at a 3D object, ask: <b>What color is it? How rough is it? Is it metal? What is the light doing? Does anything glow?</b>',
+        panel: '<b>Everything is unlocked.</b> Try the material presets, move the light, or build a new look of your own.',
+        cta: 'Keep experimenting',
     },
 };
+
+const RGB_TARGET = '#b56d9a';
+const RGB_FIXED_MATERIAL = { roughness: 35, metalness: 0, emissive: 0 };
 
 const CONTROLS = {
     [BEAT.INTRO]: [],
     [BEAT.COLOR]: ['color'],
-    [BEAT.RGB]: ['rgb'],
-    [BEAT.ROUGHNESS]: ['rgb', 'roughness'],
-    [BEAT.METALNESS]: ['rgb', 'roughness', 'metalness'],
-    [BEAT.LIGHT]: ['rgb', 'roughness', 'metalness', 'examples', 'light', 'light-color'],
-    [BEAT.EMISSIVE]: ['rgb', 'roughness', 'metalness', 'examples', 'light', 'emissive', 'room'],
-    [BEAT.CHALLENGE]: ['rgb', 'roughness', 'metalness', 'examples', 'check'],
-    [BEAT.QUIZ]: [],
+    [BEAT.RGB_WATCH]: ['rgb'],
+    [BEAT.RGB_MIX]: ['rgb', 'rgb-use'],
+    [BEAT.RGB_RETURN]: [],
+    [BEAT.ROUGHNESS]: ['roughness'],
+    [BEAT.METALNESS]: ['metalness'],
+    [BEAT.LIGHT]: ['light', 'light-color'],
+    [BEAT.EMISSIVE]: ['room'],
+    [BEAT.BODY_GLOW]: ['emissive'],
+    [BEAT.CHALLENGE]: ['color', 'roughness', 'metalness', 'check'],
+    [BEAT.RGB_CHALLENGE]: ['rgb', 'rgb-check'],
     [BEAT.DONE]: ['color', 'rgb', 'roughness', 'metalness', 'examples', 'light', 'light-color', 'emissive', 'room'],
 };
 
@@ -238,6 +146,7 @@ export function runBeat(idx, { skipRead = false } = {}) {
     state.beatLocked = false;
     state.reading = false;
     hideContinue();
+    setContinueLabel();
     setMode(null);
     clearAnims();
     toggleDemoCursor(false);
@@ -248,20 +157,27 @@ export function runBeat(idx, { skipRead = false } = {}) {
     setLightOrbVisible(idx === BEAT.LIGHT || idx === BEAT.DONE);
 
     if (idx !== BEAT.CHALLENGE) endMatch();
-    if (idx !== BEAT.QUIZ) endQuiz();
+    document.getElementById('rgb-result').classList.remove('on');
     if (idx !== BEAT.DONE) {
-        setRoomLights(true, idx !== BEAT.EMISSIVE);
-        syncRoom(true);
+        const roomOn = idx !== BEAT.EMISSIVE && idx !== BEAT.BODY_GLOW;
+        setRoomLights(roomOn, true);
+        syncRoom(roomOn);
     }
     setProgress(idx);
 
     const copy = COPY[idx];
+    if (idx === BEAT.RGB_OFFER || idx === BEAT.RGB_CHALLENGE_OFFER) {
+        hideDock();
+        stageFor(idx);
+        enterBeat(idx);
+        return;
+    }
     setCaption(copy.step, copy.title, copy.panel || copy.body);
     revealControls(CONTROLS[idx]);
     if (!CONTROLS[idx].length) hideDock();
     stageFor(idx);
 
-    if (!skipRead && idx !== BEAT.QUIZ) {
+    if (!skipRead && idx !== BEAT.RGB_MIX) {
         state.reading = true;
         showReadCard(copy, () => {
             state.reading = false;
@@ -283,26 +199,26 @@ function stageFor(idx) {
             setCam('hero', true);
             break;
 
-        case BEAT.RGB:
-            setValues({ color: START_MATERIAL.color });
+        case BEAT.ROUGHNESS:
+            setValues({ roughness: 50 });
             syncFromValues();
+            break;
+
+        case BEAT.RGB_WATCH:
+        case BEAT.RGB_MIX:
+            setValues({ color: '#b4b4b4' });
+            syncFromValues();
+            setRgbExpanded(true);
             setCam('hero');
             break;
 
-        case BEAT.ROUGHNESS:
-            setValues({ roughness: 50, metalness: 0 });
-            syncFromValues();
-            break;
-
         case BEAT.METALNESS:
-            setValues({ color: '#e2a24b', roughness: 25, metalness: 0 });
+            setValues({ metalness: 0 });
             syncFromValues();
             setCam('close');
             break;
 
         case BEAT.LIGHT:
-            setValues({ color: '#3a6fa8', roughness: 35, metalness: 0, emissive: 0 });
-            syncFromValues();
             setKeyAzimuth(LIGHT_START);
             syncLight(LIGHT_START);
             demoSetLightColor('warm');
@@ -310,10 +226,29 @@ function stageFor(idx) {
             break;
 
         case BEAT.EMISSIVE:
-            setValues({ color: '#ff6a38', roughness: 40, metalness: 0, emissive: 0 });
             syncFromValues();
             demoSetLightColor('warm');
             setCam('hero');
+            break;
+
+        case BEAT.BODY_GLOW:
+            setValues({ emissive: 0 });
+            syncFromValues();
+            setCam('hero');
+            break;
+
+        case BEAT.RGB_RETURN:
+            setRgbExpanded(false);
+            setCam('hero');
+            break;
+
+        case BEAT.RGB_CHALLENGE:
+            setValues({ color: '#b4b4b4', ...RGB_FIXED_MATERIAL });
+            setTargetMaterial({ color: RGB_TARGET, ...RGB_FIXED_MATERIAL });
+            setMatchLayout(true);
+            syncFromValues();
+            setRgbExpanded(true);
+            setCam('match');
             break;
 
         case BEAT.CHALLENGE:
@@ -326,7 +261,6 @@ function stageFor(idx) {
             setCam('match');
             break;
 
-        case BEAT.QUIZ:
         case BEAT.DONE:
             setCam('hero');
             break;
@@ -341,87 +275,47 @@ function enterBeat(idx) {
             break;
 
         case BEAT.COLOR:
-            playDemo([
-                clickSwatch('#c0453a'),
-                hold(() => swatchPoint('#c0453a'), 0.9),
-                cursorTo(() => swatchPoint('#3a6fa8'), 0.7),
-                clickSwatch('#3a6fa8'),
-                hold(() => swatchPoint('#3a6fa8'), 1),
-            ], { first: () => swatchPoint('#c0453a') });
-            break;
-
-        case BEAT.RGB: {
-            const start = hexToRgb(START_MATERIAL.color);
-            playDemo([
-                dragRGB('r', start.r, 245, 1),
-                hold(() => rgbThumbPoint('r'), 0.8),
-                cursorTo(() => rgbThumbPoint('g'), 0.55),
-                dragRGB('g', start.g, 80, 1),
-                hold(() => rgbThumbPoint('g'), 0.9),
-                cursorTo(() => rgbThumbPoint('b'), 0.55),
-                dragRGB('b', start.b, 55, 1),
-                hold(() => rgbThumbPoint('b'), 1),
-            ], { first: () => rgbThumbPoint('r') });
-            break;
-        }
-
         case BEAT.ROUGHNESS:
-            playDemo([
-                dragSlider('roughness', 50, 96, 1.5),
-                hold(() => sliderThumbPoint('roughness'), 1.2),
-                dragSlider('roughness', 96, 4, 1.9),
-                hold(() => sliderThumbPoint('roughness'), 1.2),
-                dragSlider('roughness', 4, 45, 0.9),
-            ], { camKey: 'close', release: 'close', first: () => sliderThumbPoint('roughness') });
-            break;
-
         case BEAT.METALNESS:
-            playDemo([
-                dragSlider('metalness', 0, 100, 1.4),
-                hold(() => sliderThumbPoint('metalness'), 1.4),
-                dragSlider('metalness', 100, 0, 1.4),
-                hold(() => sliderThumbPoint('metalness'), 1.1),
-            ], { camKey: 'close', release: 'close', first: () => sliderThumbPoint('metalness') });
-            break;
-
         case BEAT.LIGHT:
-            playDemo([
-                dragLight(LIGHT_START, -132, 1.7),
-                hold(() => lightOrbScreenPoint(), 1.2),
-                dragLight(-132, 132, 2.6),
-                hold(() => lightOrbScreenPoint(), 1.2),
-                dragLight(132, LIGHT_START, 1.3),
-            ], { first: () => lightOrbScreenPoint() });
+        case BEAT.EMISSIVE:
+        case BEAT.BODY_GLOW:
+            orbitCtrl.enabled = true;
+            setMode('interact');
             break;
 
-        case BEAT.EMISSIVE:
-            playDemo([
-                clickRoom(false),
-                hold(() => roomPoint('off'), 1.1),
-                cursorTo(() => sliderThumbPoint('emissive'), 0.6),
-                dragSlider('emissive', 0, 85, 1.4),
-                hold(() => sliderThumbPoint('emissive'), 1.4),
-                dragSlider('emissive', 85, 0, 1),
-                hold(() => sliderThumbPoint('emissive'), 0.8),
-                dragSlider('emissive', 0, 60, 0.8),
-                cursorTo(() => roomPoint('on'), 0.6),
-                clickRoom(true),
-            ], { first: () => roomPoint('off') });
+        case BEAT.RGB_OFFER:
+            showChoice(
+                {
+                    title: 'Want to learn where digital colors come from?',
+                    body: 'Computers can mix red, green, and blue to create Gizmobot’s color. This short side lesson is optional.',
+                    primary: 'Show me RGB',
+                    secondary: 'Maybe later',
+                },
+                () => runBeat(BEAT.RGB_WATCH),
+                () => runBeat(BEAT.ROUGHNESS),
+            );
+            break;
+
+        case BEAT.RGB_WATCH:
+            playRgbWatch();
+            break;
+
+        case BEAT.RGB_MIX:
+            orbitCtrl.enabled = true;
+            setMode('interact');
+            break;
+
+        case BEAT.RGB_RETURN:
+            orbitCtrl.enabled = true;
+            setMode('interact');
+            showContinue();
             break;
 
         case BEAT.CHALLENGE:
             orbitCtrl.enabled = true;
             setMode('interact');
             flashControl('check');
-            break;
-
-        case BEAT.QUIZ:
-            orbitCtrl.enabled = true;
-            setMode(null);
-            startQuiz(() => {
-                state.quizPassed = true;
-                showContinue();
-            });
             break;
 
         case BEAT.DONE:
@@ -441,12 +335,6 @@ export function checkBeatComplete(key) {
         case BEAT.COLOR:
             if (key === 'color') state.colorsTried.add(String(values.color).toLowerCase());
             break;
-        case BEAT.RGB:
-            if (key === 'rgb') {
-                const channels = rgbChannels();
-                Object.entries(channels).forEach(([ch, value]) => trackSpan('rgb-' + ch, value));
-            }
-            break;
         case BEAT.ROUGHNESS:
             if (key === 'roughness') trackSpan('roughness', values.roughness);
             break;
@@ -459,7 +347,27 @@ export function checkBeatComplete(key) {
             }
             break;
         case BEAT.EMISSIVE:
+            break;
+        case BEAT.BODY_GLOW:
             if (key === 'emissive') trackSpan('emissive', values.emissive);
+            break;
+
+        case BEAT.RGB_CHALLENGE_OFFER:
+            showChoice(
+                {
+                    title: 'Material matched',
+                    body: 'You can finish now, or try one extra RGB color match.',
+                    primary: 'Try an RGB match',
+                    secondary: 'Finish lesson',
+                },
+                () => runBeat(BEAT.RGB_CHALLENGE),
+                () => runBeat(BEAT.DONE),
+            );
+            break;
+
+        case BEAT.RGB_CHALLENGE:
+            orbitCtrl.enabled = true;
+            setMode('interact');
             break;
     }
 
@@ -467,10 +375,7 @@ export function checkBeatComplete(key) {
 
     switch (state.beatIdx) {
         case BEAT.COLOR:
-            if (state.colorsTried.size >= 2) showContinue();
-            break;
-        case BEAT.RGB:
-            if (Math.max(span('rgb-r'), span('rgb-g'), span('rgb-b')) >= EXPLORE.rgb) showContinue();
+            if (state.colorsTried.size >= 1) showContinue();
             break;
         case BEAT.ROUGHNESS:
             if (span('roughness') >= EXPLORE.roughness) showContinue();
@@ -482,6 +387,9 @@ export function checkBeatComplete(key) {
             if (span('light') >= EXPLORE.light) showContinue();
             break;
         case BEAT.EMISSIVE:
+            if (key === 'room') showContinue();
+            break;
+        case BEAT.BODY_GLOW:
             if (span('emissive') >= EXPLORE.emissive) showContinue();
             break;
         case BEAT.CHALLENGE:
@@ -490,8 +398,73 @@ export function checkBeatComplete(key) {
     }
 }
 
+function playRgbWatch() {
+    orbitCtrl.enabled = false;
+    state.beatLocked = true;
+    lockDock(true);
+    showWatch();
+    demoSetRGB('r', 180);
+    demoSetRGB('g', 180);
+    demoSetRGB('b', 180);
+
+    let cursorFrom = null;
+    const moveTo = (getPoint, duration = 0.65) => ({
+        duration,
+        fn: t => {
+            const target = getPoint();
+            if (!target) return;
+            if (t === 0 || !cursorFrom) cursorFrom = { ...getDemoCursorPoint() };
+            moveDemoCursor({
+                x: lerp(cursorFrom.x, target.x, t),
+                y: lerp(cursorFrom.y, target.y, t),
+            });
+            if (t === 1) cursorFrom = null;
+        },
+    });
+    const dragRgb = (channel, from, to, duration = 1.15) => ({
+        duration,
+        fn: t => {
+            if (t === 0) setDemoCursorDown(true);
+            demoSetRGB(channel, Math.round(lerp(from, to, t)));
+            moveDemoCursor(rgbThumbPoint(channel));
+            if (t === 1) setDemoCursorDown(false);
+        },
+    });
+    const pause = (getPoint, duration = 0.65) => ({
+        duration,
+        fn: () => moveDemoCursor(getPoint()),
+    });
+
+    toggleDemoCursor(true);
+    moveDemoCursor(centerPoint());
+    runSequence([
+        moveTo(() => rgbThumbPoint('r'), 0.8),
+        dragRgb('r', 180, 245),
+        pause(() => rgbThumbPoint('r')),
+        dragRgb('r', 245, 180, 0.8),
+        moveTo(() => rgbThumbPoint('g'), 0.7),
+        dragRgb('g', 180, 245),
+        pause(() => rgbThumbPoint('g')),
+        dragRgb('g', 245, 180, 0.8),
+        moveTo(() => rgbThumbPoint('b'), 0.7),
+        dragRgb('b', 180, 245),
+        pause(() => rgbThumbPoint('b'), 0.8),
+    ], () => {
+        toggleDemoCursor(false);
+        setDemoCursorDown(false);
+        document.getElementById('app').classList.remove('demo-running');
+        state.beatLocked = false;
+        setContinueLabel('My turn');
+        showContinue();
+    });
+}
+
 export function nextBeat() {
     if (state.beatLocked || state.reading) return;
+    if (state.beatIdx === BEAT.CHALLENGE) {
+        runBeat(state.rgbLearned ? BEAT.RGB_CHALLENGE_OFFER : BEAT.DONE);
+        return;
+    }
     if (state.beatIdx < TOTAL_BEATS - 1) runBeat(state.beatIdx + 1);
 }
 
@@ -504,6 +477,34 @@ export function onCheckMatch() {
     if (state.beatIdx !== BEAT.CHALLENGE) return;
     checkMatch();
     checkBeatComplete('check');
+}
+
+export function onUseRgbColor() {
+    if (state.beatIdx !== BEAT.RGB_MIX) return;
+    state.rgbLearned = true;
+    runBeat(BEAT.RGB_RETURN);
+}
+
+export function onCheckRgbMatch() {
+    if (state.beatIdx !== BEAT.RGB_CHALLENGE) return;
+    const current = hexToRgb(values.color);
+    const target = hexToRgb(RGB_TARGET);
+    const delta = { r: target.r - current.r, g: target.g - current.g, b: target.b - current.b };
+    const distance = Math.hypot(delta.r, delta.g, delta.b);
+    const result = document.getElementById('rgb-result');
+    let feedback;
+
+    if (distance < 74) {
+        feedback = '<b>Great match.</b> You built this color with RGB.';
+        showContinue();
+    } else {
+        const channel = Object.entries(delta).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))[0];
+        const labels = { r: 'Red', g: 'Green', b: 'Blue' };
+        const direction = channel[1] > 0 ? 'raise' : 'lower';
+        feedback = '<b>Very close.</b> Try to ' + direction + ' ' + labels[channel[0]] + ' a little.';
+    }
+    result.innerHTML = feedback;
+    result.classList.add('on');
 }
 
 export function onNewTarget() {

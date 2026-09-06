@@ -101,6 +101,17 @@
             </div>
         </div>
 
+        <div id="choice-layer" class="choice-layer" role="dialog" aria-modal="true" aria-labelledby="choice-title">
+            <div class="choice-card">
+                <h2 id="choice-title"></h2>
+                <p id="choice-body"></p>
+                <div class="choice-actions">
+                    <button id="btn-choice-primary" class="dock-btn primary" type="button"></button>
+                    <button id="btn-choice-secondary" class="dock-btn" type="button"></button>
+                </div>
+            </div>
+        </div>
+
         <!-- ── the console ──
              One bar across the whole bottom of the screen: the step's words on
              the left, the controls that step unlocked on the right. It takes
@@ -173,18 +184,20 @@
                     </div>
                 </div>
 
+                <div id="rgb-result" class="rgb-result" aria-live="polite"></div>
+
                 <div class="dock-row">
                     <div class="ctl" data-group="color">
-                        <div class="ctl-label">Quick colors</div>
+                        <div class="ctl-label">Pick a color</div>
                         <div id="swatches" class="swatches"></div>
                     </div>
 
                     <div class="ctl ctl-rgb" data-group="rgb">
                         <div class="ctl-label">
-                            Mix a color
+                            <button id="btn-toggle-rgb" class="mix-color-toggle" type="button" aria-expanded="false">Mix your own color</button>
                             <span class="rgb-chip"><i id="rgb-chip"></i><span id="rgb-hex">#B8B8B4</span></span>
                         </div>
-                        <div class="rgb-rows">
+                        <div id="rgb-rows" class="rgb-rows" hidden>
                             <div class="rgb-row" data-ch="r">
                                 <label for="in-r">R</label>
                                 <input id="in-r" type="range" data-rgb="r" min="0" max="255" value="184">
@@ -203,23 +216,34 @@
                         </div>
                     </div>
 
+                    <div class="ctl" data-group="rgb-use">
+                        <button id="btn-use-rgb" class="dock-btn primary" type="button">Use this color</button>
+                    </div>
+
                     <div class="ctl" data-group="roughness">
                         <div class="ctl-label">Roughness <span class="ctl-val" data-for="roughness">0.50</span></div>
                         <input type="range" data-ctl="roughness" min="0" max="100" value="50">
-                        <div class="ctl-ends"><span>polished</span><span>chalky</span></div>
+                        <div class="ctl-ends"><span>shiny</span><span>matte</span></div>
                     </div>
 
                     <div class="ctl" data-group="metalness">
                         <div class="ctl-label">Metalness <span class="ctl-val" data-for="metalness">0.00</span></div>
                         <input type="range" data-ctl="metalness" min="0" max="100" value="0">
-                        <div class="ctl-ends"><span>not metal</span><span>metal</span></div>
+                        <div class="ctl-ends"><span>non-metal</span><span>metal</span></div>
                     </div>
 
                     <div class="ctl" data-group="light">
-                        <div class="ctl-label">Light orbit <span class="ctl-val" data-for="light">38°</span></div>
-                        <input type="range" data-ctl="light" min="-180" max="180" value="38"
-                            aria-label="Light orbit around Gizmobot">
-                        <div class="ctl-ends"><span>drag orb or slider</span><span>fixed path</span></div>
+                        <div class="ctl-label">Move the light <span class="ctl-val" data-for="light">38°</span></div>
+                        <div id="light-orbit-dial" class="light-orbit-dial" aria-label="Light orbit around Gizmobot">
+                            <div class="dial-gizmo" aria-hidden="true">
+                                <i></i><i></i><span></span>
+                            </div>
+                            <button id="light-orbit-handle" type="button" aria-label="Drag the light around Gizmobot"></button>
+                            <span class="dial-front">front</span>
+                        </div>
+                        <input class="light-keyboard-control" type="range" data-ctl="light" min="-180" max="180" value="38"
+                            aria-label="Light position for keyboard control">
+                        <div class="orbit-help">Drag the orange light around the ring</div>
                     </div>
 
                     <div class="ctl" data-group="light-color">
@@ -234,9 +258,9 @@
                     </div>
 
                     <div class="ctl" data-group="emissive">
-                        <div class="ctl-label">Glow <span class="ctl-val" data-for="emissive">0.00</span></div>
+                        <div class="ctl-label">Body glow <span class="ctl-val" data-for="emissive">0.00</span></div>
                         <input type="range" data-ctl="emissive" min="0" max="100" value="0">
-                        <div class="ctl-ends"><span>no glow</span><span>glowing</span></div>
+                        <div class="ctl-ends"><span>off</span><span>bright</span></div>
                     </div>
 
                     <div class="ctl" data-group="room">
@@ -248,14 +272,18 @@
                     </div>
 
                     <div class="ctl" data-group="examples">
-                        <div class="ctl-label">Material examples</div>
+                        <div class="ctl-label">Try real materials</div>
                         <div id="material-examples" class="material-examples"></div>
                     </div>
 
                     <div class="ctl" data-group="check">
-                        <button id="btn-check" class="dock-btn primary" type="button">Check match</button>
+                        <button id="btn-check" class="dock-btn primary" type="button">Check my material</button>
                         <button id="btn-hint" class="dock-btn" type="button">Need a hint?</button>
                         <button id="btn-new-target" class="dock-btn" type="button">New reference</button>
+                    </div>
+
+                    <div class="ctl" data-group="rgb-check">
+                        <button id="btn-check-rgb" class="dock-btn primary" type="button">Check my color</button>
                     </div>
                 </div>
             </div>

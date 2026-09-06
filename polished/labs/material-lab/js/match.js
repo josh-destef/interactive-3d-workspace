@@ -81,7 +81,7 @@ export function scoreMatch() {
    beginner can act on. */
 function buildNote({ parts, total, target }) {
     if (total >= MATCH_PASS) {
-        return '<b>You matched it.</b> Here is what the random reference was actually set to:';
+        return '<b>You matched it.</b> You read the surface well. Here is what the reference was set to:';
     }
 
     const worst = Object.entries(parts).sort((a, b) => a[1] - b[1])[0][0];
@@ -89,20 +89,20 @@ function buildNote({ parts, total, target }) {
 
     if (worst === 'metalness') {
         note = values.metalness < target.metalness
-            ? '<b>Metalness is too low.</b> The reference has color in its reflections. Raise Metalness.'
-            : '<b>Metalness is too high.</b> The reference has a mostly white highlight. Lower Metalness.';
+            ? '<b>Check Metalness.</b> The reference behaves more like metal. Raise the slider.'
+            : '<b>Check Metalness.</b> The reference behaves more like a non-metal. Lower the slider.';
     } else if (worst === 'roughness') {
         note = values.roughness < target.roughness
-            ? '<b>Your surface is too smooth.</b> Your highlight is tighter and sharper than the reference. Raise roughness to spread it out.'
-            : '<b>Your surface is too rough.</b> Your highlight is broader and softer than the reference. Lower roughness to pull it in.';
+            ? '<b>Check Roughness.</b> Your reflections are sharper than the reference. Raise the slider.'
+            : '<b>Check Roughness.</b> The reference has softer reflections. Lower the slider.';
     } else {
-        note = '<b>The color is off.</b> Compare the shaded sides, away from the bright highlights.';
+        note = '<b>Nice work on the surface.</b> Now compare the color on the shaded side, away from the bright highlight.';
     }
 
     // Close, and only one property away - worth saying so, because "82%" on its
     // own reads as failure when it is very nearly there.
     if (total >= MATCH_PASS - 12) {
-        note += ' You are close - this is the last thing between you and a match.';
+        note += ' This is the main difference left to adjust.';
     } else if (state.matchChecks >= 2 && state.hintLevel === 0) {
         note += ' Stuck? <b>Need a hint?</b> will walk you through it.';
     }
@@ -119,14 +119,14 @@ function hintFor(level) {
     const worst = Object.entries(parts).sort((a, b) => a[1] - b[1])[0][0];
 
     if (level === 1) {
-        return '<b>Look in this order:</b> colored or white reflection for metalness; sharp or soft reflection for roughness; then color in the shade.';
+        return '<b>Look in this order:</b> is it metal or non-metal, is the reflection sharp or soft, then what color is the shaded side?';
     }
 
     if (level === 2) {
         if (worst === 'metalness') {
             return target.metalness >= 50
                 ? '<b>The reference is metal.</b> Take metalness most of the way up and see how differently the surface behaves.'
-                : '<b>The reference is not metal.</b> Bring metalness back down to nothing and let the color speak for itself.';
+                : '<b>The reference is a non-metal.</b> Bring Metalness back down near 0.';
         }
         if (worst === 'roughness') {
             const zone = target.roughness >= 70 ? 'well into the chalky end'

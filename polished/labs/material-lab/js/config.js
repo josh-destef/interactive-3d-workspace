@@ -5,21 +5,26 @@
 import { V3 } from './utils.js';
 
 /* ── beat map ──
-   Six beats are numbered steps; the intro, challenge, quiz and finish carry
+   Six main beats are numbered steps. RGB beats are optional side activities.
    their own labels. */
 export const BEAT = {
     INTRO: 0,
     COLOR: 1,
-    RGB: 2,
-    ROUGHNESS: 3,
-    METALNESS: 4,
-    LIGHT: 5,
-    EMISSIVE: 6,
-    CHALLENGE: 7,
-    QUIZ: 8,
-    DONE: 9,
+    RGB_OFFER: 2,
+    RGB_WATCH: 3,
+    RGB_MIX: 4,
+    RGB_RETURN: 5,
+    ROUGHNESS: 6,
+    METALNESS: 7,
+    LIGHT: 8,
+    EMISSIVE: 9,
+    BODY_GLOW: 10,
+    CHALLENGE: 11,
+    RGB_CHALLENGE_OFFER: 12,
+    RGB_CHALLENGE: 13,
+    DONE: 14,
 };
-export const TOTAL_BEATS = 10;
+export const TOTAL_BEATS = 15;
 export const NUMBERED_STEPS = 6;
 
 /* the subject sits here; every camera preset looks at it */
@@ -64,14 +69,14 @@ export const MATERIAL_EXAMPLES = {
     rubber: {
         label: 'Rubber', color: '#22252b', roughness: 95, metalness: 0,
     },
-    gold: {
-        label: 'Gold', color: '#ffdb93', roughness: 18, metalness: 100,
+    chrome: {
+        label: 'Chrome', color: '#d8e0e8', roughness: 8, metalness: 100,
     },
     copper: {
         label: 'Copper', color: '#fad1c2', roughness: 30, metalness: 100,
     },
-    steel: {
-        label: 'Steel', color: '#c5c7c8', roughness: 48, metalness: 100,
+    brushed: {
+        label: 'Brushed metal', color: '#c5c7c8', roughness: 58, metalness: 100,
     },
 };
 
@@ -102,7 +107,7 @@ export const LIGHT_COLORS = {
 
 /* the material the lesson opens on: mid roughness, no metal, plain gray. It
    deliberately looks like nothing in particular, so every change reads. */
-export const START_MATERIAL = { color: '#b8b8b4', roughness: 50, metalness: 0, emissive: 0 };
+export const START_MATERIAL = { color: '#f2f0eb', roughness: 50, metalness: 0, emissive: 0 };
 
 /* ── how much exploring unlocks Continue ──
    The span a student has to cover on a step's control before the step counts

@@ -11,7 +11,7 @@
    and doing, so a student who looks away and back is never reading something
    different in meaning from what they started.
 ═══════════════════════════════════════════════ */
-import { NUMBERED_STEPS, TOTAL_BEATS } from './config.js';
+import { BEAT, NUMBERED_STEPS, TOTAL_BEATS } from './config.js';
 
 function tog(id, on) {
     const el = document.getElementById(id);
@@ -85,6 +85,40 @@ export function readCardOpen() {
 
 document.getElementById('btn-read-go').addEventListener('click', dismissReadCard);
 
+/* ── optional lesson choices ── */
+const choiceLayer = document.getElementById('choice-layer');
+let choicePrimary = null;
+let choiceSecondary = null;
+
+export function showChoice({ title, body, primary, secondary }, onPrimary, onSecondary) {
+    document.getElementById('choice-title').textContent = title;
+    document.getElementById('choice-body').textContent = body;
+    document.getElementById('btn-choice-primary').textContent = primary;
+    document.getElementById('btn-choice-secondary').textContent = secondary;
+    choicePrimary = onPrimary;
+    choiceSecondary = onSecondary;
+    choiceLayer.classList.add('on');
+    setTimeout(() => document.getElementById('btn-choice-primary').focus(), 80);
+}
+
+function dismissChoice(action) {
+    choiceLayer.classList.remove('on');
+    const fn = action === 'primary' ? choicePrimary : choiceSecondary;
+    choicePrimary = null;
+    choiceSecondary = null;
+    if (fn) setTimeout(fn, 180);
+}
+
+document.getElementById('btn-choice-primary').addEventListener('click', () => dismissChoice('primary'));
+document.getElementById('btn-choice-secondary').addEventListener('click', () => dismissChoice('secondary'));
+
+export function choiceOpen() { return choiceLayer.classList.contains('on'); }
+
+export function setContinueLabel(label = 'Continue') {
+    const button = document.getElementById('btn-continue');
+    button.childNodes[0].nodeValue = label + '\n                            ';
+}
+
 /* ── Watch / Your Turn ── */
 
 export function setMode(mode) {
@@ -136,7 +170,25 @@ export function hideContinue() {
 }
 
 export function setProgress(idx) {
-    const pct = idx <= 0 ? 0 : (idx / (TOTAL_BEATS - 1)) * 100;
+    /* Optional RGB beats should not make the main-course progress jump. */
+    const pctByBeat = {
+        [BEAT.INTRO]: 0,
+        [BEAT.COLOR]: 14,
+        [BEAT.RGB_OFFER]: 16,
+        [BEAT.RGB_WATCH]: 18,
+        [BEAT.RGB_MIX]: 20,
+        [BEAT.RGB_RETURN]: 22,
+        [BEAT.ROUGHNESS]: 30,
+        [BEAT.METALNESS]: 44,
+        [BEAT.LIGHT]: 58,
+        [BEAT.EMISSIVE]: 70,
+        [BEAT.BODY_GLOW]: 80,
+        [BEAT.CHALLENGE]: 90,
+        [BEAT.RGB_CHALLENGE_OFFER]: 92,
+        [BEAT.RGB_CHALLENGE]: 96,
+        [BEAT.DONE]: 100,
+    };
+    const pct = pctByBeat[idx] ?? (idx <= 0 ? 0 : (idx / (TOTAL_BEATS - 1)) * 100);
     document.getElementById('prog-fill').style.width = pct + '%';
 }
 

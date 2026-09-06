@@ -1,7 +1,8 @@
 /* ═══════════════════════════════════════════════
    SUBJECT
    One teaching GLB is loaded, then cloned so the challenge reuses its geometry.
-   Only Shell_Paint is learner-controlled; Face_Glow has its own emissive control.
+   The shell is learner-controlled. Gizmobot's face is always emissive so it
+   remains a clear visual cue when the studio lights go out.
 ═══════════════════════════════════════════════ */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -43,7 +44,7 @@ function configureMaterial(material, role) {
         const glow = material.clone();
         glow.name = 'Face_Glow';
         glow.emissive.set(0xc8f2ff);
-        glow.emissiveIntensity = 0;
+        glow.emissiveIntensity = 1.6;
         glow.depthWrite = false;
         glow.transparent = true;
         registerRoomMaterial(glow);
@@ -106,12 +107,14 @@ export function applyValues(target = studentMaterial, v = values, glow = student
     target.color.set(v.color);
     target.roughness = v.roughness / 100;
     target.metalness = v.metalness / 100;
+    target.emissive.set(v.color);
+    target.emissiveIntensity = ((v.emissive ?? 0) / 100) * 1.25;
     target.needsUpdate = true;
 
-    // The mask confines emission to the eyes and mouth. No light object is
-    // added, so Glow never illuminates the floor or surrounding room.
+    // The face stays lit independently. Body glow is visual only, so neither
+    // the face nor shell casts light onto the floor or room.
     if (glow) {
-        glow.emissiveIntensity = ((v.emissive ?? 0) / 100) * 4;
+        glow.emissiveIntensity = 1.6;
         glow.needsUpdate = true;
     }
 }

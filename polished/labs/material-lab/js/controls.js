@@ -63,11 +63,47 @@ const sliders = {};
 
 /* ── light position ── */
 const lightInput = document.querySelector('input[data-ctl="light"]');
+const lightDial = document.getElementById('light-orbit-dial');
+const lightHandle = document.getElementById('light-orbit-handle');
 sliders.light = lightInput;
 let onLight = () => { };
 export function onLightChange(fn) { onLight = fn; }
 lightInput.addEventListener('input', () => {
     const deg = Number(lightInput.value);
+    onLight(deg);
+    syncLight(deg);
+    emit('light');
+});
+
+function setLightFromDialEvent(event) {
+    const rect = lightDial.getBoundingClientRect();
+    const dx = event.clientX - (rect.left + rect.width / 2);
+    const dy = event.clientY - (rect.top + rect.height / 2);
+    const deg = Math.round(Math.atan2(dx, dy) * 180 / Math.PI);
+    onLight(deg);
+    syncLight(deg);
+    emit('light');
+}
+
+let draggingLightDial = false;
+lightDial.addEventListener('pointerdown', event => {
+    draggingLightDial = true;
+    lightDial.setPointerCapture(event.pointerId);
+    setLightFromDialEvent(event);
+});
+lightDial.addEventListener('pointermove', event => {
+    if (draggingLightDial) setLightFromDialEvent(event);
+});
+lightDial.addEventListener('pointerup', event => {
+    draggingLightDial = false;
+    if (lightDial.hasPointerCapture(event.pointerId)) lightDial.releasePointerCapture(event.pointerId);
+});
+lightDial.addEventListener('pointercancel', () => { draggingLightDial = false; });
+lightHandle.addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+    event.preventDefault();
+    const step = ['ArrowRight', 'ArrowUp'].includes(event.key) ? 5 : -5;
+    const deg = Math.max(-180, Math.min(180, Number(lightInput.value) + step));
     onLight(deg);
     syncLight(deg);
     emit('light');
@@ -147,6 +183,21 @@ const rgbInputs = {};
         emit('rgb');
     });
 });
+
+/* RGB is useful for curious learners, but it is not part of the required
+   material lesson. Keep it available as a small, explicit optional tool. */
+const rgbToggle = document.getElementById('btn-toggle-rgb');
+const rgbRows = document.getElementById('rgb-rows');
+rgbToggle?.addEventListener('click', () => {
+    const open = rgbToggle.getAttribute('aria-expanded') !== 'true';
+    rgbToggle.setAttribute('aria-expanded', String(open));
+    rgbRows.hidden = !open;
+});
+
+export function setRgbExpanded(open) {
+    rgbToggle?.setAttribute('aria-expanded', String(open));
+    if (rgbRows) rgbRows.hidden = !open;
+}
 
 function readRGB() {
     return rgbToHex(
@@ -234,6 +285,9 @@ export function syncLight(deg) {
     lightInput.value = rounded;
     paintSlider(lightInput);
     document.querySelector('.ctl-val[data-for="light"]').textContent = rounded + '°';
+    const rad = rounded * Math.PI / 180;
+    lightHandle.style.left = (50 + Math.sin(rad) * 41) + '%';
+    lightHandle.style.top = (50 + Math.cos(rad) * 41) + '%';
 }
 
 /* ── demo support ── */

@@ -392,14 +392,7 @@ body {
 
 /* the rule that marks this as a step card at a glance */
 #read-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    border-radius: 14px 14px 0 0;
-    background: var(--orange);
+    display: none;
 }
 
 #read-step {
@@ -419,13 +412,14 @@ body {
     line-height: 1.2;
     letter-spacing: -.02em;
     color: #111;
-    margin-bottom: 12px;
+    margin: 0 0 14px;
 }
 
 #read-body {
+    max-width: 56ch;
     font-size: clamp(14px, 1.85vmin, 17px);
     font-weight: 300;
-    line-height: 1.72;
+    line-height: 1.62;
     color: #555;
 }
 
@@ -601,7 +595,7 @@ body {
 #panel {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     min-width: 0;
 }
 
@@ -612,7 +606,7 @@ body {
     letter-spacing: .12em;
     text-transform: uppercase;
     color: var(--green);
-    margin-bottom: 5px;
+    margin: 0 0 4px;
     opacity: 0;
     max-height: 0;
     overflow: hidden;
@@ -630,16 +624,17 @@ body {
     color: #111;
     line-height: 1.25;
     letter-spacing: -.02em;
-    margin-bottom: 5px;
+    margin: 0 0 4px;
     opacity: 0;
     transition: opacity .45s ease;
 }
 
 #cap-body {
+    max-width: 58ch;
     font-size: var(--fs-body);
     font-weight: 300;
     color: #555;
-    line-height: 1.66;
+    line-height: 1.58;
     opacity: 0;
     transition: opacity .45s ease .06s;
 }
@@ -891,13 +886,19 @@ body {
    beginner; "chalky" does, and that is the difference between a control they
    can guess at and one they have to be told about. */
 .ctl-ends {
+    width: clamp(180px, 18vw, 240px);
     display: flex;
     justify-content: space-between;
-    font-family: var(--mono);
+    gap: 16px;
+    font-family: var(--font);
     font-size: var(--fs-fine);
     color: #a4a4ac;
-    letter-spacing: .04em;
+    line-height: 1.3;
+    letter-spacing: 0;
 }
+
+.ctl-ends span { flex: 1; }
+.ctl-ends span:last-child { text-align: right; }
 
 /* ── sliders ──
    Custom track so the filled portion reads as how far along the value is.
@@ -987,6 +988,112 @@ input[type="range"]:focus-visible {
     box-shadow: 0 0 0 2px var(--dark);
 }
 
+.light-orbit-dial {
+    position: relative;
+    width: 126px;
+    height: 126px;
+    margin-inline: auto;
+    border: 2px solid rgba(26, 26, 46, .18);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,.94) 0 30%, rgba(0,0,0,.025) 31% 100%);
+    cursor: crosshair;
+    touch-action: none;
+}
+
+.light-orbit-dial::before,
+.light-orbit-dial::after {
+    content: '';
+    position: absolute;
+    background: rgba(26, 26, 46, .08);
+}
+
+.light-orbit-dial::before { left: 50%; top: 8px; bottom: 8px; width: 1px; }
+.light-orbit-dial::after { top: 50%; left: 8px; right: 8px; height: 1px; }
+
+.dial-gizmo {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 2;
+    width: 42px;
+    height: 34px;
+    transform: translate(-50%, -50%);
+    border: 2px solid #4b4d57;
+    border-radius: 13px;
+    background: #252632;
+    box-shadow: 0 3px 8px rgba(0,0,0,.15);
+}
+
+.dial-gizmo i {
+    position: absolute;
+    top: 9px;
+    width: 4px;
+    height: 7px;
+    border-radius: 99px;
+    background: #d9f7ff;
+}
+
+.dial-gizmo i:first-child { left: 10px; }
+.dial-gizmo i:nth-child(2) { right: 10px; }
+.dial-gizmo span {
+    position: absolute;
+    left: 50%;
+    bottom: 6px;
+    width: 13px;
+    height: 5px;
+    transform: translateX(-50%);
+    border-bottom: 2px solid #d9f7ff;
+    border-radius: 0 0 10px 10px;
+}
+
+#light-orbit-handle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 4;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    background: var(--orange);
+    box-shadow: 0 0 0 1px var(--orange), 0 3px 10px rgba(0,0,0,.2);
+    transform: translate(-50%, -50%);
+    cursor: grab;
+}
+
+#light-orbit-handle:active { cursor: grabbing; }
+.dial-front {
+    position: absolute;
+    left: 50%;
+    bottom: -18px;
+    transform: translateX(-50%);
+    font-family: var(--mono);
+    font-size: 9px;
+    color: #999aa2;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+}
+
+.light-keyboard-control {
+    position: absolute;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.orbit-help {
+    margin-top: 12px;
+    max-width: 150px;
+    font-size: var(--fs-fine);
+    line-height: 1.35;
+    color: var(--muted);
+    text-align: center;
+}
+
 .swatch:focus-visible {
     outline: 3px solid rgba(255, 144, 34, .35);
     outline-offset: 3px;
@@ -994,8 +1101,68 @@ input[type="range"]:focus-visible {
 
 /* R/G/B */
 .ctl-rgb {
-    min-width: clamp(190px, 20vw, 250px);
+    min-width: clamp(230px, 22vw, 290px);
 }
+
+.mix-color-toggle {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.mix-color-toggle::after {
+    content: ' +';
+    color: var(--accent);
+}
+
+.mix-color-toggle[aria-expanded="true"]::after { content: ' \2212'; }
+
+.choice-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 800;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(22, 26, 35, .38);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease;
+}
+
+.choice-layer.on { opacity: 1; pointer-events: auto; }
+
+.choice-card {
+    width: min(460px, 100%);
+    padding: 28px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: rgba(255,255,255,.97);
+    box-shadow: 0 20px 70px rgba(15,20,30,.24);
+}
+
+.choice-card h2 { margin: 0 0 12px; font-size: var(--fs-title); line-height: 1.25; }
+.choice-card p { max-width: 48ch; margin: 0; color: var(--muted); line-height: 1.6; }
+.choice-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+
+.rgb-result {
+    display: none;
+    max-width: 360px;
+    margin: 0 0 10px auto;
+    padding: 10px 13px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: rgba(255,255,255,.88);
+    color: var(--dark);
+    font-size: var(--fs-small);
+    line-height: 1.45;
+}
+
+.rgb-result.on { display: block; }
 
 .rgb-chip {
     display: inline-flex;
@@ -1015,14 +1182,14 @@ input[type="range"]:focus-visible {
 
 .rgb-rows {
     display: grid;
-    gap: 1px;
+    gap: 5px;
 }
 
 .rgb-row {
     display: grid;
     grid-template-columns: 13px 1fr 28px;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .rgb-row label {

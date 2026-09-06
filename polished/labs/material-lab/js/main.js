@@ -17,7 +17,7 @@ import { BEAT } from './config.js';
 import { subjectReady } from './subject.js';
 import { dismissReadCard, readCardOpen } from './ui.js';
 import {
-    runBeat, nextBeat, replayBeat, checkBeatComplete, onCheckMatch, onNewTarget, onHint,
+    runBeat, nextBeat, replayBeat, checkBeatComplete, onCheckMatch, onNewTarget, onHint, onUseRgbColor, onCheckRgbMatch,
 } from './beats.js';
 
 /* ── controls ── */
@@ -27,6 +27,8 @@ document.getElementById('btn-reset-view').addEventListener('click', resetView);
 document.getElementById('btn-check').addEventListener('click', onCheckMatch);
 document.getElementById('btn-new-target').addEventListener('click', onNewTarget);
 document.getElementById('btn-hint').addEventListener('click', onHint);
+document.getElementById('btn-use-rgb').addEventListener('click', onUseRgbColor);
+document.getElementById('btn-check-rgb').addEventListener('click', onCheckRgbMatch);
 
 onControlChange(checkBeatComplete);
 onLightChange(setKeyAzimuth);
@@ -58,7 +60,7 @@ function animate() {
     tickCam(dt);
     tickRoom(dt);
     tickAnims(dt);
-    if (state.beatIdx === BEAT.CHALLENGE) updateMatchLabels();
+    if (state.beatIdx === BEAT.CHALLENGE || state.beatIdx === BEAT.RGB_CHALLENGE) updateMatchLabels();
     renderer.render(scene, camera);
 }
 animate();
