@@ -1,0 +1,138 @@
+/* ══════════════════════════════════════════════════════════════════════
+   THE PANEL  (alternate step surface)
+
+   A small card docked in the bottom-left corner, leaving the canvas
+   edge-to-edge. Use this instead of console.css when the lesson happens in
+   the 3D viewport and there are no DOM controls to dock - Navigate +
+   Transform is the case it was built for.
+
+   Load exactly one of console.css or panel.css. They style the same inner
+   markup (#panel, #cap-step, #cap-title, #cap-body, .panel-footer), so the
+   HTML and every kit JS module work unchanged either way; only the outer
+   surface differs.
+
+   Everything below overrides or adds to console.css's inner rules, so load
+   console.css first and panel.css after it.
+   ══════════════════════════════════════════════════════════════════════ */
+
+#panel {
+    position: absolute;
+    bottom: var(--edge);
+    left: var(--edge);
+    z-index: 50;
+    width: min(92vw, var(--panel-w));
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-panel);
+    padding: var(--pad-panel);
+    /* Solid, not translucent. A blur here is invisible at this opacity but
+       forces a full backdrop-filter recomposite every frame the scene moves
+       behind it - the main source of jank during a Watch camera sweep. */
+    background: var(--surface);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 14px;
+    box-shadow:
+        0 12px 32px rgba(0, 0, 0, 0.06),
+        0 4px 12px rgba(0, 0, 0, 0.03);
+    pointer-events: auto;
+    cursor: default;
+    transition: box-shadow .4s ease, border-color .4s ease;
+}
+
+#panel * {
+    pointer-events: auto;
+}
+
+/* The card can draw its mode as a ring, which the full-width console cannot. */
+#panel.panel-watching {
+    border-color: rgba(26, 26, 46, .55);
+    box-shadow:
+        inset 0 0 0 1px rgba(26, 26, 46, .55),
+        0 12px 32px rgba(0, 0, 0, .06),
+        0 4px 12px rgba(0, 0, 0, .03);
+}
+
+#panel.panel-interacting {
+    border-color: var(--orange);
+    box-shadow:
+        inset 0 0 0 1px var(--orange),
+        0 12px 32px rgba(0, 0, 0, .06),
+        0 4px 12px rgba(0, 0, 0, .03);
+}
+
+#panel.panel-celebrate {
+    border-color: var(--orange);
+    box-shadow:
+        inset 0 0 0 1px var(--orange),
+        0 20px 48px rgba(255, 144, 34, .18);
+}
+
+/* ── free-play tool switch ──
+   The bottom-center widget that lets a student pick Move / Rotate / Scale once
+   the lesson stops telling them which one to use. Stacks above the panel on
+   small screens using --panel-h, kept current by ui.js trackSurfaceHeight. */
+#free-play-widget {
+    position: absolute;
+    bottom: var(--edge);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 55;
+    display: none;
+    gap: 6px;
+    padding: 6px;
+    background: var(--surface);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+#free-play-widget.on {
+    display: flex;
+    animation: riseIn .45s cubic-bezier(.34, 1.3, .64, 1) backwards;
+}
+
+.fp-btn {
+    padding: clamp(7px, 1.1vmin, 10px) clamp(14px, 2.2vmin, 20px);
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    font-family: var(--font);
+    font-size: var(--fs-ui);
+    font-weight: 500;
+    color: #555;
+    cursor: pointer;
+    transition: background .18s, color .18s;
+}
+
+.fp-btn:hover {
+    background: rgba(0, 0, 0, .04);
+    color: var(--dark);
+}
+
+.fp-btn.active {
+    background: var(--orange);
+    color: #fff;
+}
+
+@media (max-width: 640px) {
+    #panel {
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        max-height: 52vh;
+        overflow-y: auto;
+        border-radius: 14px 14px 0 0;
+    }
+
+    /* stack above the panel bar rather than under it */
+    #free-play-widget {
+        bottom: calc(var(--panel-h) + 12px);
+    }
+
+    #util-bar {
+        top: auto;
+        bottom: calc(var(--panel-h) + 12px);
+        right: var(--edge);
+    }
+}

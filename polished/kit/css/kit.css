@@ -1,0 +1,21 @@
+/* ══════════════════════════════════════════════════════════════════════
+   THE KIT, all of it.
+
+       <link rel="stylesheet" href="../../kit/css/kit.css" />
+       <link rel="stylesheet" href="css/lab.css" />
+
+   Load this first and the lab's own stylesheet second, so anything the lab
+   overrides wins on source order alone.
+
+   Console layout is the default. For the floating-card layout, skip this
+   file and link the pieces you want, ending with panel.css:
+
+       tokens.css  shell.css  console.css  panel.css  controls.css  cards.css  assess.css
+   ══════════════════════════════════════════════════════════════════════ */
+
+@import url('tokens.css');
+@import url('shell.css');
+@import url('console.css');
+@import url('controls.css');
+@import url('cards.css');
+@import url('assess.css');

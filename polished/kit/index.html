@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Lab Kit - CreateAccess</title>
+    <meta name="description" content="Every shared element the guided labs are built from, live and in one place." />
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧰</text></svg>" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="css/kit.css" />
+
+    <style>
+        /* ── gallery chrome only ──
+           This page is documentation, not a lab, so it scrolls and it lays the
+           kit's pieces out on a page. Nothing in here belongs in a lab. */
+        html,
+        body {
+            height: auto;
+            min-height: 100%;
+            overflow: auto;
+            background: #f4f4f2;
+        }
+
+        /* A lab's #app fills the screen and clips; this page scrolls. */
+        #app {
+            height: auto;
+            overflow: visible;
+        }
+
+        .doc {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: clamp(28px, 6vmin, 72px) clamp(18px, 4vw, 40px) 120px;
+        }
+
+        .doc-head {
+            padding-bottom: 26px;
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .doc-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 22px;
+            padding: 8px 14px;
+            border: 1px solid rgba(0, 0, 0, .1);
+            border-radius: 8px;
+            background: #fff;
+            font-size: var(--fs-ui);
+            font-weight: 500;
+            color: #444;
+            text-decoration: none;
+            transition: border-color .2s, color .2s, transform .2s;
+        }
+
+        .doc-back:hover {
+            border-color: var(--orange);
+            color: var(--orange);
+            transform: translateX(-3px);
+        }
+
+        .doc-eyebrow {
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            color: var(--green);
+            margin-bottom: 10px;
+        }
+
+        .doc-head h1 {
+            font-size: clamp(28px, 5vmin, 46px);
+            font-weight: 500;
+            letter-spacing: -.025em;
+            line-height: 1.1;
+            color: #111;
+            margin-bottom: 14px;
+        }
+
+        .doc-head p {
+            max-width: 62ch;
+            font-size: clamp(14px, 1.9vmin, 17px);
+            font-weight: 300;
+            line-height: 1.65;
+            color: #555;
+        }
+
+        .doc-head p + p {
+            margin-top: 12px;
+        }
+
+        .doc-head a,
+        .note a {
+            color: var(--orange);
+        }
+
+        section {
+            margin-bottom: 56px;
+        }
+
+        h2 {
+            font-size: clamp(17px, 2.3vmin, 22px);
+            font-weight: 500;
+            letter-spacing: -.015em;
+            color: #111;
+            margin-bottom: 6px;
+        }
+
+        h2 .file {
+            margin-left: 10px;
+            font-family: var(--mono);
+            font-size: 11px;
+            font-weight: 400;
+            letter-spacing: .02em;
+            color: var(--muted);
+        }
+
+        .note {
+            max-width: 68ch;
+            margin-bottom: 18px;
+            font-size: var(--fs-body);
+            font-weight: 300;
+            line-height: 1.62;
+            color: #555;
+        }
+
+        .note b {
+            font-weight: 500;
+            color: #222;
+        }
+
+        /* ── the specimen boards ──
+           A grid, not wrapped flex. Flex bottom-aligned each cell, so cells of
+           different heights put their labels at different heights and the row
+           read as ragged. A grid with `align-items: start` lines every label
+           up on one baseline and keeps the gutters even. */
+        .board {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+            align-items: start;
+            gap: 30px;
+            padding: 28px 30px;
+            background: var(--surface);
+            border: 1px solid rgba(0, 0, 0, .06);
+            border-radius: 14px;
+        }
+
+        /* one board, one column: for a specimen that is a block, not a chip */
+        .board.stack {
+            display: block;
+        }
+
+        /* `align-items: start` matters: without it every specimen stretches to
+           its grid column, which pushes a slider's value readout to the far
+           right of the board and turns a two-option toggle into a full-width
+           bar. Each specimen should be exactly as wide as it is in a lab. */
+        .cell {
+            display: flex;
+            flex-direction: column;
+            align-items: start;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        /* a specimen too wide for one column (RGB rows, a 5-up toggle) */
+        .cell.wide {
+            grid-column: span 2;
+        }
+
+        .cell-name {
+            font-family: var(--mono);
+            font-size: 10px;
+            line-height: 1.4;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: #a0a0a8;
+        }
+
+        /* ── the mouse-diagram board ──
+           Narrower columns, everything centred under its own label, and the
+           rig's lab-side top margin removed - here it is a specimen in a grid,
+           not a diagram hanging under a caption. */
+        #mice {
+            grid-template-columns: repeat(auto-fill, minmax(158px, 1fr));
+            gap: 26px 18px;
+        }
+
+        #mice .cell {
+            align-items: center;
+            text-align: center;
+        }
+
+        #mice .mouse-rig {
+            margin-top: 0;
+        }
+
+        /* ── the demo-cursor board ──
+           The specimens are absolutely-positioned overlay elements in a lab,
+           so each one gets a small stage to sit in rather than collapsing the
+           row to zero height. */
+        .cursor-stage {
+            display: grid;
+            place-items: center;
+            align-self: stretch;
+            height: 86px;
+            border: 1px dashed rgba(0, 0, 0, .12);
+            border-radius: 10px;
+            background: #fff;
+        }
+
+        .cursor-caption {
+            font-size: 12px;
+            font-weight: 300;
+            line-height: 1.5;
+            color: #777;
+        }
+
+        .cursor-caption b {
+            font-weight: 500;
+            color: #333;
+        }
+
+        /* ── the miniature lab: the real shell, boxed ──
+           Tall enough that the console reads as a band across the bottom of a
+           screen rather than as half of one. The kit's type and padding scale
+           on `vmin`, so inside a small frame the console keeps its real
+           height while everything around it shrinks; the frame has to be
+           generous to keep the proportion honest. */
+        .frame {
+            position: relative;
+            height: min(74vh, 640px);
+            overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, .08);
+            border-radius: 14px;
+            background: var(--page);
+        }
+
+        /* Stop the canvas above the console rather than running under it. A
+           real lab does the equivalent in the projection - it lifts the
+           subject clear of the bar - so a subject half-buried behind the
+           console is wrong here for the same reason it would be wrong there.
+           --console-h is kept current by ui.js trackSurfaceHeight. */
+        .frame #canvas-wrap {
+            bottom: var(--console-h);
+            background: radial-gradient(circle at 50% 50%, #fff 0%, #e8e8e4 100%);
+        }
+
+        .frame #console {
+            position: absolute;
+        }
+
+        /* the demo subject standing in for a 3D scene */
+        .stand-in {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: clamp(84px, 13vmin, 124px);
+            height: clamp(84px, 13vmin, 124px);
+            transform: translate(-50%, -50%);
+            border-radius: 26px;
+            background: linear-gradient(150deg, #ffb469, var(--orange) 45%, #d4720f);
+            box-shadow: 0 26px 50px rgba(0, 0, 0, .18), inset -10px -14px 30px rgba(0, 0, 0, .22);
+            transition: transform .5s cubic-bezier(.34, 1.3, .64, 1);
+        }
+
+        .switches {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        pre {
+            overflow-x: auto;
+            margin-top: 12px;
+            padding: 14px 16px;
+            background: #21212e;
+            border-radius: 10px;
+            font-family: var(--mono);
+            font-size: 12px;
+            line-height: 1.65;
+            color: #ccc9e0;
+        }
+
+        pre .t {
+            color: #8fb8e8;
+        }
+
+        pre .a {
+            color: #d7a86e;
+        }
+
+        pre .c {
+            color: #6f7a8c;
+        }
+
+        ul.rules {
+            max-width: 68ch;
+            padding-left: 20px;
+            font-size: var(--fs-body);
+            font-weight: 300;
+            line-height: 1.7;
+            color: #555;
+        }
+
+        ul.rules li {
+            margin-bottom: 8px;
+        }
+
+        ul.rules b {
+            font-weight: 500;
+            color: #222;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="doc">
+
+            <header class="doc-head">
+                <a href="../../" class="doc-back">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6" />
+                    </svg>
+                    All labs
+                </a>
+                <div class="doc-eyebrow">CreateAccess · guided labs</div>
+                <h1>The lab kit</h1>
+                <p>
+                    Every shared piece the guided labs are built from, live on one page. It was pulled out of
+                    <b>Material Lab</b> and <b>Navigate&nbsp;+&nbsp;Transform</b> after those two converged on the same
+                    shell, so that the third, fourth and fifth labs start where those finished rather than at the
+                    beginning.
+                </p>
+                <p>
+                    Two things to read before building: <a href="README.md">README.md</a> for how to start a lab, and
+                    <a href="../LEARNING-DESIGN.md">LEARNING-DESIGN.md</a> for what a step owes the student. A runnable
+                    starter lives in <a href="template/">template/</a> - copy that folder rather than an existing lab.
+                </p>
+            </header>
+
+            <!-- ══════════════════════════════════════════════
+                 THE SHELL
+                 ══════════════════════════════════════════════ -->
+            <section>
+                <h2>The shell <span class="file">shell.css · console.css · js/ui.js</span></h2>
+                <p class="note">
+                    A working miniature: the same ids, the same CSS, the same <code>ui.js</code> driving it. The badge,
+                    the progress bar, the caption and the dock are all real. Press the switches to put it through the
+                    states a beat moves it through.
+                </p>
+
+                <div class="switches">
+                    <button class="dock-btn" data-demo="read">Read card</button>
+                    <button class="dock-btn" data-demo="watch">Watch</button>
+                    <button class="dock-btn" data-demo="turn">Your turn</button>
+                    <button class="dock-btn" data-demo="continue">Reveal Continue</button>
+                    <button class="dock-btn" data-demo="celebrate">Celebrate</button>
+                    <button class="dock-btn" data-demo="choice">Choice</button>
+                    <button class="dock-btn" data-demo="reset">Reset</button>
+                </div>
+
+                <div class="frame">
+                    <div id="canvas-wrap">
+                        <div class="stand-in"></div>
+                        <div id="prog">
+                            <div id="prog-fill"></div>
+                        </div>
+                        <div id="status-badge">
+                            <span class="badge-dot"></span>
+                            <span class="badge-text">Watch</span>
+                        </div>
+                        <button id="btn-replay" type="button">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <polygon points="10 8 16 12 10 16 10 8" />
+                            </svg>
+                            Replay demo
+                        </button>
+                        <div id="hint"></div>
+                    </div>
+
+                    <div id="console">
+                        <div id="panel">
+                            <div class="panel-header">
+                                <div id="cap-step"></div>
+                                <div id="cap-title"></div>
+                            </div>
+                            <div id="cap-body"></div>
+                            <div class="panel-footer">
+                                <a id="btn-finish" href="#">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                        <polyline points="9 22 9 12 15 12 15 22" />
+                                    </svg>
+                                    Back to Home
+                                </a>
+                                <div class="continue-side">
+                                    <button id="btn-continue" type="button">
+                                        Continue
+                                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                            <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" stroke-width="1.4"
+                                                stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    </button>
+                                    <div id="kbd-hint"><kbd>Space</kbd> to continue</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="dock">
+                            <div class="dock-row">
+                                <div class="ctl" data-group="demo-size">
+                                    <div class="ctl-label">Size <span class="ctl-val" data-for="demo-size">1.00</span>
+                                    </div>
+                                    <input type="range" id="demo-size" min="50" max="160" value="100"
+                                        aria-label="Size">
+                                    <div class="ctl-ends"><span>small</span><span>large</span></div>
+                                </div>
+                                <div class="ctl" data-group="demo-color">
+                                    <div class="ctl-label">Color</div>
+                                    <div id="demo-swatches" class="swatches"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <pre><span class="c">&lt;!-- the four pieces every lab has --&gt;</span>
+<span class="t">&lt;div</span> <span class="a">id=</span>"canvas-wrap"<span class="t">&gt;</span>   <span class="c">canvas, progress, badge, replay, hint, loading</span>
+<span class="t">&lt;div</span> <span class="a">id=</span>"read-layer"<span class="t">&gt;</span>    <span class="c">the step's words, before anything moves</span>
+<span class="t">&lt;div</span> <span class="a">id=</span>"console"<span class="t">&gt;</span>       <span class="c">#panel (the words) + #dock (the controls)</span>
+<span class="t">&lt;div</span> <span class="a">id=</span>"demo-cursor"<span class="t">&gt;</span>   <span class="c">the pointer that drives a Watch demo</span></pre>
+            </section>
+
+            <!-- ══════════════════════════════════════════════
+                 THE RHYTHM
+                 ══════════════════════════════════════════════ -->
+            <section>
+                <h2>The rhythm <span class="file">js/beats.js</span></h2>
+                <p class="note">
+                    Every beat is one idea, and every beat runs the same five stages. The runner enforces the two rules
+                    that are easy to break by hand: a demo never satisfies its own gate, and the caption does not change
+                    between Watch and Do.
+                </p>
+                <ul class="rules">
+                    <li><b>Reset</b> — chrome cleared, animations dropped, gates emptied, progress set.</li>
+                    <li><b>Read</b> — the idea, centered and still, waiting on the student. Nothing moves until they say
+                        go.</li>
+                    <li><b>Watch</b> — a demo drives the <i>real</i> control, dock locked, real cursor hidden.</li>
+                    <li><b>Do</b> — the same words stay put, the control unlocks, a gate watches.</li>
+                    <li><b>Continue</b> — appears the moment the gate passes, and never before.</li>
+                </ul>
+                <pre><span class="t">const</span> beats = createBeats({
+    total: TOTAL_BEATS,
+    copy:     COPY,        <span class="c">// idx -> { step, title, body, panel, cta }</span>
+    controls: CONTROLS,    <span class="c">// idx -> ['roughness']</span>
+    stage:    stageFor,    <span class="c">// (idx) => pose the scene</span>
+    demos:    { [BEAT.SIZE]: demoSize },
+    gates:    { [BEAT.SIZE]: key => trackSpan('size', values.size) >= 45 },
+});
+beats.run(BEAT.INTRO);     <span class="c">// then beats.notify('size') on every change</span></pre>
+            </section>
+
+            <!-- ══════════════════════════════════════════════
+                 CONTROLS
+                 ══════════════════════════════════════════════ -->
+            <section>
+                <h2>Controls <span class="file">controls.css · js/controls.js</span></h2>
+                <p class="note">
+                    A control arrives with the step that teaches it and never before — <code>revealControls([...])</code>
+                    names the <code>data-group</code>s a beat wants. Every slider gets its two ends
+                    <b>named in words</b>: “0.94” means nothing to a beginner, “chalky” does.
+                </p>
+
+                <div class="board">
+                    <div class="cell">
+                        <div class="cell-name">slider</div>
+                        <div class="ctl on" style="animation:none">
+                            <div class="ctl-label">Roughness <span class="ctl-val" data-for="rough">0.50</span></div>
+                            <input type="range" id="s-rough" min="0" max="100" value="50" aria-label="Roughness">
+                            <div class="ctl-ends"><span>shiny</span><span>matte</span></div>
+                        </div>
+                    </div>
+
+                    <div class="cell">
+                        <div class="cell-name">swatches</div>
+                        <div id="pal" class="swatches"></div>
+                    </div>
+
+                    <div class="cell">
+                        <div class="cell-name">segmented</div>
+                        <div id="seg-demo" class="seg">
+                            <button type="button" data-room="on" aria-pressed="true">On</button>
+                            <button type="button" data-room="off" aria-pressed="false">Off</button>
+                        </div>
+                    </div>
+
+                    <div class="cell wide">
+                        <div class="cell-name">segmented + dot</div>
+                        <div id="seg-light" class="seg">
+                            <button type="button" data-light="warm" aria-pressed="true"><i
+                                    style="--swatch:#ffd3a5"></i>Warm</button>
+                            <button type="button" data-light="day" aria-pressed="false"><i
+                                    style="--swatch:#fff"></i>Daylight</button>
+                            <button type="button" data-light="cool" aria-pressed="false"><i
+                                    style="--swatch:#d8e7ff"></i>Cool</button>
+                        </div>
+                    </div>
+
+                    <div class="cell">
+                        <div class="cell-name">example chips</div>
+                        <div id="ex" class="examples"></div>
+                    </div>
+
+                    <div class="cell wide">
+                        <div class="cell-name">RGB rows</div>
+                        <div class="rgb-rows">
+                            <div class="rgb-row" data-ch="r">
+                                <label for="g-r"><b>R</b> Red</label>
+                                <input id="g-r" type="range" min="0" max="255" value="184">
+                                <span class="rgb-val">184</span>
+                            </div>
+                            <div class="rgb-row" data-ch="g">
+                                <label for="g-g"><b>G</b> Green</label>
+                                <input id="g-g" type="range" min="0" max="255" value="120">
+                                <span class="rgb-val">120</span>
+                            </div>
+                            <div class="rgb-row" data-ch="b">
+                                <label for="g-b"><b>B</b> Blue</label>
+                                <input id="g-b" type="range" min="0" max="255" value="60">
+                                <span class="rgb-val">60</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="cell wide">
+                        <div class="cell-name">buttons</div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <button class="dock-btn primary" type="button">Check my work</button>
+                            <button class="dock-btn" type="button">Need a hint?</button>
+                            <button class="dock-btn" type="button" disabled>No hints left</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ══════════════════════════════════════════════
+                 TEACHING THE POINTER
+                 ══════════════════════════════════════════════ -->
+            <section>
+                <h2>Teaching the pointer <span class="file">js/mouseDiagram.js · js/demoCursor.js</span></h2>
+                <p class="note">
+                    “Right-click and drag” is three words a beginner has to translate into a hand movement. A picture of
+                    the mouse with the right button shaded is not. Drop one into a caption body with
+                    <code>buildMouseDiagram('pan')</code>.
+                </p>
+                <div class="board" id="mice"></div>
+
+                <h2 style="margin-top:44px">The demo cursor <span class="file">js/demoCursor.js</span></h2>
+                <p class="note">
+                    The pixel pointer that drives a Watch demo. Its press glow says <b>which mouse button is
+                    down</b> — and nothing else. Which button to hold is the one thing about a mouse a beginner
+                    cannot guess, so that is what the colour is spent on. Don’t recruit green for “a click rather
+                    than a drag”: a left-click and a left-drag are the same button, so they are the same colour.
+                </p>
+
+                <div class="board">
+                    <div class="cell">
+                        <div class="cell-name">idle</div>
+                        <div class="cursor-stage">
+                            <span class="demo-cursor static on" data-cursor></span>
+                        </div>
+                        <div class="cursor-caption">Travelling. No button down.</div>
+                    </div>
+                    <div class="cell">
+                        <div class="cell-name">left button — orange</div>
+                        <div class="cursor-stage">
+                            <span class="demo-cursor static on down" data-cursor></span>
+                        </div>
+                        <div class="cursor-caption">
+                            <b>Orange.</b> Dragging a slider, a gizmo arrow, or clicking anything at all.
+                        </div>
+                    </div>
+                    <div class="cell">
+                        <div class="cell-name">right button — green</div>
+                        <div class="cursor-stage">
+                            <span class="demo-cursor static on down right" data-cursor></span>
+                        </div>
+                        <div class="cursor-caption">
+                            <b>Green.</b> A right-drag — panning the camera in Navigate&nbsp;+&nbsp;Transform.
+                        </div>
+                    </div>
+                </div>
+
+                <p class="note" style="margin-top:18px">
+                    Press <b>Watch</b> on the shell above to see it run: the cursor starts near the middle of the
+                    screen and travels to the control, because a pointer that simply appears in the bottom corner is
+                    a pointer nobody notices.
+                </p>
+            </section>
+
+            <!-- ══════════════════════════════════════════════
+                 ASSESSMENT
+                 ══════════════════════════════════════════════ -->
+            <section>
+                <h2>Assessment <span class="file">assess.css · js/quiz.js</span></h2>
+                <p class="note">
+                    Nothing is scored, and every option carries a reason — <b>especially the wrong ones</b>. The
+                    explanation is the only part of a card like this that teaches anything; the buttons are just how it
+                    gets asked for. A wrong pick stays struck through rather than disappearing, so what was ruled out
+                    stays visible.
+                </p>
+
+                <div class="board stack">
+                    <div class="cell">
+                        <div class="cell-name">scoreboard — a match against a reference</div>
+                        <div class="scoreboard on scored pass" style="border:none;padding-bottom:0">
+                            <div class="sb-head">
+                                <div class="sb-score">92<span class="sb-pct-sign">%</span></div>
+                                <div class="sb-rows">
+                                    <div class="sb-row"><span>Color</span>
+                                        <div class="sb-bar"><i style="width:96%"></i></div>
+                                    </div>
+                                    <div class="sb-row"><span>Roughness</span>
+                                        <div class="sb-bar"><i style="width:88%"></i></div>
+                                    </div>
+                                    <div class="sb-row"><span>Metalness</span>
+                                        <div class="sb-bar"><i style="width:93%"></i></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="sb-note">That is a <b>match</b>. The reflection is the right sharpness and the
+                                color reads the same in shadow as well as in the highlight.</div>
+                            <div class="sb-hint on">Look at the <b>shaded side</b> rather than the highlight. On a
+                                metal, the shadowed part takes its color from the room, not from the surface.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top:18px">
+                    <button class="dock-btn primary" data-demo="quiz" type="button">Open the quiz card</button>
+                </div>
+            </section>
+
+            <!-- ══════════════════════════════════════════════
+                 TOKENS
+                 ══════════════════════════════════════════════ -->
+            <section>
+                <h2>Tokens <span class="file">tokens.css</span></h2>
+                <p class="note">
+                    Change a value here and every lab moves together — which is the only reason a kit is worth having.
+                    Do not redeclare these in a lab’s own stylesheet.
+                </p>
+                <div class="board" id="tokens"></div>
+            </section>
+
+        </div>
+
+        <!-- ══ the live demo cursor ══
+             Positioned in viewport space (`fixed`), which is what a demo
+             driving DOM controls needs. The pixel art is injected by
+             gallery.js, from the same source as the specimens above. -->
+        <div id="demo-cursor" class="fixed"></div>
+
+        <!-- ══ the layers, shared by the whole page ══ -->
+        <div id="read-layer">
+            <div id="read-card" role="dialog" aria-modal="true" aria-labelledby="read-title">
+                <div id="read-step"></div>
+                <h2 id="read-title"></h2>
+                <div id="read-body"></div>
+                <button id="btn-read-go" type="button"></button>
+                <div id="read-hint"><kbd>Space</kbd> or click to continue</div>
+            </div>
+        </div>
+
+        <div id="choice-layer" class="choice-layer" role="dialog" aria-modal="true" aria-labelledby="choice-title">
+            <div class="choice-card">
+                <h2 id="choice-title"></h2>
+                <p id="choice-body"></p>
+                <div class="choice-actions">
+                    <button id="btn-choice-primary" class="dock-btn primary" type="button"></button>
+                    <button id="btn-choice-secondary" class="dock-btn" type="button"></button>
+                </div>
+            </div>
+        </div>
+
+        <div id="quiz-card" role="dialog" aria-modal="true" aria-labelledby="quiz-title"
+            style="position:fixed;top:12vh;max-height:70vh">
+            <div class="quiz-head">
+                <h2 id="quiz-title">Check what you learned</h2>
+                <span id="quiz-tally"></span>
+            </div>
+            <div id="quiz-list"></div>
+        </div>
+    </div>
+
+    <script type="module" src="js/gallery.js"></script>
+</body>
+
+</html>

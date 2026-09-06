@@ -1,0 +1,356 @@
+/* ══════════════════════════════════════════════════════════════════════
+   THE CONSOLE  (default step surface)
+
+   One bar across the whole bottom of the screen: the step's words on the
+   left, the controls that step unlocked on the right.
+
+   It takes the full width on purpose. The earlier design floated a small
+   caption card in the bottom-left and a control card in the bottom-center.
+   On a laptop that reads fine; on a 27" display they are two islands in an
+   ocean of gray and the student's eye never goes near them. One bar with a
+   shared edge fixes that without making anything bigger than it needs to be.
+
+   Pair with panel.css instead if a lab needs the canvas edge-to-edge and can
+   afford a small floating card (see Navigate + Transform).
+   ══════════════════════════════════════════════════════════════════════ */
+
+#console {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 60;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(16px, 2.4vw, 44px);
+    padding: clamp(14px, 2.1vmin, 24px) clamp(20px, 3vw, 44px)
+        calc(clamp(14px, 2.1vmin, 24px) + env(safe-area-inset-bottom, 0px));
+    /* Solid, not translucent: a backdrop-filter across the full width forces a
+       recomposite of the whole bar every frame the 3D scene moves behind it,
+       which is the main source of jank during a camera sweep. */
+    background: var(--surface);
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.06), 0 -4px 12px rgba(0, 0, 0, 0.03);
+}
+
+/* Two columns only when there are controls to put in the second one. On an
+   intro or a quiz step the words get the whole bar. Toggled by
+   kit/js/controls.js `revealControls`. */
+#console.has-dock {
+    grid-template-columns: minmax(260px, 30%) 1fr;
+}
+
+#console:not(.has-dock) #panel {
+    max-width: 940px;
+    margin-inline: auto;
+    width: 100%;
+}
+
+/* ── the Watch / Your turn rule ──
+   The panel layout draws its mode as a ring around a card. A full-width bar
+   cannot do that without drawing a box around the whole screen, so the same
+   two colors become a rule along its top edge. */
+#console::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: transparent;
+    transition: background .4s ease;
+}
+
+#console.panel-watching::before {
+    background: rgba(26, 26, 46, .55);
+}
+
+#console.panel-interacting::before {
+    background: var(--orange);
+}
+
+#console.panel-celebrate::before {
+    background: linear-gradient(90deg, var(--orange), var(--orange-dark));
+}
+
+/* ── left: the step ── */
+#panel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+#cap-step {
+    font-family: var(--mono);
+    font-size: var(--fs-step);
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin: 0 0 4px;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity .4s ease, max-height .4s ease;
+}
+
+#cap-step.on {
+    opacity: 1;
+    max-height: 24px;
+}
+
+#cap-title {
+    font-size: var(--fs-title);
+    font-weight: 500;
+    color: #111;
+    line-height: 1.25;
+    letter-spacing: -.02em;
+    margin: 0 0 4px;
+    opacity: 0;
+    transition: opacity .45s ease;
+}
+
+#cap-body {
+    max-width: 58ch;
+    font-size: var(--fs-body);
+    font-weight: 300;
+    color: #555;
+    line-height: 1.58;
+    opacity: 0;
+    transition: opacity .45s ease .06s;
+}
+
+#cap-title.on,
+#cap-body.on {
+    opacity: 1;
+}
+
+/* Bold inside caption copy is the one emphasis available. It marks the action
+   the student is being asked to take - not a technical term. */
+#cap-body b {
+    color: #222;
+    font-weight: 400;
+}
+
+/* axis-colored words in caption copy */
+#cap-body .cx { color: var(--axis-x); font-weight: 400; }
+#cap-body .cy { color: var(--axis-y); font-weight: 400; }
+#cap-body .cz { color: var(--axis-z); font-weight: 400; }
+
+/* ══════════════════════════════════════════════
+   FOOTER
+   ══════════════════════════════════════════════ */
+.panel-footer {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 10px;
+}
+
+.continue-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+    margin-left: auto;
+}
+
+#btn-continue {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: var(--pad-btn);
+    background: var(--orange);
+    border: none;
+    border-radius: 7px;
+    font-family: var(--font);
+    font-size: var(--fs-btn);
+    font-weight: 500;
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform .15s ease, background .15s, opacity .15s ease;
+}
+
+#btn-continue.on {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    animation: riseIn .45s cubic-bezier(.34, 1.3, .64, 1) backwards;
+}
+
+#btn-continue:hover {
+    background: var(--orange-dark);
+    transform: translateY(-1px);
+}
+
+#kbd-hint {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--green);
+    opacity: 0;
+    visibility: hidden;
+}
+
+#kbd-hint.on {
+    opacity: 1;
+    visibility: visible;
+    animation: riseIn .45s ease .1s backwards;
+}
+
+kbd {
+    display: inline-block;
+    background: rgba(0, 0, 0, .05);
+    border: 1px solid rgba(0, 0, 0, .12);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--green);
+}
+
+#btn-finish {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: var(--pad-btn);
+    background: var(--dark);
+    border: none;
+    border-radius: 7px;
+    font-family: var(--font);
+    font-size: var(--fs-btn);
+    font-weight: 500;
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: background .2s, transform .15s;
+}
+
+#btn-finish.on {
+    display: inline-flex;
+}
+
+#btn-finish:hover {
+    background: var(--orange);
+    transform: translateY(-2px);
+}
+
+#btn-finish svg {
+    opacity: .8;
+}
+
+/* ── celebration ──
+   The last beat. The gradient on the title is the reward; nothing else about
+   the layout changes, so the student is not suddenly somewhere new. */
+#console.panel-celebrate #cap-title,
+#panel.panel-celebrate #cap-title {
+    background: linear-gradient(120deg, var(--orange), var(--orange-dark));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: clamp(19px, 2.5vmin, 26px);
+}
+
+.cap-celebrate-icon {
+    display: inline-block;
+    margin-right: 6px;
+    -webkit-text-fill-color: initial;
+    animation: celebPop .55s cubic-bezier(.34, 1.56, .64, 1) both;
+}
+
+@keyframes celebPop {
+    0% {
+        transform: scale(0) rotate(-10deg);
+        opacity: 0;
+    }
+
+    60% {
+        transform: scale(1.15) rotate(4deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+/* ── take-away callout ──
+   An offer that appears inside the panel at the end of a lab (save a picture,
+   download a file). Orange-tinted so it reads as a reward, not a next step. */
+.panel-offer {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 14px;
+    padding: 13px 14px;
+    border: 1px solid rgba(255, 144, 34, .28);
+    border-radius: 11px;
+    background: rgba(255, 144, 34, .07);
+}
+
+.panel-offer.on {
+    display: flex;
+    animation: riseIn .4s ease backwards;
+}
+
+.panel-offer-title {
+    margin-bottom: 3px;
+    font-size: var(--fs-ui);
+    font-weight: 600;
+    color: var(--dark);
+}
+
+.panel-offer-copy {
+    font-size: var(--fs-fine);
+    line-height: 1.4;
+    color: var(--muted);
+}
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════ */
+@media (max-width: 1080px) {
+    #console.has-dock {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    #dock {
+        padding-left: 0;
+        border-left: none;
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+        padding-top: 12px;
+    }
+}
+
+@media (max-width: 760px) {
+    #console {
+        max-height: 62vh;
+        overflow-y: auto;
+    }
+
+    .panel-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .continue-side {
+        align-items: stretch;
+        margin-left: 0;
+    }
+
+    #btn-continue {
+        justify-content: center;
+    }
+}

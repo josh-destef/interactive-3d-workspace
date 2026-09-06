@@ -1,0 +1,381 @@
+/* ══════════════════════════════════════════════════════════════════════
+   ASSESSMENT
+   The two things a lab uses to find out whether it worked: the scoreboard
+   that grades a match against a reference, and the closing quiz.
+
+   Both follow the same rule: a wrong answer is never punished and nothing is
+   scored out of anything. What teaches is the sentence that appears
+   underneath saying why - so that sentence is the part with the emphasis,
+   the color and the space.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════
+   SCOREBOARD
+   Sits inside the dock, directly above the controls that produced it, so the
+   feedback and the controls it refers to read as one object.
+   ══════════════════════════════════════════════ */
+.scoreboard {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+}
+
+.scoreboard.on {
+    display: flex;
+}
+
+.scoreboard.bump {
+    animation: riseIn .4s cubic-bezier(.34, 1.3, .64, 1) backwards;
+}
+
+.sb-head {
+    display: none;
+    align-items: center;
+    gap: 20px;
+}
+
+/* The score only exists once a check has been pressed. A hint asked for
+   before that opens the panel without one. */
+.scoreboard.scored .sb-head {
+    display: flex;
+}
+
+.sb-score {
+    display: flex;
+    align-items: baseline;
+    font-family: var(--mono);
+    font-size: clamp(24px, 3.2vmin, 34px);
+    font-weight: 400;
+    line-height: 1;
+    color: var(--dark);
+}
+
+.sb-pct-sign {
+    margin-left: 2px;
+    font-size: .5em;
+    color: var(--muted);
+}
+
+.scoreboard.pass .sb-score {
+    color: var(--green);
+}
+
+.sb-rows {
+    display: grid;
+    flex: 1;
+    gap: 5px;
+    min-width: 180px;
+    max-width: 340px;
+}
+
+.sb-row {
+    display: grid;
+    grid-template-columns: 74px 1fr;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--fs-fine);
+    color: var(--muted);
+}
+
+.sb-bar {
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, .07);
+    overflow: hidden;
+}
+
+.sb-bar i {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--orange);
+    transition: width .5s cubic-bezier(.4, 0, .2, 1);
+}
+
+.scoreboard.pass .sb-bar i {
+    background: var(--green);
+}
+
+.sb-note {
+    max-width: 640px;
+    font-size: var(--fs-ui);
+    font-weight: 300;
+    line-height: 1.6;
+    color: #555;
+}
+
+.sb-note b {
+    font-weight: 500;
+    color: #222;
+}
+
+.scoreboard.pass .sb-note b {
+    color: var(--green);
+}
+
+/* ── hints ──
+   Their own block under the per-check note, so asking for a hint and then
+   checking again does not wipe the help away. Blue rather than the system's
+   orange: a hint is a different kind of message from a score. */
+.sb-hint {
+    display: none;
+    max-width: 640px;
+    padding: 9px 13px;
+    border-left: 3px solid rgba(58, 111, 168, .5);
+    border-radius: 0 8px 8px 0;
+    background: rgba(58, 111, 168, .07);
+    font-size: var(--fs-ui);
+    font-weight: 300;
+    line-height: 1.6;
+    color: #4a5666;
+}
+
+.sb-hint.on {
+    display: block;
+    animation: riseIn .4s cubic-bezier(.34, 1.3, .64, 1) backwards;
+}
+
+.sb-hint b {
+    font-weight: 500;
+    color: #2f4d70;
+}
+
+/* ── the reveal ──
+   The reference's real numbers beside the student's, shown once they have
+   matched it. Mono, because these are the values they would type into any
+   other 3D app. */
+.sb-reveal {
+    display: none;
+    flex-direction: column;
+    gap: 3px;
+    max-width: 420px;
+    padding: 10px 13px;
+    border-radius: 9px;
+    background: rgba(0, 170, 0, .06);
+}
+
+.sb-reveal.on {
+    display: flex;
+    animation: riseIn .45s cubic-bezier(.34, 1.3, .64, 1) .1s backwards;
+}
+
+.sbv-row {
+    display: grid;
+    grid-template-columns: 82px 1fr 1fr;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: var(--fs-fine);
+    color: #3f5340;
+}
+
+.sbv-row > span:first-child {
+    font-family: var(--font);
+    font-weight: 400;
+    color: var(--muted);
+}
+
+.sbv-head {
+    margin-bottom: 3px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid rgba(0, 170, 0, .18);
+    font-family: var(--font);
+    font-size: var(--fs-fine);
+    font-weight: 500;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.sbv-sw {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    margin-right: 6px;
+    vertical-align: -1px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, .18);
+}
+
+/* ══════════════════════════════════════════════
+   CHECK WHAT YOU LEARNED
+   The closing quiz. It floats over the canvas above the console rather than
+   replacing the screen, so the thing the questions are about is still there
+   to look at while answering.
+   ══════════════════════════════════════════════ */
+#quiz-card {
+    position: absolute;
+    left: 50%;
+    top: clamp(58px, 8vh, 96px);
+    transform: translateX(-50%);
+    z-index: 70;
+    display: none;
+    width: min(94vw, 760px);
+    max-height: calc(100vh - var(--console-h) - clamp(78px, 11vh, 128px));
+    overflow-y: auto;
+    padding: clamp(18px, 2.6vmin, 26px) clamp(20px, 3vmin, 32px);
+    background: var(--surface);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+#quiz-card.on {
+    display: block;
+    animation: riseIn .5s cubic-bezier(.34, 1.3, .64, 1) backwards;
+}
+
+.quiz-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 11px;
+    border-bottom: 1px solid var(--line);
+}
+
+.quiz-head h2 {
+    font-size: clamp(15px, 1.9vmin, 19px);
+    font-weight: 500;
+    letter-spacing: -.01em;
+    color: #111;
+}
+
+/* "answered", not "correct". The tally counts progress through the card, so
+   a student who got one wrong first is not being shown a running score. */
+#quiz-tally {
+    font-family: var(--mono);
+    font-size: var(--fs-fine);
+    letter-spacing: .06em;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+#quiz-tally.complete {
+    color: var(--green);
+}
+
+.quiz-q {
+    padding: 13px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, .05);
+}
+
+.quiz-q:last-child {
+    padding-bottom: 2px;
+    border-bottom: none;
+}
+
+.quiz-prompt {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: var(--fs-body);
+    font-weight: 400;
+    line-height: 1.5;
+    color: #222;
+}
+
+.quiz-num {
+    flex: 0 0 auto;
+    width: 21px;
+    height: 21px;
+    margin-top: 1px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, .06);
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 21px;
+    text-align: center;
+    color: var(--muted);
+    transition: background .3s, color .3s;
+}
+
+.quiz-q.solved .quiz-num {
+    background: var(--green);
+    color: #fff;
+}
+
+.quiz-opts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding-left: 31px;
+}
+
+.quiz-opt {
+    padding: 8px 14px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font-family: var(--font);
+    font-size: var(--fs-ui);
+    font-weight: 400;
+    text-align: left;
+    color: #444;
+    cursor: pointer;
+    transition: all .18s ease;
+}
+
+.quiz-opt:hover:not(:disabled) {
+    border-color: var(--orange);
+    color: #d66d08;
+    transform: translateY(-1px);
+}
+
+.quiz-opt.right {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+    font-weight: 500;
+}
+
+/* A wrong pick stays visible and struck through. Hiding it would let the card
+   be scrubbed back into a state where the student cannot see what they ruled
+   out, which is the part worth remembering. */
+.quiz-opt.wrong {
+    border-color: rgba(192, 69, 58, .5);
+    background: #fdf1ef;
+    color: #c0453a;
+    text-decoration: line-through;
+}
+
+.quiz-opt:disabled {
+    opacity: .5;
+    cursor: default;
+}
+
+.quiz-opt.right:disabled {
+    opacity: 1;
+}
+
+.quiz-opt:focus-visible {
+    outline: 3px solid rgba(255, 144, 34, .35);
+    outline-offset: 2px;
+}
+
+.quiz-why {
+    display: none;
+    margin: 10px 0 0 31px;
+    padding: 9px 13px;
+    border-left: 3px solid rgba(192, 69, 58, .45);
+    border-radius: 0 8px 8px 0;
+    background: rgba(192, 69, 58, .05);
+    font-size: var(--fs-ui);
+    font-weight: 300;
+    line-height: 1.6;
+    color: #555;
+}
+
+.quiz-why.on {
+    display: block;
+    animation: riseIn .35s ease backwards;
+}
+
+.quiz-why.right {
+    border-left-color: var(--green);
+    background: rgba(0, 170, 0, .06);
+}

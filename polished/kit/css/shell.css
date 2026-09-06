@@ -1,0 +1,577 @@
+/* ══════════════════════════════════════════════════════════════════════
+   SHELL
+   Everything that frames the canvas and never belongs to one lesson:
+   the canvas window, progress bar, Watch / Your turn badge, Replay pill,
+   loading screen, corner chrome, the floating hint, and the demo cursor.
+
+   These are the parts a student sees in every lab, so they are the parts
+   that must not drift between labs.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── canvas window ── */
+#canvas-wrap {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, #ffffff 0%, var(--page) 100%);
+    overflow: hidden;
+}
+
+#cv {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* ── progress bar ── */
+#prog {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    z-index: 20;
+    background: rgba(28, 27, 34, .08);
+}
+
+#prog-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--orange);
+    transition: width 1s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* ══════════════════════════════════════════════
+   MODE BADGE
+   The single most important piece of chrome in the whole system: it is the
+   only thing telling a student whether the screen is theirs to touch yet.
+
+   It is deliberately oversized. Watch blows up to 2.6x near the top of the
+   canvas and gets out of the way; Your turn snaps back down to a smaller,
+   pulsing orange pill. The size change, not the wording, is what reads from
+   across a classroom.
+   ══════════════════════════════════════════════ */
+#status-badge {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 18px;
+    border-radius: 24px;
+    font-family: var(--font);
+    font-size: var(--fs-ui);
+    font-weight: 600;
+    letter-spacing: .01em;
+    pointer-events: none;
+    opacity: 0;
+    white-space: nowrap;
+    transition: opacity .4s ease, background .4s, color .4s, box-shadow .4s,
+        transform .5s cubic-bezier(0.34, 1.56, 0.64, 1),
+        top .5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#status-badge.on {
+    opacity: 1;
+}
+
+#status-badge.watching {
+    background: rgba(26, 26, 46, .92);
+    color: #fff;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, .28);
+    transform: translateX(-50%) scale(2.6);
+    top: 10%;
+}
+
+#status-badge.interacting {
+    background: var(--orange);
+    color: #fff;
+    box-shadow: 0 10px 32px rgba(255, 144, 34, .55);
+    transform: translateX(-50%) scale(1.65);
+    top: 22px;
+}
+
+.badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: background .4s;
+}
+
+#status-badge.watching .badge-dot {
+    background: rgba(255, 255, 255, .4);
+}
+
+#status-badge.interacting .badge-dot {
+    background: rgba(255, 255, 255, .9);
+    animation: badge-pulse 1.3s infinite;
+}
+
+@keyframes badge-pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.7);
+        opacity: .5;
+    }
+}
+
+/* ── replay pill ──
+   Sits under the Your turn badge so a student who looked away during the demo
+   can re-watch it without restarting the step. */
+#btn-replay {
+    position: absolute;
+    top: 72px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.05);
+    font-family: var(--font);
+    font-size: var(--fs-ui);
+    font-weight: 600;
+    color: var(--dark);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .2s, border-color .2s, color .2s, transform .15s, box-shadow .2s;
+}
+
+#btn-replay.on {
+    display: inline-flex;
+    animation: replayIn .4s ease .55s backwards;
+}
+
+@keyframes replayIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+#btn-replay svg {
+    opacity: .75;
+}
+
+#btn-replay:hover {
+    color: var(--orange);
+    border-color: var(--orange);
+    box-shadow: 0 8px 22px rgba(255, 144, 34, 0.20), 0 1px 4px rgba(0, 0, 0, 0.06);
+    transform: translateX(-50%) translateY(-2px);
+}
+
+/* ── floating hint ──
+   A single line of mono text over the canvas, for a nudge that belongs to the
+   viewport rather than to the step ("try dragging further round"). Optional -
+   most labs put their words in the caption instead. */
+#hint {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    pointer-events: none;
+    padding: 5px 12px;
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 20px;
+    background: var(--dark);
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: .06em;
+    color: #fff;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity .6s ease;
+}
+
+#hint.on {
+    opacity: 1;
+}
+
+/* ── loading ── */
+#loading {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--dark);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 300;
+    color: rgba(255, 255, 255, .35);
+    letter-spacing: .1em;
+    transition: opacity .8s ease;
+}
+
+#loading.fade {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#loading.error {
+    color: #ff9a9a;
+}
+
+/* ══════════════════════════════════════════════
+   CORNER CHROME
+   ══════════════════════════════════════════════ */
+.home-btn {
+    position: fixed;
+    top: var(--edge);
+    left: var(--edge);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(23, 30, 53, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #fff;
+    text-decoration: none;
+    font-size: var(--fs-ui);
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.home-btn:hover {
+    background: rgba(23, 30, 53, 0.95);
+    border-color: var(--orange);
+    color: var(--orange);
+    transform: translateX(-4px);
+}
+
+.logo-top-right {
+    position: fixed;
+    top: var(--edge);
+    right: var(--edge);
+    z-index: 1000;
+    height: var(--logo-h);
+    width: auto;
+    object-fit: contain;
+    pointer-events: none;
+    opacity: 0.9;
+}
+
+/* ── utility buttons (Reset view, Reset subject) ──
+   Parked under the logo. The bottom band belongs to the console. */
+#util-bar {
+    position: absolute;
+    top: calc(var(--edge) + var(--logo-h) + 14px);
+    right: var(--edge);
+    z-index: 100;
+    display: flex;
+    gap: 8px;
+}
+
+/* Labs that only want the resets during the student's turn add `.on` through
+   ui.js `setMode`; labs that want them always visible can just leave this
+   rule out by not using the hidden variant. */
+#util-bar.hide-until-turn {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .4s ease;
+}
+
+#util-bar.hide-until-turn.on {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.util-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1.5px solid rgba(0, 0, 0, 0.12);
+    border-radius: 10px;
+    padding: clamp(8px, 1.2vmin, 11px) clamp(12px, 2vmin, 18px);
+    font-family: var(--font);
+    font-size: var(--fs-ui);
+    font-weight: 600;
+    color: #222;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.util-btn:hover {
+    border-color: var(--orange);
+    color: var(--orange);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(255, 144, 34, 0.22), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.util-btn svg {
+    opacity: .8;
+}
+
+/* Draw the eye to the util bar when a step calls it out (ui.js pulseUtilBar). */
+#util-bar.callout .util-btn {
+    animation: utilCallout 1.2s ease-in-out 3;
+    border-color: var(--orange);
+}
+
+@keyframes utilCallout {
+
+    0%,
+    100% {
+        transform: translateY(0);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10);
+    }
+
+    50% {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 30px rgba(255, 144, 34, 0.30);
+    }
+}
+
+/* ══════════════════════════════════════════════
+   DEMO CURSOR
+   The simulated pointer that drives a Watch demo.
+
+   The press glow says which mouse button is down, and nothing else:
+     orange - the left button
+     green  - the right button
+
+   It is the only thing that says the cursor acted rather than merely passed
+   over a control, and which button to hold is the one thing about a mouse a
+   beginner cannot guess, so the colour is spent on saying that.
+
+   Styled by class as well as by id so the kit's gallery can show the states
+   side by side; a lab still uses the single #demo-cursor.
+   ══════════════════════════════════════════════ */
+#demo-cursor,
+.demo-cursor {
+    position: absolute;
+    z-index: 400;
+    pointer-events: none;
+    display: flex;
+    align-items: flex-start;
+    opacity: 0;
+    transition: opacity .3s;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
+}
+
+/* Labs whose demos drive DOM controls (sliders, buttons) position the cursor
+   in viewport space instead of inside the canvas. */
+#demo-cursor.fixed {
+    position: fixed;
+}
+
+/* A specimen sits in the page rather than over it. */
+.demo-cursor.static {
+    position: relative;
+}
+
+#demo-cursor.on,
+.demo-cursor.on {
+    opacity: 1;
+}
+
+#cursor-arrow,
+.demo-cursor svg {
+    display: block;
+}
+
+/* left button */
+#demo-cursor.down,
+.demo-cursor.down {
+    filter: drop-shadow(0 0 5px rgba(255, 144, 34, 0.95)) drop-shadow(0 0 14px rgba(255, 144, 34, 0.55));
+}
+
+/* right button. `.click` is the same state under the older Material Lab name,
+   kept so either vocabulary works. */
+#demo-cursor.down.right,
+#demo-cursor.down.click,
+.demo-cursor.down.right,
+.demo-cursor.down.click {
+    filter: drop-shadow(0 0 5px rgba(0, 170, 0, 0.95)) drop-shadow(0 0 14px rgba(0, 170, 0, 0.55));
+}
+
+/* ── mouse diagram (kit/js/mouseDiagram.js) ──
+   A labelled mouse showing which button and which motion. Injected into a
+   caption body as an HTML string. */
+.mouse-rig {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    margin-top: 10px;
+}
+
+/* The SVG ships with fixed width/height attributes, but its viewBox lets CSS
+   resize it; height auto keeps the aspect ratio. */
+.mouse-rig svg {
+    width: clamp(52px, 7vmin, 74px);
+    height: auto;
+}
+
+.mouse-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .13em;
+    color: #9b9799;
+    text-transform: uppercase;
+}
+
+@keyframes arrBobUp {
+
+    0%,
+    100% {
+        transform: translateY(0);
+        opacity: .6;
+    }
+
+    50% {
+        transform: translateY(-5px);
+        opacity: 1;
+    }
+}
+
+@keyframes arrBobDown {
+
+    0%,
+    100% {
+        transform: translateY(0);
+        opacity: .6;
+    }
+
+    50% {
+        transform: translateY(5px);
+        opacity: 1;
+    }
+}
+
+@keyframes arrBobLeft {
+
+    0%,
+    100% {
+        transform: translateX(0);
+        opacity: .6;
+    }
+
+    50% {
+        transform: translateX(-5px);
+        opacity: 1;
+    }
+}
+
+@keyframes arrBobRight {
+
+    0%,
+    100% {
+        transform: translateX(0);
+        opacity: .6;
+    }
+
+    50% {
+        transform: translateX(5px);
+        opacity: 1;
+    }
+}
+
+@keyframes arrBobArcL {
+
+    0%,
+    100% {
+        transform: translateX(0);
+        opacity: .6;
+    }
+
+    50% {
+        transform: translateX(-4px);
+        opacity: 1;
+    }
+}
+
+@keyframes arrBobArcR {
+
+    0%,
+    100% {
+        transform: translateX(0);
+        opacity: .6;
+    }
+
+    50% {
+        transform: translateX(4px);
+        opacity: 1;
+    }
+}
+
+.arr-up,
+.arr-down,
+.arr-left,
+.arr-right,
+.arr-arc-l,
+.arr-arc-r {
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.arr-up { animation: arrBobUp 1.4s ease-in-out infinite; }
+.arr-down { animation: arrBobDown 1.4s ease-in-out infinite .7s; }
+.arr-left { animation: arrBobLeft 1.4s ease-in-out infinite; }
+.arr-right { animation: arrBobRight 1.4s ease-in-out infinite .7s; }
+.arr-arc-l { animation: arrBobArcL 1.6s ease-in-out infinite; }
+.arr-arc-r { animation: arrBobArcR 1.6s ease-in-out infinite .8s; }
+
+/* ── model labels ──
+   Names pinned over objects in the scene, positioned each frame by the lab
+   (project a world point, write left/top). Used wherever two things must be
+   told apart: a reference next to the student's work, a parent next to a child. */
+.model-label {
+    position: absolute;
+    z-index: 40;
+    transform: translate(-50%, -100%);
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .9);
+    border: 1px solid rgba(0, 0, 0, .07);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .08);
+    font-family: var(--mono);
+    font-size: var(--fs-fine);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #4a4a55;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .4s ease;
+}
+
+.model-label.on {
+    opacity: 1;
+}
+
+/* the student's own object, so it reads as theirs at a glance */
+.model-label.mine {
+    color: var(--orange);
+    border-color: rgba(255, 144, 34, .35);
+}

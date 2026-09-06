@@ -1,0 +1,464 @@
+/* ══════════════════════════════════════════════════════════════════════
+   THE DOCK
+   The controls half of the console: sliders, swatches, segmented toggles,
+   example chips and buttons.
+
+   The organising rule is that a control arrives with the step that teaches
+   it and never before. A dock full of controls on step one is a dock the
+   student has to ignore; each `.ctl` block is hidden until
+   `revealControls([...])` names its data-group.
+   ══════════════════════════════════════════════════════════════════════ */
+
+#dock {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+    min-width: 0;
+    padding-left: clamp(16px, 2.4vw, 44px);
+    border-left: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+#dock.on {
+    display: flex;
+}
+
+/* Controls stay visible but stop responding while a demo drives them. */
+#dock.locked {
+    pointer-events: none;
+}
+
+.dock-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    /* Grows rightward from the divider rather than centering: a single control
+       centered in a half-screen-wide column reads as lost, and every later step
+       adds another to the right of it, so nothing jumps sideways when a new
+       control is revealed. */
+    justify-content: flex-start;
+    gap: clamp(14px, 2vw, 30px) clamp(16px, 2.4vw, 34px);
+}
+
+.ctl {
+    display: none;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.ctl.on {
+    display: flex;
+    animation: riseIn .45s cubic-bezier(.34, 1.3, .64, 1) backwards;
+}
+
+/* a group of buttons sits side by side rather than stacked */
+.ctl.ctl-inline.on {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Draw the eye to a control the caption named but did not demo. */
+.ctl.flash {
+    animation: ctlFlash 1.1s cubic-bezier(.34, 1.56, .64, 1) 2;
+}
+
+@keyframes ctlFlash {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    45% {
+        transform: translateY(-5px);
+    }
+}
+
+.ctl-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    font-size: var(--fs-ui);
+    font-weight: 500;
+    color: #333;
+    letter-spacing: -.01em;
+}
+
+.ctl-val {
+    font-family: var(--mono);
+    font-size: var(--fs-fine);
+    color: var(--muted);
+}
+
+/* ── the two ends of a slider, named in words ──
+   "0.94" means nothing to a beginner; "chalky" does. That is the difference
+   between a control they can guess at and one they have to be told about.
+   Every slider in the kit gets a pair.
+
+   Same --ctl-w as the slider itself: the words name the ends of the track, so
+   they have to sit at the ends of the track. */
+.ctl-ends {
+    width: var(--ctl-w);
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    font-family: var(--font);
+    font-size: var(--fs-fine);
+    color: #a4a4ac;
+    line-height: 1.3;
+}
+
+.ctl-ends span {
+    flex: 1;
+}
+
+.ctl-ends span:last-child {
+    text-align: right;
+}
+
+/* ══════════════════════════════════════════════
+   SLIDERS
+   Custom track so the filled portion reads as how far along the value is.
+   --fill is written by kit/js/controls.js `paintSlider` on every change;
+   --track recolors one slider (the RGB rows use it).
+   ══════════════════════════════════════════════ */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: var(--ctl-w);
+    height: 18px;
+    background: transparent;
+    cursor: pointer;
+    --fill: 50%;
+    --track: var(--orange);
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+    height: 5px;
+    border-radius: 99px;
+    background: linear-gradient(to right,
+            var(--track) 0 var(--fill), rgba(0, 0, 0, .11) var(--fill) 100%);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    margin-top: -5.5px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--track);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .22);
+}
+
+input[type="range"]::-moz-range-track {
+    height: 5px;
+    border-radius: 99px;
+    background: rgba(0, 0, 0, .11);
+}
+
+input[type="range"]::-moz-range-progress {
+    height: 5px;
+    border-radius: 99px;
+    background: var(--track);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--track);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .22);
+}
+
+input[type="range"]:focus-visible {
+    outline: 3px solid rgba(255, 144, 34, .35);
+    outline-offset: 4px;
+    border-radius: 99px;
+}
+
+/* A slider kept only so a control driven by a custom widget (a dial, a 3D
+   handle) stays keyboard reachable. Visually hidden, still focusable. */
+.keyboard-only-control {
+    position: absolute;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.keyboard-only-control:focus-visible {
+    position: static;
+    width: auto !important;
+    height: auto !important;
+    clip: auto;
+}
+
+/* ══════════════════════════════════════════════
+   SWATCHES
+   Six across, two rows: keeps the block about as tall as a slider control so
+   the dock row stays one clean height instead of stepping up.
+   ══════════════════════════════════════════════ */
+.swatches {
+    display: grid;
+    grid-template-columns: repeat(6, auto);
+    gap: 7px;
+}
+
+.swatch {
+    width: clamp(21px, 2.7vmin, 27px);
+    height: clamp(21px, 2.7vmin, 27px);
+    padding: 0;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px var(--line);
+    cursor: pointer;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.swatch:hover {
+    transform: translateY(-2px);
+}
+
+.swatch.active {
+    box-shadow: 0 0 0 2px var(--dark);
+}
+
+.swatch:focus-visible {
+    outline: 3px solid rgba(255, 144, 34, .35);
+    outline-offset: 2px;
+}
+
+/* ══════════════════════════════════════════════
+   SEGMENTED TOGGLE
+   Two or more mutually exclusive options. State lives in aria-pressed, not a
+   class, so the control is correct to a screen reader as well as to the eye.
+   ══════════════════════════════════════════════ */
+.seg {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    padding: 3px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: rgba(0, 0, 0, .03);
+}
+
+.seg button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 13px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    font-family: var(--font);
+    font-size: var(--fs-fine);
+    font-weight: 500;
+    color: #555;
+    cursor: pointer;
+    transition: background .18s, color .18s;
+}
+
+.seg button:hover[aria-pressed="false"] {
+    background: rgba(0, 0, 0, .05);
+    color: var(--dark);
+}
+
+.seg button[aria-pressed="true"] {
+    background: var(--dark);
+    color: #fff;
+}
+
+.seg button:focus-visible {
+    outline: 3px solid rgba(255, 144, 34, .35);
+    outline-offset: 1px;
+}
+
+/* a color dot inside a segmented option */
+.seg i {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--swatch, #fff);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, .15);
+}
+
+/* ══════════════════════════════════════════════
+   EXAMPLE CHIPS
+   Named presets a student can try against what they built. Always optional,
+   always reversible - they are a comparison, not an answer.
+   ══════════════════════════════════════════════ */
+.examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-width: clamp(220px, 26vw, 360px);
+}
+
+.example {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 11px 6px 7px;
+    border: 1px solid var(--line);
+    border-radius: 99px;
+    background: #fff;
+    font-family: var(--font);
+    font-size: var(--fs-fine);
+    font-weight: 500;
+    color: #444;
+    cursor: pointer;
+    transition: border-color .18s, color .18s, transform .15s;
+}
+
+.example:hover {
+    border-color: var(--orange);
+    color: var(--orange);
+    transform: translateY(-2px);
+}
+
+.example.active {
+    border-color: var(--dark);
+    color: var(--dark);
+}
+
+.example-ball {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    box-shadow: inset -2px -2px 4px rgba(0, 0, 0, .3), 0 0 0 1px rgba(0, 0, 0, .1);
+}
+
+/* ══════════════════════════════════════════════
+   DOCK BUTTONS
+   ══════════════════════════════════════════════ */
+.dock-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: clamp(9px, 1.3vmin, 12px) clamp(15px, 2.4vmin, 21px);
+    border: 1.5px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    font-family: var(--font);
+    font-size: var(--fs-ui);
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color .18s, color .18s, background .18s, transform .15s;
+}
+
+.dock-btn:hover {
+    border-color: var(--orange);
+    color: var(--orange);
+    transform: translateY(-2px);
+}
+
+.dock-btn.primary {
+    background: var(--orange);
+    border-color: var(--orange);
+    color: #fff;
+}
+
+.dock-btn.primary:hover {
+    background: var(--orange-dark);
+    border-color: var(--orange-dark);
+    color: #fff;
+}
+
+.dock-btn:focus-visible {
+    outline: 3px solid rgba(255, 144, 34, .35);
+    outline-offset: 2px;
+}
+
+/* Out of hints: the button stays put rather than disappearing, so the row
+   does not reflow underneath the student's hand. */
+.dock-btn:disabled {
+    opacity: .45;
+    cursor: default;
+}
+
+.dock-btn:disabled:hover {
+    border-color: var(--line);
+    color: #333;
+    transform: none;
+}
+
+/* ══════════════════════════════════════════════
+   RGB ROWS
+   Three channel sliders, each in its own channel color. Used wherever a lab
+   teaches color mixing rather than color picking.
+   ══════════════════════════════════════════════ */
+.rgb-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.rgb-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 9px;
+}
+
+.rgb-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: var(--fs-fine);
+    color: #555;
+}
+
+.rgb-row label b {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    font-family: var(--mono);
+    font-weight: 500;
+}
+
+.rgb-row input[type="range"] {
+    width: clamp(110px, 12vw, 170px);
+}
+
+.rgb-val {
+    min-width: 3ch;
+    font-family: var(--mono);
+    font-size: var(--fs-fine);
+    color: var(--muted);
+    text-align: right;
+}
+
+.rgb-row[data-ch="r"] input[type="range"] { --track: var(--ch-r); }
+.rgb-row[data-ch="g"] input[type="range"] { --track: var(--ch-g); }
+.rgb-row[data-ch="b"] input[type="range"] { --track: var(--ch-b); }
+
+.rgb-row[data-ch="r"] label b { color: var(--ch-r); }
+.rgb-row[data-ch="g"] label b { color: var(--ch-g); }
+.rgb-row[data-ch="b"] label b { color: var(--ch-b); }
+
+/* the mixed result, next to the control that mixes it */
+.rgb-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rgb-chip i {
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px var(--line);
+}

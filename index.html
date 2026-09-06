@@ -406,6 +406,47 @@
       background: #3a6fa8;
     }
 
+    /* ── builder tier ──
+       Not a lesson. These are the pieces the labs are made of, so the cards
+       are deliberately drawn as a blueprint rather than as another thing to
+       click through: same shape, different material. */
+    .section-heading.tier-build {
+      border-bottom-color: rgba(23, 30, 53, 0.28);
+    }
+
+    .status-pill.build {
+      color: #fff;
+      background: var(--header-bg);
+    }
+
+    .card-header.build {
+      background: #171e35;
+    }
+
+    .card-header.build::before {
+      background:
+        linear-gradient(90deg, transparent 48%, rgba(255, 218, 34, 0.16) 50%, transparent 52%),
+        linear-gradient(transparent 48%, rgba(255, 218, 34, 0.16) 50%, transparent 52%);
+      background-size: 24px 24px;
+      opacity: 0.85;
+    }
+
+    .build .visual {
+      color: var(--accent-yellow);
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 218, 34, 0.32);
+      font-size: 1.6rem;
+    }
+
+    .build .card-number {
+      color: rgba(255, 255, 255, 0.45);
+    }
+
+    .build-tag {
+      color: #fff;
+      background: var(--header-bg);
+    }
+
     @media (max-width: 600px) {
       body {
         padding: 2.5rem 1rem;
@@ -951,6 +992,37 @@
           <h2 class="card-title">Feel the Controls</h2>
           <p class="card-desc">Tune acceleration, braking, steering, grip, jump arcs, camera response, and impact feedback as independent layers of game feel.</p>
           <div class="card-tags"><span class="tag new-tag">course</span><span class="tag">game feel</span><span class="tag">movement</span></div>
+        </div>
+      </a>
+    </div>
+
+    <div class="section-heading tier-build">
+      <h2 class="section-title">Building Blocks<span class="status-pill build">internal</span></h2>
+      <span class="section-kicker">The shared shell every guided lab is made from</span>
+    </div>
+
+    <div class="grid short-row">
+      <a href="polished/kit/" class="card">
+        <div class="card-header build">
+          <span class="card-number">KIT</span>
+          <span class="visual">◧</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">The Lab Kit</h2>
+          <p class="card-desc">Every shared element live on one page &mdash; a working miniature of the lab shell, plus the controls, cards, quiz, mouse diagrams and colour tokens. Open it after any change and drift shows up immediately.</p>
+          <div class="card-tags"><span class="tag build-tag">reference</span><span class="tag">components</span><span class="tag">tokens</span></div>
+        </div>
+      </a>
+
+      <a href="polished/kit/template/" class="card">
+        <div class="card-header build">
+          <span class="card-number">TEMPLATE</span>
+          <span class="visual">▤</span>
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Starter Lab</h2>
+          <p class="card-desc">A runnable three-beat lesson with the Read &rarr; Watch &rarr; Do rhythm, a worked demo, exploration gates and an exit check already wired. Copy this folder to start a new module.</p>
+          <div class="card-tags"><span class="tag build-tag">starter</span><span class="tag">beats</span><span class="tag">copy me</span></div>
         </div>
       </a>
     </div>

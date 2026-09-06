@@ -1,0 +1,19 @@
+/* ══════════════════════════════════════════════════════════════════════
+   THIS LAB'S OWN CSS
+
+   Almost everything is already in the kit. What belongs here is only what is
+   genuinely particular to this lesson: a custom widget, a diagram, a control
+   the kit has no shape for.
+
+   What does NOT belong here:
+     - redeclaring a token. Change it in kit/css/tokens.css so every lab moves.
+     - a second copy of a kit component with one value changed. Either the kit
+       is wrong (fix it there) or the difference is the lab's, and it belongs
+       in a class of its own on top of the kit's.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Example: this lab's caption mentions the subject by name in orange. */
+#cap-body .subject {
+    color: var(--orange);
+    font-weight: 400;
+}

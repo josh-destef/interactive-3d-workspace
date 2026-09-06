@@ -10,6 +10,8 @@ out to every lab, and each module lives in its own folder under `labs/`.
 ```
 index.html                      landing page (markup + inline CSS)
 assets/                         landing page card art
+kit/                            the shared shell: tokens, components, the beat
+                                runner, and a runnable starter lab
 labs/
   navigate-and-transform/       Navigate + Transform lab
   material-lab/                 Material Lab (colour, RGB, roughness, metalness,
@@ -44,6 +46,23 @@ Each lab folder is self-contained — its own `index.html`, `css/`, `js/` and
 opened, edited or lifted out on its own without a build step deciding what it
 depends on.
 
+## The kit
+
+That duplication is fine for five labs and a problem at ten, so the shell those
+labs converged on now lives once, in [`kit/`](kit/): the tokens, the chrome, the
+Read card, the console, the controls, the quiz, and the beat runner that gives
+every step its Read → Watch → Do rhythm.
+
+- [`kit/index.html`](kit/) renders every element on one page, so drift shows up
+  immediately rather than three labs later.
+- [`kit/template/`](kit/template/) is a runnable three-beat lab. **Copy this to
+  start a new module**, not an existing lab.
+- [`kit/README.md`](kit/README.md) covers what is in it and the rules it
+  encodes.
+
+The five existing labs still carry their own copies and are not wired to the
+kit — they are finished, working lessons. Migrating one is its own change.
+
 ## Run it
 
 No build step. Modules use ES modules and load `.glb` assets, so open it through
@@ -73,9 +92,10 @@ node ../scripts/qa-polished-curriculum.mjs
 
 ## Adding a module
 
-1. Drop the module in `labs/<module-name>/` with its own `index.html` and
-   relative `css/`, `js/`, `assets/` paths. Use one of the rebuilt labs as the
-   reference for the Read/Watch/Do rhythm, single-action panels and exit check.
+1. Copy `kit/template/` to `labs/<module-name>/` and work through the order in
+   [`kit/README.md`](kit/README.md) — copy first, beat map and words next, then
+   the subject and the controls. It arrives with the Read/Watch/Do rhythm,
+   single-action panels and the exit check already wired.
 2. Add card art to `assets/`, sized 800x520 (an SVG poster or a screenshot).
 3. Copy a `.card` block in the root `index.html` and point `href` at
    `labs/<module-name>/`.

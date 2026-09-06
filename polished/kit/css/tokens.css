@@ -1,0 +1,129 @@
+/* ══════════════════════════════════════════════════════════════════════
+   TOKENS
+   Colors, type scale and the reset every lab starts from.
+
+   The scale is fluid on `vmin`, not `vw`: a lab is a single non-scrolling
+   screen, so the chrome has to shrink on short displays as well as narrow
+   ones. Each size clamps at both ends, and the mid-range is calibrated to
+   land on the original desktop sizes.
+
+   Change a value here and every lab moves together. That is the point - do
+   not redeclare these in a lab's own stylesheet.
+   ══════════════════════════════════════════════════════════════════════ */
+
+:root {
+    /* ── brand ── */
+    --orange: #FF9022;
+    --orange-dark: #e07010;
+    --green: #00AA00;
+    --dark: #1a1a2e;
+    --muted: #7c7c85;
+    --line: rgba(0, 0, 0, 0.10);
+
+    /* ── surfaces ── */
+    --surface: #fbfbfa;
+    --page: #efefed;
+
+    /* ── axis colors (2D UI) ──
+       X red, Y green, Z blue, the industry convention. Kept a touch darker
+       than a scene's 3D axis colors so they stay legible on a light panel. */
+    --axis-x: #c0453a;
+    --axis-y: #267326;
+    --axis-z: #3a6fa8;
+
+    /* ── RGB channel colors (color-mixing labs) ── */
+    --ch-r: #e53e3e;
+    --ch-g: #19a35b;
+    --ch-b: #3478d4;
+
+    /* ── type ── */
+    --font: 'Lexend', sans-serif;
+    --mono: 'DM Mono', monospace;
+
+    /* ── fluid scale ── */
+    --edge: clamp(12px, 2.5vmin, 28px);
+    --logo-h: clamp(22px, 3.4vmin, 34px);
+    --fs-step: clamp(10px, 1.2vmin, 12px);
+    --fs-title: clamp(16px, 2.1vmin, 23px);
+    --fs-body: clamp(13px, 1.65vmin, 16px);
+    --fs-btn: clamp(13px, 1.7vmin, 16px);
+    --fs-ui: clamp(12px, 1.45vmin, 14.5px);
+    --fs-fine: clamp(10px, 1.15vmin, 11.5px);
+    --pad-btn: clamp(10px, 1.4vmin, 13px) clamp(18px, 3vmin, 26px);
+
+    /* One width for a slider and the two words naming its ends, so the labels
+       line up with the ends of the track instead of overhanging it. */
+    --ctl-w: clamp(150px, 16vw, 215px);
+
+    /* ── panel-layout only (see panel.css) ── */
+    --panel-w: clamp(300px, 34vw, 460px);
+    --pad-panel: clamp(16px, 2.2vmin, 24px) clamp(22px, 3.8vmin, 40px);
+    --gap-panel: clamp(10px, 1.7vmin, 18px);
+
+    /* ── live measurements ──
+       Written by a ResizeObserver in the lab's main.js (see kit/js/ui.js
+       `trackSurfaceHeight`). The values here are pre-measure fallbacks only. */
+    --console-h: 180px;
+    --panel-h: 148px;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--page);
+    font-family: var(--font);
+}
+
+#app {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* The real pointer is hidden for the length of a Watch demo, so there is only
+   ever one cursor on screen for the student to follow. */
+#app.demo-running,
+#app.demo-running * {
+    cursor: none !important;
+}
+
+/* ── shared entrance ──
+   Used by every element that arrives mid-lesson. 'backwards' not 'both', so
+   the finished animation releases `transform` and hover lifts still work. */
+@keyframes riseIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Anyone who has asked for less motion gets the lesson without the flourishes.
+   Transitions stay - they are what makes a state change readable - but the
+   looping and springing animations stop. */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .12s !important;
+        scroll-behavior: auto !important;
+    }
+}
