@@ -19,12 +19,13 @@ export const BEAT = {
     LIGHT: 8,
     EMISSIVE: 9,
     BODY_GLOW: 10,
-    CHALLENGE: 11,
-    RGB_CHALLENGE_OFFER: 12,
-    RGB_CHALLENGE: 13,
-    DONE: 14,
+    PHOTO: 11,
+    CHALLENGE: 12,
+    RGB_CHALLENGE_OFFER: 13,
+    RGB_CHALLENGE: 14,
+    DONE: 15,
 };
-export const TOTAL_BEATS = 15;
+export const TOTAL_BEATS = 16;
 export const NUMBERED_STEPS = 6;
 
 /* the subject sits here; every camera preset looks at it */

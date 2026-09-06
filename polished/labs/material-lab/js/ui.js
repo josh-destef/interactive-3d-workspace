@@ -184,17 +184,22 @@ export function setProgress(idx) {
         [BEAT.LIGHT]: 58,
         [BEAT.EMISSIVE]: 70,
         [BEAT.BODY_GLOW]: 80,
-        [BEAT.CHALLENGE]: 90,
-        [BEAT.RGB_CHALLENGE_OFFER]: 92,
-        [BEAT.RGB_CHALLENGE]: 96,
+        [BEAT.PHOTO]: 86,
+        [BEAT.CHALLENGE]: 92,
+        [BEAT.RGB_CHALLENGE_OFFER]: 94,
+        [BEAT.RGB_CHALLENGE]: 97,
         [BEAT.DONE]: 100,
     };
     const pct = pctByBeat[idx] ?? (idx <= 0 ? 0 : (idx / (TOTAL_BEATS - 1)) * 100);
     document.getElementById('prog-fill').style.width = pct + '%';
 }
 
+export function showSaveGizmo() {
+    tog('save-gizmo', true);
+}
+
 export function showFinishButton() {
     const fin = document.getElementById('btn-finish');
     if (fin) fin.classList.add('on');
-    tog('save-gizmo', true);
+    showSaveGizmo();
 }

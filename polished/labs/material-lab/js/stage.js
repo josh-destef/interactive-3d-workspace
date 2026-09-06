@@ -103,6 +103,10 @@ export function setLightOrbVisible(on) {
     if (!on) canvas.style.cursor = '';
 }
 
+export function isLightOrbVisible() {
+    return lightOrb.visible;
+}
+
 /* Swing the key light around the subject. Degrees, 0 = straight in front of the
    hero camera, positive to the student's right. */
 export function setKeyAzimuth(deg) {

@@ -24,7 +24,7 @@ import {
 } from './demoCursor.js';
 import {
     setCaption, setMode, showWatch, showContinue, hideContinue,
-    setProgress, showFinishButton, showReadCard, dismissReadCard, readCardOpen, showChoice, setContinueLabel,
+    setProgress, showSaveGizmo, showFinishButton, showReadCard, dismissReadCard, readCardOpen, showChoice, setContinueLabel,
 } from './ui.js';
 
 /* ── one idea and one action per beat ── */
@@ -99,6 +99,13 @@ const COPY = {
         panel: '<b>Move Body glow.</b> Choose an amount you like.',
         cta: 'Try body glow',
     },
+    [BEAT.PHOTO]: {
+        step: 'Your design',
+        title: 'Save your Gizmobot',
+        body: 'Your shell material is finished. Orbit around Gizmobot to choose an angle, then take a picture to save or share.',
+        panel: '<b>Choose your favorite angle.</b> Take a picture of your Gizmobot, then continue when you are ready for the challenge.',
+        cta: 'See my Gizmobot',
+    },
     [BEAT.RGB_CHALLENGE]: {
         step: 'Optional extra challenge',
         title: 'Match this color with RGB',
@@ -136,6 +143,7 @@ const CONTROLS = {
     [BEAT.LIGHT]: ['light', 'light-color'],
     [BEAT.EMISSIVE]: ['room'],
     [BEAT.BODY_GLOW]: ['emissive'],
+    [BEAT.PHOTO]: [],
     [BEAT.CHALLENGE]: ['color', 'roughness', 'metalness', 'check'],
     [BEAT.RGB_CHALLENGE]: ['rgb', 'rgb-check'],
     [BEAT.DONE]: ['color', 'rgb', 'roughness', 'metalness', 'examples', 'light', 'light-color', 'emissive', 'room'],
@@ -237,6 +245,10 @@ function stageFor(idx) {
             setCam('hero');
             break;
 
+        case BEAT.PHOTO:
+            setCam('hero');
+            break;
+
         case BEAT.RGB_RETURN:
             setRgbExpanded(false);
             setCam('hero');
@@ -309,6 +321,14 @@ function enterBeat(idx) {
         case BEAT.RGB_RETURN:
             orbitCtrl.enabled = true;
             setMode('interact');
+            showContinue();
+            break;
+
+        case BEAT.PHOTO:
+            orbitCtrl.enabled = true;
+            setMode('interact');
+            showSaveGizmo();
+            setContinueLabel('Start challenge');
             showContinue();
             break;
 

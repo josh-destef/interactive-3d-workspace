@@ -1,5 +1,7 @@
 /* Save a clean picture of the finished Gizmobot without the lesson interface. */
-import { renderer, scene, camera, setBandOffset, setLightOrbVisible, applyFraming } from './stage.js';
+import {
+    renderer, scene, camera, setBandOffset, setLightOrbVisible, isLightOrbVisible, applyFraming,
+} from './stage.js';
 
 const layer = document.getElementById('picture-layer');
 const image = document.getElementById('gizmo-picture');
@@ -21,6 +23,7 @@ function canvasBlob() {
 async function takePicture() {
     const consoleHeight = document.getElementById('console').offsetHeight;
     const previousZoom = camera.zoom;
+    const orbWasVisible = isLightOrbVisible();
     status.textContent = '';
 
     // Center Gizmobot in the exported frame. The regular lesson view shifts
@@ -32,7 +35,7 @@ async function takePicture() {
     renderer.render(scene, camera);
     pictureBlob = await canvasBlob();
     camera.zoom = previousZoom;
-    setLightOrbVisible(true);
+    setLightOrbVisible(orbWasVisible);
     setBandOffset(consoleHeight);
     applyFraming();
 
