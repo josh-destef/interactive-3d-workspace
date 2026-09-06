@@ -17,6 +17,8 @@ labs/
   hierarchy/                    Hierarchy lab (parent, child, local, world)
   keyframes/                    Keyframe lab (poses, time, interpolation)
   particles/                    Particle lab (rate, lifetime, forces)
+  robot-assembly/               WIP Gizmobot assembly (objects, position,
+                                rotation and parent/child transforms)
 ```
 
 The four guided labs share one learning architecture. Every step is paced

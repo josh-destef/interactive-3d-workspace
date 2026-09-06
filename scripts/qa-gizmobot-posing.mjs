@@ -1,0 +1,31 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+import assert from 'node:assert/strict';
+const root=path.resolve(import.meta.dirname,'..');
+const threeUrl=pathToFileURL(path.join(os.tmpdir(),'fundamentals-3d-qa/node_modules/three/build/three.module.js')).href;
+const THREE=await import(threeUrl);
+const source=fs.readFileSync(path.join(root,'polished/labs/robot-assembly/js/posing.js'),'utf8').replace("from 'three'",`from '${threeUrl}'`);
+const {createPoser,presets}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+const manifest=JSON.parse(fs.readFileSync(path.join(root,'polished/labs/robot-assembly/assets/assembly-manifest.json')));
+const robot=new THREE.Group();robot.scale.set(.978685796,1.182997584,1.182997584);
+const parts=new Map();
+for(const p of manifest.parts){const object=new THREE.Group();object.name=p.node;object.position.fromArray(p.assembledPosition);robot.add(object);parts.set(p.node,{object,definition:p});}
+const world=name=>{robot.updateMatrixWorld(true);return parts.get(name).object.getWorldPosition(new THREE.Vector3());};
+const original=new Map(manifest.parts.map(p=>[p.node,world(p.node)]));
+const poser=createPoser(robot,manifest,parts);poser.enable();
+for(const [name,v] of original)assert.ok(world(name).distanceTo(v)<1e-7,'rest pose changed '+name);
+assert.equal(parts.get('LeftFoot').object.parent.name,'LeftLowerLeg');
+assert.equal(parts.get('LeftLowerLeg').object.parent.name,'LeftUpperLeg');
+poser.set('LeftLowerLeg','x',-75);
+assert.ok(world('LeftFoot').distanceTo(original.get('LeftFoot'))>.2,'knee must move foot');
+assert.ok(world('LeftLowerLeg').distanceTo(original.get('LeftLowerLeg'))<1e-7,'knee pivot must remain fixed');
+assert.ok(world('RightFoot').distanceTo(original.get('RightFoot'))<1e-7,'other leg must stay still');
+poser.set('LeftLowerLeg','x',-200);assert.equal(poser.values.LeftLowerLeg.x,-120);
+for(const name of Object.keys(presets)){poser.preset(name);robot.updateMatrixWorld(true);for(const p of manifest.parts)assert.ok(world(p.node).toArray().every(Number.isFinite));}
+poser.preset('Wave');const saved=JSON.stringify(poser.values);poser.play(0);poser.tick(500);assert.notEqual(JSON.stringify(poser.values),saved);poser.stop();assert.equal(JSON.stringify(poser.values),saved);
+poser.disable();assert.ok([...parts.values()].every(p=>p.object.parent===robot));
+for(const p of manifest.parts)parts.get(p.node).object.position.fromArray(p.assembledPosition);
+poser.enable();for(const [name,v] of original)assert.ok(world(name).distanceTo(v)<1e-7,'second build changed '+name);
+console.log('PASS: rest pose, articulated knee and foot, isolated limbs, joint limits, presets, animation restore and repeat assembly.');

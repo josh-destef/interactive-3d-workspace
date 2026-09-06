@@ -1,0 +1,413 @@
+{
+  "version": 2,
+  "parent": "Gizmobot",
+  "coordinateSpace": "Gizmobot-local, Y up",
+  "parts": [
+    {
+      "node": "Torso",
+      "label": "Body",
+      "order": 0,
+      "requires": null,
+      "assembledPosition": [
+        0,
+        1.09,
+        0.13
+      ],
+      "assembledQuaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "assembledScale": [
+        1,
+        1,
+        1
+      ],
+      "explodedOffset": [
+        0,
+        0,
+        0
+      ],
+      "snapDistance": 0.24,
+      "instruction": "The body is your starting object."
+    },
+    {
+      "node": "Head",
+      "label": "Head",
+      "order": 1,
+      "requires": "Torso",
+      "assembledPosition": [
+        0,
+        1.85,
+        0.13
+      ],
+      "assembledQuaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "assembledScale": [
+        1,
+        1,
+        1
+      ],
+      "explodedOffset": [
+        0,
+        1.05,
+        0
+      ],
+      "snapDistance": 0.24,
+      "instruction": "Bring the head down to the neck."
+    },
+    {
+      "node": "LeftUpperArm",
+      "label": "Left upper arm",
+      "order": 2,
+      "requires": "Torso",
+      "assembledPosition": [
+        0.49,
+        1.574,
+        0.148
+      ],
+      "assembledQuaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "assembledScale": [
+        1,
+        1,
+        1
+      ],
+      "explodedOffset": [
+        0.7,
+        0.48,
+        0
+      ],
+      "snapDistance": 0.24,
+      "instruction": "Join the arm to the shoulder."
+    },
+    {
+      "node": "RightUpperArm",
+      "label": "Right upper arm",
+      "order": 3,
+      "requires": "Torso",
+      "assembledPosition": [
+        -0.49,
+        1.574,
+        0.148
+      ],
+      "assembledQuaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "assembledScale": [
+        1,
+        1,
+        1
+      ],
+      "explodedOffset": [
+        -0.7,
+        0.48,
+        0
+      ],
+      "snapDistance": 0.24,
+      "instruction": "Use the other shoulder."
+    },
+    {
+      "node": "LeftForearm",
+      "label": "Left forearm",
+      "order": 4,
+      "requires": "LeftUpperArm",
+      "assembledPosition": [
+        0.88,
+        1.574,
+        0.148
+      ],
+      "assembledQuaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "assembledScale": [
+        1,
+        1,
+        1
+      ],
+      "explodedOffset": [
+        1.05,
+        0,
+        0
+      ],
+      "snapDistance": 0.24,
+      "instruction": "Connect the forearm at the elbow."
+    },
+    {
+      "node": "RightForearm",
+      "label": "Right forearm",
+      "order": 5,
+      "requires": "RightUpperArm",
+      "assembledPosition": [
+        -0.88,
+        1.574,
+        0.148
+      ],
+      "assembledQuaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "assembledScale": [
+        1,
+        1,
+        1
+      ],
+      "explodedOffset": [
+        -1.05,
+        0,
+        0
+      ],
+      "snapDistance": 0.24,
+      "instruction": "Connect the other elbow."
+    },
+    {
+      "node": "LeftHand",
+      "label": "Left hand",
+      "order": 6,
+      "requires": "LeftForearm",
+      "assembledPosition": [
+        1.24,
+        1.574,
+        0.148
+      ],
+      "assembledQuaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "assembledScale": [
+        1,
+        1,
+        1
+      ],
+      "explodedOffset": [
+        1.5,
+        -0.55,
+        0
+      ],
+      "snapDistance": 0.24,
+      "instruction": "The fingers move together as one part."
+    },
+    {
+      "node": "RightHand",
+      "label": "Right hand",
+      "order": 7,
+      "requires": "RightForearm",
+      "assembledPosition": [
+        -1.24,
+        1.574,
+        0.148
+      ],
+      "assembledQuaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "assembledScale": [
+        1,
+        1,
+        1
+      ],
+      "explodedOffset": [
+        -1.5,
+        -0.55,
+        0
+      ],
+      "snapDistance": 0.24,
+      "instruction": "Bring the hand to the wrist."
+    },
+    {
+      "node": "LeftUpperLeg",
+      "label": "Left upper leg",
+      "order": 8,
+      "requires": "Torso",
+      "assembledPosition": [
+        0.25,
+        1.09,
+        0.13
+      ],
+      "assembledQuaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "assembledScale": [
+        1,
+        1,
+        1
+      ],
+      "explodedOffset": [
+        0.6,
+        -0.25,
+        0
+      ],
+      "snapDistance": 0.24,
+      "instruction": "Connect the thigh at the hip."
+    },
+    {
+      "node": "RightUpperLeg",
+      "label": "Right upper leg",
+      "order": 9,
+      "requires": "Torso",
+      "assembledPosition": [
+        -0.25,
+        1.09,
+        0.13
+      ],
+      "assembledQuaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "assembledScale": [
+        1,
+        1,
+        1
+      ],
+      "explodedOffset": [
+        -0.6,
+        -0.25,
+        0
+      ],
+      "snapDistance": 0.24,
+      "instruction": "Connect the other thigh at the hip."
+    },
+    {
+      "node": "LeftLowerLeg",
+      "label": "Left lower leg",
+      "order": 10,
+      "requires": "LeftUpperLeg",
+      "assembledPosition": [
+        0.25,
+        0.73,
+        0.135
+      ],
+      "assembledQuaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "assembledScale": [
+        1,
+        1,
+        1
+      ],
+      "explodedOffset": [
+        0.8,
+        -0.7,
+        0
+      ],
+      "snapDistance": 0.24,
+      "instruction": "Join the shin at the knee. This joint will bend later."
+    },
+    {
+      "node": "RightLowerLeg",
+      "label": "Right lower leg",
+      "order": 11,
+      "requires": "RightUpperLeg",
+      "assembledPosition": [
+        -0.25,
+        0.73,
+        0.135
+      ],
+      "assembledQuaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "assembledScale": [
+        1,
+        1,
+        1
+      ],
+      "explodedOffset": [
+        -0.8,
+        -0.7,
+        0
+      ],
+      "snapDistance": 0.24,
+      "instruction": "Add the other shin. Keep the knee between the two leg parts."
+    },
+    {
+      "node": "LeftFoot",
+      "label": "Left foot",
+      "order": 12,
+      "requires": "LeftLowerLeg",
+      "assembledPosition": [
+        0.26,
+        0.29,
+        0.13
+      ],
+      "assembledQuaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "assembledScale": [
+        1,
+        1,
+        1
+      ],
+      "explodedOffset": [
+        1,
+        -1.25,
+        -0.12
+      ],
+      "snapDistance": 0.24,
+      "instruction": "Connect the foot at the ankle."
+    },
+    {
+      "node": "RightFoot",
+      "label": "Right foot",
+      "order": 13,
+      "requires": "RightLowerLeg",
+      "assembledPosition": [
+        -0.26,
+        0.29,
+        0.13
+      ],
+      "assembledQuaternion": [
+        0,
+        0,
+        0,
+        1
+      ],
+      "assembledScale": [
+        1,
+        1,
+        1
+      ],
+      "explodedOffset": [
+        -1,
+        -1.25,
+        -0.12
+      ],
+      "snapDistance": 0.24,
+      "instruction": "One last ankle connection. Next, bring Gizmobot to life."
+    }
+  ]
+}
