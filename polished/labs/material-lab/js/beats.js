@@ -44,24 +44,24 @@ const COPY = {
         cta: 'Choose a color',
     },
     [BEAT.RGB_WATCH]: {
-        step: 'Optional color lesson',
-        title: 'Three sliders, millions of colors',
-        body: 'Computers mix red, green, and blue to make digital colors. Equal amounts make gray. Watch what happens when one slider moves.',
-        panel: '<b>Watch the mouse.</b> It will move Red, Green, and Blue. Notice how Gizmobot’s shell changes.',
+        step: '',
+        title: 'How RGB builds a color',
+        body: 'A screen mixes three amounts of light: red, green, and blue. Equal values make a shade of gray. Changing one value shifts the color toward that channel.',
+        panel: '<b>Watch one channel at a time.</b> The mouse raises Red, Green, and Blue in turn. Your sliders will unlock when the demonstration finishes.',
         cta: 'Watch RGB',
     },
     [BEAT.RGB_MIX]: {
-        step: 'Optional color lesson',
+        step: '',
         title: 'Mix a color',
-        body: 'Now try it. Raise Red, mix Red and Blue, or bring all three sliders close together. Watch Gizmobot’s shell as you work.',
-        panel: '<b>Make a color you like.</b> Choose Use this color when it is ready.',
+        body: 'R adds red, G adds green, and B adds blue. Mix Red and Blue for purple. Keep all three values close for gray. Lower all three to make a darker color.',
+        panel: '<b>Make a color for Gizmobot.</b> Move one slider at a time so you can see what it adds. Choose Use this color when you are happy with the result.',
         cta: 'My turn',
     },
     [BEAT.RGB_RETURN]: {
         step: 'Back to materials',
         title: 'Your color is ready',
-        body: 'RGB tells the computer which color to make. In a 3D material, that color becomes the base color. Your mix will stay on Gizmobot.',
-        panel: '<b>Next: Roughness.</b> Your color will stay with Gizmobot.',
+        body: 'The RGB values you chose now make up Gizmobot’s base color. Roughness will change the finish while keeping this color.',
+        panel: '<b>Next: Roughness.</b> Watch how the same color looks on a shiny surface and a matte surface.',
         cta: 'Next: Roughness',
     },
     [BEAT.ROUGHNESS]: {
@@ -102,8 +102,8 @@ const COPY = {
     [BEAT.RGB_CHALLENGE]: {
         step: 'Optional extra challenge',
         title: 'Match this color with RGB',
-        body: 'The material and lighting are fixed. Use Red, Green, and Blue to match the reference color.',
-        panel: '<b>Compare the colors.</b> Is yours warmer, cooler, brighter, or darker?',
+        body: 'Use the Red, Green, and Blue sliders to match the reference. The surface finish and lighting will stay fixed.',
+        panel: '<b>Compare the shaded parts of both shells.</b> Decide which color channel needs to go up or down, then check your color.',
         cta: 'Try the RGB match',
     },
     [BEAT.CHALLENGE]: {
@@ -287,8 +287,8 @@ function enterBeat(idx) {
         case BEAT.RGB_OFFER:
             showChoice(
                 {
-                    title: 'Want to learn where digital colors come from?',
-                    body: 'Computers can mix red, green, and blue to create Gizmobot’s color. This short side lesson is optional.',
+                    title: 'Want to mix a color with RGB?',
+                    body: 'The swatches are ready-made colors. RGB lets you create your own by mixing red, green, and blue.',
                     primary: 'Show me RGB',
                     secondary: 'Maybe later',
                 },
@@ -316,6 +316,19 @@ function enterBeat(idx) {
             orbitCtrl.enabled = true;
             setMode('interact');
             flashControl('check');
+            break;
+
+        case BEAT.RGB_CHALLENGE_OFFER:
+            showChoice(
+                {
+                    title: 'Material matched',
+                    body: 'You can finish now, or try one extra RGB color match.',
+                    primary: 'Try an RGB match',
+                    secondary: 'Finish lesson',
+                },
+                () => runBeat(BEAT.RGB_CHALLENGE),
+                () => runBeat(BEAT.DONE),
+            );
             break;
 
         case BEAT.DONE:
@@ -350,19 +363,6 @@ export function checkBeatComplete(key) {
             break;
         case BEAT.BODY_GLOW:
             if (key === 'emissive') trackSpan('emissive', values.emissive);
-            break;
-
-        case BEAT.RGB_CHALLENGE_OFFER:
-            showChoice(
-                {
-                    title: 'Material matched',
-                    body: 'You can finish now, or try one extra RGB color match.',
-                    primary: 'Try an RGB match',
-                    secondary: 'Finish lesson',
-                },
-                () => runBeat(BEAT.RGB_CHALLENGE),
-                () => runBeat(BEAT.DONE),
-            );
             break;
 
         case BEAT.RGB_CHALLENGE:
@@ -408,7 +408,7 @@ function playRgbWatch() {
     demoSetRGB('b', 180);
 
     let cursorFrom = null;
-    const moveTo = (getPoint, duration = 0.65) => ({
+    const moveTo = (getPoint, duration = 0.45) => ({
         duration,
         fn: t => {
             const target = getPoint();
@@ -421,7 +421,7 @@ function playRgbWatch() {
             if (t === 1) cursorFrom = null;
         },
     });
-    const dragRgb = (channel, from, to, duration = 1.15) => ({
+    const dragRgb = (channel, from, to, duration = 0.65) => ({
         duration,
         fn: t => {
             if (t === 0) setDemoCursorDown(true);
@@ -430,7 +430,7 @@ function playRgbWatch() {
             if (t === 1) setDemoCursorDown(false);
         },
     });
-    const pause = (getPoint, duration = 0.65) => ({
+    const pause = (getPoint, duration = 0.3) => ({
         duration,
         fn: () => moveDemoCursor(getPoint()),
     });
@@ -438,24 +438,23 @@ function playRgbWatch() {
     toggleDemoCursor(true);
     moveDemoCursor(centerPoint());
     runSequence([
-        moveTo(() => rgbThumbPoint('r'), 0.8),
+        moveTo(() => rgbThumbPoint('r')),
         dragRgb('r', 180, 245),
         pause(() => rgbThumbPoint('r')),
-        dragRgb('r', 245, 180, 0.8),
-        moveTo(() => rgbThumbPoint('g'), 0.7),
+        dragRgb('r', 245, 180, 0.45),
+        moveTo(() => rgbThumbPoint('g')),
         dragRgb('g', 180, 245),
         pause(() => rgbThumbPoint('g')),
-        dragRgb('g', 245, 180, 0.8),
-        moveTo(() => rgbThumbPoint('b'), 0.7),
+        dragRgb('g', 245, 180, 0.45),
+        moveTo(() => rgbThumbPoint('b')),
         dragRgb('b', 180, 245),
-        pause(() => rgbThumbPoint('b'), 0.8),
+        pause(() => rgbThumbPoint('b'), 0.4),
     ], () => {
         toggleDemoCursor(false);
         setDemoCursorDown(false);
         document.getElementById('app').classList.remove('demo-running');
         state.beatLocked = false;
-        setContinueLabel('My turn');
-        showContinue();
+        runBeat(BEAT.RGB_MIX);
     });
 }
 
@@ -498,10 +497,18 @@ export function onCheckRgbMatch() {
         feedback = '<b>Great match.</b> You built this color with RGB.';
         showContinue();
     } else {
-        const channel = Object.entries(delta).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))[0];
-        const labels = { r: 'Red', g: 'Green', b: 'Blue' };
-        const direction = channel[1] > 0 ? 'raise' : 'lower';
-        feedback = '<b>Very close.</b> Try to ' + direction + ' ' + labels[channel[0]] + ' a little.';
+        const brightnessDifference = delta.r + delta.g + delta.b;
+        if (brightnessDifference > 135) {
+            feedback = '<b>Your color is darker than the reference.</b> Raise all three sliders a little.';
+        } else if (brightnessDifference < -135) {
+            feedback = '<b>Your color is brighter than the reference.</b> Lower all three sliders a little.';
+        } else {
+            const channel = Object.entries(delta).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))[0];
+            const labels = { r: 'Red', g: 'Green', b: 'Blue' };
+            feedback = channel[1] > 0
+                ? '<b>Your color needs more ' + labels[channel[0]] + '.</b> Raise ' + channel[0].toUpperCase() + ' and compare again.'
+                : '<b>Your color has too much ' + labels[channel[0]] + '.</b> Lower ' + channel[0].toUpperCase() + ' and compare again.';
+        }
     }
     result.innerHTML = feedback;
     result.classList.add('on');

@@ -112,6 +112,25 @@
             </div>
         </div>
 
+        <div id="picture-layer" class="picture-layer" role="dialog" aria-modal="true"
+            aria-labelledby="picture-title" aria-describedby="picture-copy">
+            <div class="picture-card">
+                <div class="picture-head">
+                    <div>
+                        <h2 id="picture-title">Your Gizmobot</h2>
+                        <p id="picture-copy">Your picture is ready to save or share.</p>
+                    </div>
+                    <button id="btn-close-picture" class="picture-close" type="button" aria-label="Close picture">&times;</button>
+                </div>
+                <img id="gizmo-picture" alt="A picture of your customized Gizmobot">
+                <div class="picture-actions">
+                    <a id="btn-download-picture" class="dock-btn primary" download="my-gizmobot.png">Download picture</a>
+                    <button id="btn-share-picture" class="dock-btn" type="button">Share picture</button>
+                </div>
+                <div id="picture-status" class="picture-status" aria-live="polite"></div>
+            </div>
+        </div>
+
         <!-- ── the console ──
              One bar across the whole bottom of the screen: the step's words on
              the left, the controls that step unlocked on the right. It takes
@@ -126,6 +145,13 @@
                     <div id="cap-title"></div>
                 </div>
                 <div id="cap-body"></div>
+                <div id="save-gizmo" class="save-gizmo" aria-labelledby="save-gizmo-title">
+                    <div>
+                        <div id="save-gizmo-title" class="save-gizmo-title">Save your Gizmobot</div>
+                        <div class="save-gizmo-copy">Take a picture of your finished design to download or share.</div>
+                    </div>
+                    <button id="btn-take-picture" class="dock-btn primary" type="button">Take a picture</button>
+                </div>
                 <div class="panel-footer">
                     <a id="btn-finish" href="../../../">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -194,22 +220,22 @@
 
                     <div class="ctl ctl-rgb" data-group="rgb">
                         <div class="ctl-label">
-                            <button id="btn-toggle-rgb" class="mix-color-toggle" type="button" aria-expanded="false">Mix your own color</button>
-                            <span class="rgb-chip"><i id="rgb-chip"></i><span id="rgb-hex">#B8B8B4</span></span>
+                            <button id="btn-toggle-rgb" class="mix-color-toggle" type="button" aria-expanded="false">Mix with RGB</button>
+                            <span class="rgb-chip" aria-hidden="true"><i id="rgb-chip"></i><span id="rgb-hex" hidden>#B8B8B4</span></span>
                         </div>
                         <div id="rgb-rows" class="rgb-rows" hidden>
                             <div class="rgb-row" data-ch="r">
-                                <label for="in-r">R</label>
+                                <label for="in-r"><b>R</b> Red</label>
                                 <input id="in-r" type="range" data-rgb="r" min="0" max="255" value="184">
                                 <span class="rgb-val" data-for="r">184</span>
                             </div>
                             <div class="rgb-row" data-ch="g">
-                                <label for="in-g">G</label>
+                                <label for="in-g"><b>G</b> Green</label>
                                 <input id="in-g" type="range" data-rgb="g" min="0" max="255" value="184">
                                 <span class="rgb-val" data-for="g">184</span>
                             </div>
                             <div class="rgb-row" data-ch="b">
-                                <label for="in-b">B</label>
+                                <label for="in-b"><b>B</b> Blue</label>
                                 <input id="in-b" type="range" data-rgb="b" min="0" max="255" value="180">
                                 <span class="rgb-val" data-for="b">180</span>
                             </div>

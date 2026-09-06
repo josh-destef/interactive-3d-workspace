@@ -166,6 +166,7 @@ export function hideContinue() {
     tog('kbd-hint', false);
     const fin = document.getElementById('btn-finish');
     if (fin) fin.classList.remove('on');
+    tog('save-gizmo', false);
     document.getElementById('console').classList.remove('panel-celebrate');
 }
 
@@ -195,4 +196,5 @@ export function setProgress(idx) {
 export function showFinishButton() {
     const fin = document.getElementById('btn-finish');
     if (fin) fin.classList.add('on');
+    tog('save-gizmo', true);
 }

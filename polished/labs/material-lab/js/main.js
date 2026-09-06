@@ -16,6 +16,7 @@ import { state } from './state.js';
 import { BEAT } from './config.js';
 import { subjectReady } from './subject.js';
 import { dismissReadCard, readCardOpen } from './ui.js';
+import './capture.js';
 import {
     runBeat, nextBeat, replayBeat, checkBeatComplete, onCheckMatch, onNewTarget, onHint, onUseRgbColor, onCheckRgbMatch,
 } from './beats.js';

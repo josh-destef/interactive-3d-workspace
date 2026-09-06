@@ -23,7 +23,7 @@ export const camera = new THREE.PerspectiveCamera(38, W() / H(), 0.05, 100);
 camera.position.copy(CAMS.hero.pos);
 
 const canvas = document.getElementById('cv');
-export const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+export const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(W(), H());
 renderer.shadowMap.enabled = true;
