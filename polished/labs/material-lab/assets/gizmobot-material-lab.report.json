@@ -1,0 +1,66 @@
+{
+  "source": "C:\\Users\\joshu\\Documents\\CreateAccess\\2026\\fundamentals_of_3d\\polished\\labs\\navigate-and-transform\\assets\\gizmobot.glb",
+  "source_sha256": "949761586a6ed5ed72ca155455643cdc59a34b3093f3c37a8f632a88586e7820",
+  "output": "C:\\Users\\joshu\\Documents\\CreateAccess\\2026\\fundamentals_of_3d\\polished\\labs\\material-lab\\assets\\gizmobot-material-lab.glb",
+  "output_sha256": "0cc7a0c3d57315297efba06caaf0ebc8328104a517ffe7833b0fbe9cca9f8c89",
+  "blender": "4.1.1",
+  "source_counts": {
+    "vertices": 9942,
+    "polygons": 14840,
+    "connected_components": 184,
+    "uv_layers": 1
+  },
+  "regions": {
+    "Shell_Paint": {
+      "polygons": 6904,
+      "components": 89
+    },
+    "Dark_Parts": {
+      "polygons": 6924,
+      "components": 81
+    },
+    "Orange_Accents": {
+      "polygons": 506,
+      "components": 7
+    },
+    "Green_Accents": {
+      "polygons": 506,
+      "components": 7
+    }
+  },
+  "overlays": {
+    "Face_Glow": {
+      "polygons": 221,
+      "mask_pixels": 4548
+    },
+    "Logo_Decal": {
+      "polygons": 382,
+      "mask_pixels": 12875
+    }
+  },
+  "materials": [
+    "Shell_Paint",
+    "Dark_Parts",
+    "Orange_Accents",
+    "Green_Accents",
+    "Face_Glow",
+    "Logo_Decal"
+  ],
+  "transform": {
+    "location": [
+      0,
+      0,
+      0
+    ],
+    "rotation": [
+      0,
+      0,
+      0
+    ],
+    "scale": [
+      1,
+      1,
+      1
+    ]
+  }
+}

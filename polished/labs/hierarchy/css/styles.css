@@ -1,0 +1,1127 @@
+/* ── reset & root ──
+   The shell (panel, badge, progress, buttons) is shared with the navigate and
+   materials labs so that moving between them feels like one product. What is new
+   here is the scene-tree selector and the local/world readout card. */
+:root {
+    --orange: #FF9022;
+    --green: #00AA00;
+    --dark: #1a1a2e;
+    --line: rgba(0, 0, 0, 0.10);
+    --muted: #7c7c85;
+    /* 2D-UI axis colors (caption text + mouse diagram). Kept a touch darker than
+       the 3D scene's axis colors so they stay legible on the light panel. */
+    --axis-x: #c0453a;
+    --axis-y: #267326;
+    --axis-z: #3a6fa8;
+    /* Live caption-panel height, kept current by a ResizeObserver in main.js.
+       Used on small screens to stack the dock above the panel bar. */
+    --panel-h: 148px;
+    --font: 'Lexend', sans-serif;
+    --mono: 'DM Mono', monospace;
+
+    /* ── fluid scale ──
+       Sizes grow with the smaller viewport dimension so the whole UI shrinks on
+       both narrow AND short screens, then clamps at each end. */
+    --edge: clamp(12px, 2.5vmin, 28px);
+    /* screen-edge inset for the corner controls */
+    --panel-w: clamp(300px, 34vw, 460px);
+    --logo-h: clamp(22px, 3.4vmin, 34px);
+    --fs-step: clamp(10px, 1.2vmin, 12px);
+    --fs-title: clamp(16px, 2.1vmin, 23px);
+    --fs-body: clamp(13px, 1.65vmin, 16px);
+    --fs-btn: clamp(13px, 1.7vmin, 16px);
+    --fs-ui: clamp(12px, 1.45vmin, 14.5px);
+    --fs-fine: clamp(10px, 1.15vmin, 11.5px);
+    --pad-panel: clamp(16px, 2.2vmin, 24px) clamp(22px, 3.8vmin, 40px);
+    --gap-panel: clamp(10px, 1.7vmin, 18px);
+    --pad-btn: clamp(10px, 1.4vmin, 13px) clamp(18px, 3vmin, 26px);
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+button:focus-visible,
+a:focus-visible,
+input[type="range"]:focus-visible {
+    outline: 3px solid rgba(255, 144, 34, .55);
+    outline-offset: 3px;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #efefed;
+    font-family: var(--font);
+}
+
+#app {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* ── canvas window ── */
+#canvas-wrap {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, #ffffff 0%, #efefed 100%);
+    overflow: hidden;
+}
+
+#cv {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* progress bar */
+#prog {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    z-index: 20;
+    background: rgba(28, 27, 34, .08);
+}
+
+#prog-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--orange);
+    transition: width 1s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* ── mode badge ── */
+#status-badge {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 18px;
+    border-radius: 24px;
+    font-size: var(--fs-ui);
+    font-weight: 600;
+    pointer-events: none;
+    opacity: 0;
+    white-space: nowrap;
+    transition: opacity .4s ease, background .4s, color .4s, box-shadow .4s,
+        transform .5s cubic-bezier(0.34, 1.56, 0.64, 1),
+        top .5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#status-badge.on {
+    opacity: 1;
+}
+
+#status-badge.watching {
+    background: rgba(26, 26, 46, .92);
+    color: #fff;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, .28);
+    transform: translateX(-50%) scale(2.6);
+    top: 10%;
+}
+
+#status-badge.interacting {
+    background: var(--orange);
+    color: #fff;
+    box-shadow: 0 10px 32px rgba(255, 144, 34, .55);
+    transform: translateX(-50%) scale(1.65);
+    top: 22px;
+}
+
+.badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: background .4s;
+}
+
+#status-badge.watching .badge-dot {
+    background: rgba(255, 255, 255, .4);
+}
+
+#status-badge.interacting .badge-dot {
+    background: rgba(255, 255, 255, .9);
+    animation: badge-pulse 1.3s infinite;
+}
+
+@keyframes badge-pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.7);
+        opacity: .5;
+    }
+}
+
+/* ── replay pill ── */
+#btn-replay {
+    position: absolute;
+    top: 72px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.05);
+    font-family: var(--font);
+    font-size: var(--fs-ui);
+    font-weight: 600;
+    color: var(--dark);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .2s, border-color .2s, color .2s, transform .15s, box-shadow .2s;
+}
+
+#btn-replay.on {
+    display: inline-flex;
+    animation: replayIn .4s ease .55s backwards;
+}
+
+@keyframes replayIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+#btn-replay svg {
+    opacity: .75;
+}
+
+#btn-replay:hover {
+    color: var(--orange);
+    border-color: var(--orange);
+    box-shadow: 0 8px 22px rgba(255, 144, 34, 0.20), 0 1px 4px rgba(0, 0, 0, 0.06);
+    transform: translateX(-50%) translateY(-2px);
+}
+
+/* ── caption panel ── */
+#panel {
+    position: absolute;
+    bottom: var(--edge);
+    left: var(--edge);
+    width: min(92vw, var(--panel-w));
+    /* Solid, not translucent: a backdrop-filter here forces a full recomposite
+       every frame the 3D scene moves behind it, which is the main source of jank
+       during the camera sweeps in Watch demos. */
+    background: #fbfbfa;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.03);
+    padding: var(--pad-panel);
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-panel);
+    z-index: 50;
+    transition: box-shadow .4s ease, border-color .4s ease;
+}
+
+#panel.panel-watching {
+    border-color: rgba(26, 26, 46, .55);
+    box-shadow: inset 0 0 0 1px rgba(26, 26, 46, .55),
+        0 12px 32px rgba(0, 0, 0, .06), 0 4px 12px rgba(0, 0, 0, .03);
+}
+
+#panel.panel-interacting {
+    border-color: var(--orange);
+    box-shadow: inset 0 0 0 1px var(--orange),
+        0 12px 32px rgba(0, 0, 0, .06), 0 4px 12px rgba(0, 0, 0, .03);
+}
+
+.panel-header {
+    display: flex;
+    flex-direction: column;
+}
+
+#cap-step {
+    font-family: var(--mono);
+    font-size: var(--fs-step);
+    font-weight: 500;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 5px;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity .4s ease, max-height .4s ease;
+}
+
+#cap-step.on {
+    opacity: 1;
+    max-height: 24px;
+}
+
+#cap-title {
+    font-size: var(--fs-title);
+    font-weight: 500;
+    color: #111;
+    line-height: 1.25;
+    letter-spacing: -.02em;
+    margin-bottom: 5px;
+    opacity: 0;
+    transition: opacity .45s ease;
+}
+
+#cap-body {
+    font-size: var(--fs-body);
+    font-weight: 300;
+    color: #555;
+    line-height: 1.72;
+    opacity: 0;
+    transition: opacity .45s ease .06s;
+}
+
+#cap-title.on,
+#cap-body.on {
+    opacity: 1;
+}
+
+#cap-body b {
+    color: #222;
+    font-weight: 400;
+}
+
+#cap-body .co {
+    color: var(--orange);
+}
+
+#cap-body .cx {
+    color: var(--axis-x);
+}
+
+#cap-body .cy {
+    color: var(--axis-y);
+}
+
+#cap-body .cz {
+    color: var(--axis-z);
+}
+
+/* loading state */
+#loading {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--dark);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 300;
+    color: rgba(255, 255, 255, .35);
+    letter-spacing: .1em;
+    transition: opacity .8s ease;
+}
+
+#loading.fade {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ── panel footer ── */
+.panel-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 6px;
+}
+
+.continue-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+    margin-left: auto;
+}
+
+#btn-continue {
+    display: none;
+    align-items: center;
+    gap: 7px;
+    padding: var(--pad-btn);
+    background: var(--orange);
+    border: none;
+    border-radius: 7px;
+    font-family: var(--font);
+    font-size: var(--fs-btn);
+    font-weight: 500;
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform .15s ease, background .15s;
+}
+
+#btn-continue.on {
+    display: inline-flex;
+    /* 'backwards' not 'both' so the finished animation releases transform and
+       the hover lift still works */
+    animation: riseIn .45s cubic-bezier(.34, 1.3, .64, 1) backwards;
+}
+
+@keyframes riseIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#btn-continue:hover {
+    background: #e07010;
+    transform: translateY(-1px);
+}
+
+#kbd-hint {
+    display: none;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--green);
+}
+
+#kbd-hint.on {
+    display: block;
+    animation: riseIn .45s ease .1s backwards;
+}
+
+#kbd-hint kbd {
+    display: inline-block;
+    background: rgba(0, 0, 0, .05);
+    border: 1px solid rgba(0, 0, 0, .12);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--green);
+}
+
+#btn-finish {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: var(--pad-btn);
+    background: var(--dark);
+    border: none;
+    border-radius: 7px;
+    font-size: var(--fs-btn);
+    font-weight: 500;
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: background .2s, transform .15s;
+}
+
+#btn-finish.on {
+    display: inline-flex;
+}
+
+#btn-finish:hover {
+    background: var(--orange);
+    transform: translateY(-2px);
+}
+
+#btn-finish svg {
+    opacity: .8;
+}
+
+/* ── celebration ── */
+#panel.panel-celebrate {
+    border-color: rgba(255, 144, 34, 0.25);
+    box-shadow: 0 0 0 3px rgba(255, 144, 34, 0.12),
+        0 20px 60px rgba(0, 0, 0, 0.10), 0 6px 16px rgba(0, 0, 0, 0.05);
+}
+
+#panel.panel-celebrate #cap-title {
+    background: linear-gradient(120deg, #FF9022, #e07010);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: clamp(19px, 2.5vmin, 26px);
+}
+
+@keyframes celebPop {
+    0% {
+        transform: scale(0) rotate(-10deg);
+        opacity: 0;
+    }
+
+    60% {
+        transform: scale(1.15) rotate(4deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+.cap-celebrate-icon {
+    display: inline-block;
+    margin-right: 6px;
+    animation: celebPop .55s cubic-bezier(.34, 1.56, .64, 1) both;
+}
+
+/* ── corner chrome ── */
+.home-btn {
+    position: fixed;
+    top: var(--edge);
+    left: var(--edge);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: rgba(23, 30, 53, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #fff;
+    text-decoration: none;
+    font-size: var(--fs-ui);
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.home-btn:hover {
+    background: rgba(23, 30, 53, 0.95);
+    border-color: var(--orange);
+    color: var(--orange);
+    transform: translateX(-4px);
+}
+
+.logo-top-right {
+    position: fixed;
+    top: var(--edge);
+    right: var(--edge);
+    z-index: 1000;
+    height: var(--logo-h);
+    width: auto;
+    object-fit: contain;
+    pointer-events: none;
+    opacity: 0.9;
+}
+
+/* Reset View lives under the logo rather than in the bottom-right corner: the
+   bottom band belongs to the control dock, and a utility button parked in the
+   middle of the primary controls reads as one of them. */
+#util-bar {
+    position: absolute;
+    top: calc(var(--edge) + var(--logo-h) + 14px);
+    right: var(--edge);
+    z-index: 100;
+    display: flex;
+    gap: 8px;
+}
+
+.util-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1.5px solid rgba(0, 0, 0, 0.12);
+    border-radius: 10px;
+    padding: clamp(8px, 1.2vmin, 11px) clamp(12px, 2vmin, 18px);
+    font-family: var(--font);
+    font-size: var(--fs-ui);
+    font-weight: 600;
+    color: #222;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.10), 0 1px 4px rgba(0, 0, 0, 0.06);
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.util-btn:hover {
+    border-color: var(--orange);
+    color: var(--orange);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(255, 144, 34, 0.22), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.util-btn svg {
+    opacity: .8;
+}
+
+/* ── demo cursor ── */
+#demo-cursor {
+    position: fixed;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .3s;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
+}
+
+#demo-cursor.on {
+    opacity: 1;
+}
+
+#demo-cursor.down {
+    filter: drop-shadow(0 0 5px rgba(255, 144, 34, 0.95)) drop-shadow(0 0 14px rgba(255, 144, 34, 0.55));
+}
+
+/* ── control dock ──
+   Centered in the space to the right of the caption panel, so the two never
+   collide on wide screens. Starts empty; each beat reveals one more control. */
+#dock {
+    position: absolute;
+    bottom: var(--edge);
+    left: calc(var(--panel-w) + var(--edge) * 2);
+    right: var(--edge);
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
+    z-index: 60;
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px 18px;
+    background: rgba(255, 255, 255, 0.97);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 16px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.13), 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+#dock.on {
+    display: flex;
+}
+
+#dock.locked {
+    pointer-events: none;
+}
+
+/* Wraps at every size. The pickup step carries six controls at once and blows
+   past the space beside the caption panel on any laptop-width screen, so the
+   dock has to grow a second row rather than overflow its own card. */
+.dock-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: center;
+    gap: clamp(14px, 2.4vmin, 26px);
+}
+
+.ctl {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ctl.on {
+    display: flex;
+    animation: riseIn .45s cubic-bezier(.34, 1.3, .64, 1) backwards;
+}
+
+/* Draw the eye to a control the caption just named but did not demo. */
+.ctl.flash {
+    animation: ctlFlash 1.1s cubic-bezier(.34, 1.56, .64, 1) 2;
+}
+
+@keyframes ctlFlash {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    45% {
+        transform: translateY(-5px);
+    }
+}
+
+.ctl-label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 14px;
+    font-size: var(--fs-ui);
+    font-weight: 500;
+    color: #333;
+    letter-spacing: -.01em;
+}
+
+.ctl-val {
+    font-family: var(--mono);
+    font-size: var(--fs-fine);
+    color: var(--muted);
+}
+
+/* The two ends of a slider, named in words. "0.94" means nothing to a beginner;
+   "chalk" does, and it is the difference between a control they can guess at and
+   one they have to be told about. */
+.ctl-ends {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: var(--fs-fine);
+    color: #a4a4ac;
+    letter-spacing: .04em;
+}
+
+.ctl input[type="range"] {
+    width: clamp(140px, 17vmin, 200px);
+    height: 4px;
+    accent-color: var(--orange);
+    cursor: pointer;
+}
+
+/* ── scene tree selector ──
+   Two columns, indented by depth, so the buttons draw the chain they select
+   from: the shape of the list is the lesson the list is teaching. */
+.node-btns {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
+}
+
+.node-btn {
+    position: relative;
+    padding: 6px 10px 6px 8px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: var(--fs-fine);
+    color: #333;
+    cursor: pointer;
+    white-space: nowrap;
+    text-align: left;
+    transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+
+.node-btn::before {
+    margin-right: 6px;
+    color: #b4b4bc;
+    content: "\2514";
+}
+
+.node-btn[data-node="shoulder"] {
+    padding-left: 14px;
+}
+
+.node-btn[data-node="elbow"] {
+    padding-left: 20px;
+}
+
+.node-btn[data-node="wrist"] {
+    padding-left: 26px;
+}
+
+.node-btn:hover {
+    border-color: var(--orange);
+    color: #d66d08;
+}
+
+.node-btn.active {
+    color: #fff;
+    background: var(--dark);
+    border-color: var(--dark);
+}
+
+.node-btn.active::before {
+    color: rgba(255, 255, 255, .45);
+}
+
+/* ── pose presets ── */
+.preset-btns {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+}
+
+/* ── dock buttons ── */
+.dock-btn {
+    padding: clamp(9px, 1.3vmin, 12px) clamp(14px, 2.2vmin, 20px);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font-family: var(--font);
+    font-size: var(--fs-ui);
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .18s ease;
+}
+
+.dock-btn:hover {
+    border-color: var(--orange);
+    color: #d66d08;
+    transform: translateY(-1px);
+}
+
+.dock-btn.primary {
+    background: var(--orange);
+    border-color: var(--orange);
+    color: #fff;
+    font-weight: 600;
+}
+
+.dock-btn.primary:hover {
+    background: #e07010;
+    border-color: #e07010;
+    color: #fff;
+}
+
+/* ── transform readout ──
+   Sits inside the dock, directly above the joints that move it, so the numbers
+   and the controls that change them are one object. */
+#readout {
+    display: none;
+    flex-direction: column;
+    gap: 9px;
+    padding-bottom: 13px;
+    border-bottom: 1px solid var(--line);
+}
+
+#readout.on {
+    display: flex;
+    animation: riseIn .45s cubic-bezier(.34, 1.3, .64, 1) backwards;
+}
+
+.ro-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+#ro-node {
+    font-family: var(--mono);
+    font-size: var(--fs-ui);
+    color: var(--dark);
+}
+
+.ro-grid {
+    display: grid;
+    grid-template-columns: 62px repeat(3, 1fr);
+    align-items: center;
+    gap: 3px 10px;
+}
+
+.ro-key {
+    font-family: var(--mono);
+    font-size: var(--fs-fine);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.ro-axis {
+    font-family: var(--mono);
+    font-size: var(--fs-fine);
+    color: #a4a4ac;
+    text-align: right;
+}
+
+/* Fixed width per column so a number going from 0.0 to -12.4 does not shove the
+   other two sideways - a readout that reflows while it updates is unreadable. */
+.ro-num {
+    min-width: 52px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: var(--fs-ui);
+    color: #333;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    transition: background .45s ease;
+}
+
+/* Only the world row flashes. Local staying flat while world lights up is the
+   entire argument of the step, so the two rows must not look alike. */
+.ro-num.changed {
+    background: rgba(255, 144, 34, .28);
+    transition: none;
+}
+
+/* ── narrow screens ──
+   Below this the dock cannot sit beside the caption panel with enough room for
+   the pickup step's six controls, so the panel becomes a bottom bar and the dock
+   takes the full width above it. 1300px keeps the common laptop sizes (1280,
+   1366) on this side of the line rather than cramping them. */
+@media (max-width: 1300px) {
+    #dock {
+        left: var(--edge);
+        bottom: calc(var(--panel-h) + var(--edge) + 10px);
+    }
+
+    #panel {
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        border-radius: 14px 14px 0 0;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+        padding: 14px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+@media (max-width: 720px) {
+
+    .node-btns,
+    .preset-btns {
+        grid-template-columns: repeat(4, auto);
+    }
+
+    /* the depth indents cost more than they teach once the buttons are in one
+       row, and they push the tree off the edge of the dock */
+    .node-btn[data-node="shoulder"],
+    .node-btn[data-node="elbow"],
+    .node-btn[data-node="wrist"] {
+        padding-left: 8px;
+    }
+
+    .ro-num {
+        min-width: 0;
+    }
+}
+
+/* mouse interaction diagram */
+.mouse-rig {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    margin-top: 10px;
+}
+
+/* Scale the diagram with the rest of the UI. The SVG ships with fixed 65x80
+   attributes from mouseDiagram.js, but its viewBox lets CSS resize it; height
+   auto keeps the aspect ratio. */
+.mouse-rig svg {
+    width: clamp(52px, 7vmin, 74px);
+    height: auto;
+}
+
+.mouse-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .13em;
+    color: #9b9799;
+    text-transform: uppercase;
+}
+
+/* Arrow bob animations - applied to SVG <g> elements */
+@keyframes arrBobUp {
+
+    0%,
+    100% {
+        transform: translateY(0);
+        opacity: .6;
+    }
+
+    50% {
+        transform: translateY(-5px);
+        opacity: 1;
+    }
+}
+
+@keyframes arrBobDown {
+
+    0%,
+    100% {
+        transform: translateY(0);
+        opacity: .6;
+    }
+
+    50% {
+        transform: translateY(5px);
+        opacity: 1;
+    }
+}
+
+@keyframes arrBobLeft {
+
+    0%,
+    100% {
+        transform: translateX(0);
+        opacity: .6;
+    }
+
+    50% {
+        transform: translateX(-5px);
+        opacity: 1;
+    }
+}
+
+@keyframes arrBobRight {
+
+    0%,
+    100% {
+        transform: translateX(0);
+        opacity: .6;
+    }
+
+    50% {
+        transform: translateX(5px);
+        opacity: 1;
+    }
+}
+
+@keyframes arrBobArcL {
+
+    0%,
+    100% {
+        transform: translateX(0);
+        opacity: .6;
+    }
+
+    50% {
+        transform: translateX(-4px);
+        opacity: 1;
+    }
+}
+
+@keyframes arrBobArcR {
+
+    0%,
+    100% {
+        transform: translateX(0);
+        opacity: .6;
+    }
+
+    50% {
+        transform: translateX(4px);
+        opacity: 1;
+    }
+}
+
+.arr-up {
+    animation: arrBobUp 1.4s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.arr-down {
+    animation: arrBobDown 1.4s ease-in-out infinite .7s;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.arr-left {
+    animation: arrBobLeft 1.4s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.arr-right {
+    animation: arrBobRight 1.4s ease-in-out infinite .7s;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.arr-arc-l {
+    animation: arrBobArcL 1.6s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+.arr-arc-r {
+    animation: arrBobArcR 1.6s ease-in-out infinite .8s;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+#read-layer { position: fixed; inset: 0; z-index: 800; display: flex; align-items: center;
+    justify-content: center; padding: var(--edge); background: rgba(26,26,46,.55);
+    backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity .38s ease; }
+#read-layer.on { opacity: 1; pointer-events: auto; }
+#read-card { position: relative; width: min(94vw, 620px); max-height: 88vh; overflow-y: auto;
+    padding: clamp(26px,4.2vmin,44px) clamp(24px,4vmin,44px) clamp(20px,3vmin,30px);
+    background: #fbfbfa; border: 1px solid rgba(0,0,0,.06); border-radius: 14px;
+    box-shadow: 0 40px 100px rgba(0,0,0,.30), 0 4px 12px rgba(0,0,0,.08);
+    transform: translateY(18px) scale(.98); opacity: 0;
+    transition: transform .42s cubic-bezier(.34,1.24,.64,1), opacity .3s; }
+#read-layer.on #read-card { transform: none; opacity: 1; }
+#read-card::before { content: ''; position: absolute; inset: 0 0 auto; height: 4px;
+    border-radius: 14px 14px 0 0; background: var(--orange); }
+#read-step { margin-bottom: 9px; font-family: var(--mono); font-size: var(--fs-step); font-weight: 500;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--green); }
+#read-title { margin-bottom: 12px; font-size: clamp(21px,3vmin,32px); font-weight: 500;
+    line-height: 1.2; letter-spacing: -.02em; color: #111; }
+#read-body { font-size: clamp(14px,1.85vmin,17px); font-weight: 300; line-height: 1.7; color: #555; }
+#read-body b { color: #222; font-weight: 400; }
+#btn-read-go { display: inline-flex; align-items: center; gap: 8px; margin-top: 22px;
+    padding: 13px 24px; background: var(--orange); border: 0; border-radius: 7px;
+    font: 500 var(--fs-btn) var(--font); color: #fff; cursor: pointer; transition: .18s; }
+#btn-read-go:hover { background: #e07010; transform: translateY(-2px); }
+#read-hint { margin-top: 10px; font: 10px var(--mono); color: var(--green); }
+#read-hint kbd { padding: 1px 5px; border: 1px solid rgba(0,0,0,.12); border-bottom-width: 2px;
+    border-radius: 4px; background: rgba(0,0,0,.05); font: inherit; }
+
+#quiz-card { position: absolute; left: 50%; top: clamp(64px,9vh,100px); z-index: 70;
+    display: none; width: min(94vw,720px); max-height: calc(100vh - var(--panel-h) - 120px);
+    overflow-y: auto; transform: translateX(-50%); padding: 22px 28px; background: #fbfbfa;
+    border: 1px solid rgba(0,0,0,.06); border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.12), 0 4px 12px rgba(0,0,0,.04); }
+#quiz-card.on { display: block; animation: riseIn .5s cubic-bezier(.34,1.3,.64,1) backwards; }
+.quiz-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+    padding-bottom: 11px; border-bottom: 1px solid var(--line); }
+.quiz-head h2 { font-size: 18px; font-weight: 500; color: #111; }
+#quiz-tally { font: var(--fs-fine) var(--mono); color: var(--muted); white-space: nowrap; }
+#quiz-tally.complete { color: var(--green); }
+.quiz-q { padding: 13px 0; border-bottom: 1px solid rgba(0,0,0,.05); }
+.quiz-q:last-child { border-bottom: 0; }
+.quiz-prompt { display: flex; gap: 10px; margin-bottom: 10px; font-size: var(--fs-body); line-height: 1.5; color: #222; }
+.quiz-num { flex: 0 0 21px; height: 21px; border-radius: 50%; background: rgba(0,0,0,.06);
+    font: 11px/21px var(--mono); color: var(--muted); text-align: center; }
+.quiz-q.solved .quiz-num { background: var(--green); color: #fff; }
+.quiz-opts { display: flex; flex-wrap: wrap; gap: 7px; padding-left: 31px; }
+.quiz-opt { padding: 8px 14px; border: 1px solid var(--line); border-radius: 9px; background: #fff;
+    font: 400 var(--fs-ui) var(--font); color: #444; text-align: left; cursor: pointer; transition: .18s; }
+.quiz-opt:hover:not(:disabled) { border-color: var(--orange); color: #d66d08; transform: translateY(-1px); }
+.quiz-opt.right { background: var(--green); border-color: var(--green); color: #fff; }
+.quiz-opt.wrong { border-color: rgba(192,69,58,.5); color: #c0453a; background: #fdf1ef; text-decoration: line-through; }
+.quiz-opt:disabled { cursor: default; opacity: .5; }
+.quiz-opt.right:disabled { opacity: 1; }
+.quiz-why { display: none; margin: 10px 0 0 31px; padding: 9px 13px; border-left: 3px solid rgba(192,69,58,.45);
+    border-radius: 0 8px 8px 0; background: rgba(192,69,58,.05); font-size: var(--fs-ui); line-height: 1.55; color: #555; }
+.quiz-why.on { display: block; animation: riseIn .35s ease backwards; }
+.quiz-why.right { border-left-color: var(--green); background: rgba(0,170,0,.06); }
+
+@media (max-width: 760px), (max-height: 620px) {
+    #quiz-card { top: 60px; padding: 18px; }
+}

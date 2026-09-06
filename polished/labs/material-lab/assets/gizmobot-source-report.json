@@ -1,0 +1,5841 @@
+{
+  "source": "C:\\Users\\joshu\\Documents\\CreateAccess\\2026\\fundamentals_of_3d\\polished\\labs\\navigate-and-transform\\assets\\gizmobot.glb",
+  "blender": "4.1.1",
+  "scene": {
+    "objects": 1,
+    "meshes": 1,
+    "materials": 1,
+    "images": 3
+  },
+  "materials": [
+    {
+      "name": "M_Gizmo",
+      "blend_method": "DITHERED",
+      "double_sided": true,
+      "nodes": [
+        {
+          "name": "Principled BSDF",
+          "type": "ShaderNodeBsdfPrincipled",
+          "values": {
+            "Base Color": [
+              0.8,
+              0.8,
+              0.8,
+              1.0
+            ],
+            "Metallic": 0.0,
+            "Roughness": 0.5,
+            "IOR": 1.5,
+            "Alpha": 1.0,
+            "Emission Color": [
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "Emission Strength": 1.0
+          }
+        },
+        {
+          "name": "Material Output",
+          "type": "ShaderNodeOutputMaterial"
+        },
+        {
+          "name": "Image Texture",
+          "type": "ShaderNodeTexImage",
+          "image": {
+            "name": "gizmo_model_v2_M_Gizmo_Emissive",
+            "size": [
+              2048,
+              2048
+            ],
+            "colorspace": "sRGB",
+            "alpha_mode": "CHANNEL_PACKED",
+            "source": "FILE",
+            "exported": "C:\\Users\\joshu\\Documents\\CreateAccess\\2026\\fundamentals_of_3d\\polished\\labs\\material-lab\\assets\\source-textures\\gizmo_model_v2_M_Gizmo_Emissive.png"
+          }
+        },
+        {
+          "name": "Image Texture.001",
+          "type": "ShaderNodeTexImage",
+          "image": {
+            "name": "gizmo_model_v2_M_Gizmo_BaseColor",
+            "size": [
+              2048,
+              2048
+            ],
+            "colorspace": "sRGB",
+            "alpha_mode": "CHANNEL_PACKED",
+            "source": "FILE",
+            "exported": "C:\\Users\\joshu\\Documents\\CreateAccess\\2026\\fundamentals_of_3d\\polished\\labs\\material-lab\\assets\\source-textures\\gizmo_model_v2_M_Gizmo_BaseColor.png"
+          }
+        },
+        {
+          "name": "Separate Color",
+          "type": "ShaderNodeSeparateColor"
+        },
+        {
+          "name": "Image Texture.002",
+          "type": "ShaderNodeTexImage",
+          "image": {
+            "name": "gizmo_model_v2_M_Gizmo_Metallic-gizmo_model_v2_M_Gizmo_Roughnes",
+            "size": [
+              2048,
+              2048
+            ],
+            "colorspace": "Non-Color",
+            "alpha_mode": "CHANNEL_PACKED",
+            "source": "FILE",
+            "exported": "C:\\Users\\joshu\\Documents\\CreateAccess\\2026\\fundamentals_of_3d\\polished\\labs\\material-lab\\assets\\source-textures\\gizmo_model_v2_M_Gizmo_Metallic-gizmo_model_v2_M_Gizmo_Roughnes.png"
+          }
+        }
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "object": "Gizmo",
+      "mesh": "Gizmo",
+      "transform": {
+        "location": [
+          0.0,
+          0.155871,
+          0.0
+        ],
+        "rotation_euler": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          0.978686,
+          1.182998,
+          1.182998
+        ]
+      },
+      "counts": {
+        "vertices": 9942,
+        "edges": 24634,
+        "polygons": 14840,
+        "triangles": 14840,
+        "materials": 1,
+        "uv_layers": 1,
+        "components": 184
+      },
+      "material_slots": [
+        "M_Gizmo"
+      ],
+      "uv_layers": [
+        "UVMap"
+      ],
+      "bounds_min": [
+        -1.938227,
+        -0.6501,
+        0.0
+      ],
+      "bounds_max": [
+        1.938227,
+        0.369424,
+        2.804304
+      ],
+      "components": [
+        {
+          "index": 11,
+          "polygons": 320,
+          "vertices": 177,
+          "area": 2.037625,
+          "bounds_min": [
+            -0.649837,
+            -0.6501,
+            1.865366
+          ],
+          "bounds_max": [
+            0.652225,
+            -0.173462,
+            2.802859
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 201
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 119
+            }
+          ]
+        },
+        {
+          "index": 10,
+          "polygons": 576,
+          "vertices": 330,
+          "area": 1.861702,
+          "bounds_min": [
+            -0.651552,
+            -0.182042,
+            1.864364
+          ],
+          "bounds_max": [
+            0.65391,
+            0.199667,
+            2.804304
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 313
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 262
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                240
+              ],
+              "triangles": 1
+            }
+          ]
+        },
+        {
+          "index": 173,
+          "polygons": 352,
+          "vertices": 216,
+          "area": 0.722986,
+          "bounds_min": [
+            -0.419068,
+            -0.483798,
+            1.153212
+          ],
+          "bounds_max": [
+            0.421242,
+            -0.131712,
+            1.824295
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 175
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 172
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                240
+              ],
+              "triangles": 3
+            },
+            {
+              "rgb": [
+                255,
+                240,
+                240
+              ],
+              "triangles": 2
+            }
+          ]
+        },
+        {
+          "index": 172,
+          "polygons": 352,
+          "vertices": 216,
+          "area": 0.698907,
+          "bounds_min": [
+            -0.419068,
+            -0.137104,
+            1.153212
+          ],
+          "bounds_max": [
+            0.421242,
+            0.215667,
+            1.824295
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 179
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 142
+            },
+            {
+              "rgb": [
+                255,
+                192,
+                96
+              ],
+              "triangles": 14
+            },
+            {
+              "rgb": [
+                0,
+                216,
+                0
+              ],
+              "triangles": 7
+            },
+            {
+              "rgb": [
+                255,
+                240,
+                96
+              ],
+              "triangles": 3
+            },
+            {
+              "rgb": [
+                255,
+                240,
+                240
+              ],
+              "triangles": 2
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                240
+              ],
+              "triangles": 2
+            },
+            {
+              "rgb": [
+                120,
+                216,
+                24
+              ],
+              "triangles": 1
+            }
+          ]
+        },
+        {
+          "index": 77,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.674062,
+          "bounds_min": [
+            -0.507927,
+            -0.398662,
+            0.22445
+          ],
+          "bounds_max": [
+            -0.022153,
+            0.109601,
+            0.814248
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 12
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 12
+            }
+          ]
+        },
+        {
+          "index": 83,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.674062,
+          "bounds_min": [
+            0.022153,
+            -0.398662,
+            0.22445
+          ],
+          "bounds_max": [
+            0.507927,
+            0.109601,
+            0.814248
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 13
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 11
+            }
+          ]
+        },
+        {
+          "index": 26,
+          "polygons": 192,
+          "vertices": 113,
+          "area": 0.630622,
+          "bounds_min": [
+            -0.482056,
+            0.101347,
+            1.979991
+          ],
+          "bounds_max": [
+            0.478786,
+            0.207227,
+            2.67463
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                120,
+                120,
+                120
+              ],
+              "triangles": 118
+            },
+            {
+              "rgb": [
+                96,
+                96,
+                72
+              ],
+              "triangles": 23
+            },
+            {
+              "rgb": [
+                96,
+                96,
+                120
+              ],
+              "triangles": 20
+            },
+            {
+              "rgb": [
+                96,
+                96,
+                96
+              ],
+              "triangles": 19
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                255
+              ],
+              "triangles": 7
+            },
+            {
+              "rgb": [
+                96,
+                120,
+                120
+              ],
+              "triangles": 3
+            },
+            {
+              "rgb": [
+                192,
+                216,
+                216
+              ],
+              "triangles": 2
+            }
+          ]
+        },
+        {
+          "index": 112,
+          "polygons": 120,
+          "vertices": 69,
+          "area": 0.403235,
+          "bounds_min": [
+            -0.437456,
+            -0.332262,
+            0.058111
+          ],
+          "bounds_max": [
+            -0.10955,
+            0.222021,
+            0.328553
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 120
+            }
+          ]
+        },
+        {
+          "index": 114,
+          "polygons": 120,
+          "vertices": 69,
+          "area": 0.403235,
+          "bounds_min": [
+            0.10955,
+            -0.332262,
+            0.058111
+          ],
+          "bounds_max": [
+            0.437456,
+            0.222021,
+            0.328553
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 120
+            }
+          ]
+        },
+        {
+          "index": 117,
+          "polygons": 208,
+          "vertices": 117,
+          "area": 0.327512,
+          "bounds_min": [
+            -0.452557,
+            -0.342028,
+            0.006622
+          ],
+          "bounds_max": [
+            -0.063813,
+            0.369424,
+            0.059446
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                192,
+                96
+              ],
+              "triangles": 208
+            }
+          ]
+        },
+        {
+          "index": 119,
+          "polygons": 208,
+          "vertices": 117,
+          "area": 0.327512,
+          "bounds_min": [
+            0.063813,
+            -0.342028,
+            0.006622
+          ],
+          "bounds_max": [
+            0.452557,
+            0.369424,
+            0.059446
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                0,
+                216,
+                0
+              ],
+              "triangles": 208
+            }
+          ]
+        },
+        {
+          "index": 55,
+          "polygons": 264,
+          "vertices": 166,
+          "area": 0.308444,
+          "bounds_min": [
+            -0.348766,
+            -0.381108,
+            0.951733
+          ],
+          "bounds_max": [
+            0.348766,
+            0.109946,
+            1.180219
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 264
+            }
+          ]
+        },
+        {
+          "index": 7,
+          "polygons": 304,
+          "vertices": 165,
+          "area": 0.255856,
+          "bounds_min": [
+            -1.619611,
+            -0.360911,
+            1.523157
+          ],
+          "bounds_max": [
+            -1.224705,
+            0.057955,
+            1.642797
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 192
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 110
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                240
+              ],
+              "triangles": 2
+            }
+          ]
+        },
+        {
+          "index": 9,
+          "polygons": 304,
+          "vertices": 165,
+          "area": 0.255856,
+          "bounds_min": [
+            1.224705,
+            -0.360911,
+            1.523157
+          ],
+          "bounds_max": [
+            1.619611,
+            0.057955,
+            1.642797
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 183
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 121
+            }
+          ]
+        },
+        {
+          "index": 116,
+          "polygons": 160,
+          "vertices": 93,
+          "area": 0.241805,
+          "bounds_min": [
+            -0.452557,
+            -0.342028,
+            0.0
+          ],
+          "bounds_max": [
+            -0.063813,
+            0.369424,
+            0.006622
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                192,
+                96
+              ],
+              "triangles": 160
+            }
+          ]
+        },
+        {
+          "index": 118,
+          "polygons": 160,
+          "vertices": 93,
+          "area": 0.241805,
+          "bounds_min": [
+            0.063813,
+            -0.342028,
+            0.0
+          ],
+          "bounds_max": [
+            0.452557,
+            0.369424,
+            0.006622
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                0,
+                216,
+                0
+              ],
+              "triangles": 160
+            }
+          ]
+        },
+        {
+          "index": 159,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.235651,
+          "bounds_min": [
+            -1.185936,
+            -0.302562,
+            1.418272
+          ],
+          "bounds_max": [
+            -0.890815,
+            0.006333,
+            1.728547
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 14
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 10
+            }
+          ]
+        },
+        {
+          "index": 167,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.235651,
+          "bounds_min": [
+            0.890815,
+            -0.302562,
+            1.418272
+          ],
+          "bounds_max": [
+            1.185936,
+            0.006333,
+            1.728547
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 16
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 8
+            }
+          ]
+        },
+        {
+          "index": 86,
+          "polygons": 72,
+          "vertices": 48,
+          "area": 0.224154,
+          "bounds_min": [
+            -0.265558,
+            -0.325518,
+            0.109208
+          ],
+          "bounds_max": [
+            -0.051687,
+            0.047811,
+            0.48248
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 72
+            }
+          ]
+        },
+        {
+          "index": 87,
+          "polygons": 72,
+          "vertices": 48,
+          "area": 0.224154,
+          "bounds_min": [
+            -0.471553,
+            -0.325518,
+            0.109208
+          ],
+          "bounds_max": [
+            -0.257682,
+            0.047811,
+            0.48248
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 72
+            }
+          ]
+        },
+        {
+          "index": 90,
+          "polygons": 72,
+          "vertices": 48,
+          "area": 0.224154,
+          "bounds_min": [
+            0.051687,
+            -0.325518,
+            0.109208
+          ],
+          "bounds_max": [
+            0.265558,
+            0.047811,
+            0.48248
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 72
+            }
+          ]
+        },
+        {
+          "index": 91,
+          "polygons": 72,
+          "vertices": 48,
+          "area": 0.224154,
+          "bounds_min": [
+            0.257682,
+            -0.325518,
+            0.109208
+          ],
+          "bounds_max": [
+            0.471553,
+            0.047811,
+            0.48248
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 72
+            }
+          ]
+        },
+        {
+          "index": 41,
+          "polygons": 276,
+          "vertices": 157,
+          "area": 0.215624,
+          "bounds_min": [
+            -0.486559,
+            -0.333348,
+            1.373821
+          ],
+          "bounds_max": [
+            -0.09717,
+            -0.141483,
+            1.757984
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 276
+            }
+          ]
+        },
+        {
+          "index": 45,
+          "polygons": 276,
+          "vertices": 157,
+          "area": 0.215624,
+          "bounds_min": [
+            0.09717,
+            -0.333348,
+            1.373821
+          ],
+          "bounds_max": [
+            0.486559,
+            -0.141483,
+            1.757984
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 276
+            }
+          ]
+        },
+        {
+          "index": 40,
+          "polygons": 276,
+          "vertices": 157,
+          "area": 0.215623,
+          "bounds_min": [
+            -0.486559,
+            -0.141483,
+            1.373821
+          ],
+          "bounds_max": [
+            -0.09717,
+            0.050381,
+            1.757984
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 276
+            }
+          ]
+        },
+        {
+          "index": 44,
+          "polygons": 276,
+          "vertices": 157,
+          "area": 0.215623,
+          "bounds_min": [
+            0.09717,
+            -0.141483,
+            1.373821
+          ],
+          "bounds_max": [
+            0.486559,
+            0.050381,
+            1.757984
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 276
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "polygons": 60,
+          "vertices": 40,
+          "area": 0.203822,
+          "bounds_min": [
+            -0.864065,
+            -0.269674,
+            1.457368
+          ],
+          "bounds_max": [
+            -0.597421,
+            -0.032921,
+            1.687463
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 58
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 2
+            }
+          ]
+        },
+        {
+          "index": 5,
+          "polygons": 60,
+          "vertices": 40,
+          "area": 0.203822,
+          "bounds_min": [
+            0.599595,
+            -0.269674,
+            1.457368
+          ],
+          "bounds_max": [
+            0.866239,
+            -0.032921,
+            1.687463
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 58
+            },
+            {
+              "rgb": [
+                255,
+                240,
+                240
+              ],
+              "triangles": 1
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 1
+            }
+          ]
+        },
+        {
+          "index": 99,
+          "polygons": 208,
+          "vertices": 120,
+          "area": 0.197303,
+          "bounds_min": [
+            -0.446653,
+            0.010891,
+            0.04268
+          ],
+          "bounds_max": [
+            -0.0653,
+            0.353732,
+            0.283114
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 122
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 84
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                240
+              ],
+              "triangles": 2
+            }
+          ]
+        },
+        {
+          "index": 103,
+          "polygons": 208,
+          "vertices": 120,
+          "area": 0.197303,
+          "bounds_min": [
+            0.0653,
+            0.010891,
+            0.04268
+          ],
+          "bounds_max": [
+            0.446653,
+            0.353732,
+            0.283114
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 117
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 90
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                240
+              ],
+              "triangles": 1
+            }
+          ]
+        },
+        {
+          "index": 98,
+          "polygons": 208,
+          "vertices": 120,
+          "area": 0.152787,
+          "bounds_min": [
+            -0.423769,
+            0.014738,
+            0.041682
+          ],
+          "bounds_max": [
+            -0.088184,
+            0.316434,
+            0.253261
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                216,
+                216,
+                216
+              ],
+              "triangles": 208
+            }
+          ]
+        },
+        {
+          "index": 102,
+          "polygons": 208,
+          "vertices": 120,
+          "area": 0.152787,
+          "bounds_min": [
+            0.088184,
+            0.014738,
+            0.041682
+          ],
+          "bounds_max": [
+            0.423769,
+            0.316434,
+            0.253261
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                216,
+                216,
+                216
+              ],
+              "triangles": 208
+            }
+          ]
+        },
+        {
+          "index": 113,
+          "polygons": 56,
+          "vertices": 37,
+          "area": 0.151231,
+          "bounds_min": [
+            -0.431675,
+            -0.328905,
+            0.029558
+          ],
+          "bounds_max": [
+            -0.117604,
+            0.216106,
+            0.06514
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                216,
+                216,
+                216
+              ],
+              "triangles": 56
+            }
+          ]
+        },
+        {
+          "index": 115,
+          "polygons": 56,
+          "vertices": 37,
+          "area": 0.151231,
+          "bounds_min": [
+            0.117604,
+            -0.328905,
+            0.029558
+          ],
+          "bounds_max": [
+            0.431675,
+            0.216106,
+            0.06514
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                216,
+                216,
+                216
+              ],
+              "triangles": 56
+            }
+          ]
+        },
+        {
+          "index": 151,
+          "polygons": 72,
+          "vertices": 52,
+          "area": 0.142753,
+          "bounds_min": [
+            -0.357266,
+            -0.223297,
+            0.802563
+          ],
+          "bounds_max": [
+            -0.142527,
+            -0.041086,
+            1.11391
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 67
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 5
+            }
+          ]
+        },
+        {
+          "index": 154,
+          "polygons": 72,
+          "vertices": 52,
+          "area": 0.142753,
+          "bounds_min": [
+            0.144701,
+            -0.223297,
+            0.802563
+          ],
+          "bounds_max": [
+            0.35944,
+            -0.041086,
+            1.11391
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 65
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 7
+            }
+          ]
+        },
+        {
+          "index": 6,
+          "polygons": 112,
+          "vertices": 69,
+          "area": 0.132111,
+          "bounds_min": [
+            -1.614189,
+            -0.348349,
+            1.515307
+          ],
+          "bounds_max": [
+            -1.231647,
+            0.048739,
+            1.531136
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 112
+            }
+          ]
+        },
+        {
+          "index": 8,
+          "polygons": 112,
+          "vertices": 69,
+          "area": 0.132111,
+          "bounds_min": [
+            1.231647,
+            -0.348349,
+            1.515307
+          ],
+          "bounds_max": [
+            1.614189,
+            0.048739,
+            1.531136
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                216,
+                216,
+                216
+              ],
+              "triangles": 112
+            }
+          ]
+        },
+        {
+          "index": 35,
+          "polygons": 84,
+          "vertices": 51,
+          "area": 0.117255,
+          "bounds_min": [
+            -0.655643,
+            -0.278342,
+            1.443868
+          ],
+          "bounds_max": [
+            -0.340174,
+            -0.017357,
+            1.574361
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 84
+            }
+          ]
+        },
+        {
+          "index": 36,
+          "polygons": 84,
+          "vertices": 51,
+          "area": 0.117255,
+          "bounds_min": [
+            -0.655643,
+            -0.278342,
+            1.574361
+          ],
+          "bounds_max": [
+            -0.340174,
+            -0.017357,
+            1.704853
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 84
+            }
+          ]
+        },
+        {
+          "index": 37,
+          "polygons": 84,
+          "vertices": 51,
+          "area": 0.117255,
+          "bounds_min": [
+            0.340174,
+            -0.278342,
+            1.443868
+          ],
+          "bounds_max": [
+            0.655643,
+            -0.017357,
+            1.574361
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 84
+            }
+          ]
+        },
+        {
+          "index": 38,
+          "polygons": 84,
+          "vertices": 51,
+          "area": 0.117255,
+          "bounds_min": [
+            0.340174,
+            -0.278342,
+            1.574361
+          ],
+          "bounds_max": [
+            0.655643,
+            -0.017357,
+            1.704853
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 84
+            }
+          ]
+        },
+        {
+          "index": 30,
+          "polygons": 84,
+          "vertices": 51,
+          "area": 0.117012,
+          "bounds_min": [
+            -0.157734,
+            -0.13176,
+            1.667555
+          ],
+          "bounds_max": [
+            0.157734,
+            -0.001267,
+            1.92854
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 84
+            }
+          ]
+        },
+        {
+          "index": 31,
+          "polygons": 84,
+          "vertices": 51,
+          "area": 0.117012,
+          "bounds_min": [
+            -0.157734,
+            -0.262252,
+            1.667555
+          ],
+          "bounds_max": [
+            0.157734,
+            -0.13176,
+            1.92854
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 84
+            }
+          ]
+        },
+        {
+          "index": 174,
+          "polygons": 64,
+          "vertices": 51,
+          "area": 0.114011,
+          "bounds_min": [
+            -0.288967,
+            -0.134278,
+            1.689422
+          ],
+          "bounds_max": [
+            0.291141,
+            0.124254,
+            1.824295
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 64
+            }
+          ]
+        },
+        {
+          "index": 175,
+          "polygons": 64,
+          "vertices": 51,
+          "area": 0.110677,
+          "bounds_min": [
+            -0.286293,
+            -0.389317,
+            1.716292
+          ],
+          "bounds_max": [
+            0.288466,
+            -0.129854,
+            1.824295
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 64
+            }
+          ]
+        },
+        {
+          "index": 74,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.109117,
+          "bounds_min": [
+            -0.464565,
+            -0.35261,
+            0.194153
+          ],
+          "bounds_max": [
+            -0.06682,
+            0.063549,
+            0.389644
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                216,
+                216,
+                216
+              ],
+              "triangles": 24
+            }
+          ]
+        },
+        {
+          "index": 80,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.109117,
+          "bounds_min": [
+            0.06682,
+            -0.35261,
+            0.194153
+          ],
+          "bounds_max": [
+            0.464565,
+            0.063549,
+            0.389644
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                216,
+                216,
+                216
+              ],
+              "triangles": 24
+            }
+          ]
+        },
+        {
+          "index": 33,
+          "polygons": 18,
+          "vertices": 20,
+          "area": 0.10815,
+          "bounds_min": [
+            -0.20568,
+            -0.293785,
+            1.784201
+          ],
+          "bounds_max": [
+            0.20568,
+            0.042477,
+            1.836567
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 18
+            }
+          ]
+        },
+        {
+          "index": 180,
+          "polygons": 32,
+          "vertices": 34,
+          "area": 0.10382,
+          "bounds_min": [
+            -0.357124,
+            -0.131774,
+            1.137719
+          ],
+          "bounds_max": [
+            0.359298,
+            0.173014,
+            1.142672
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 32
+            }
+          ]
+        },
+        {
+          "index": 133,
+          "polygons": 208,
+          "vertices": 115,
+          "area": 0.100003,
+          "bounds_min": [
+            -1.735098,
+            -0.36369,
+            1.51877
+          ],
+          "bounds_max": [
+            -1.548629,
+            -0.080278,
+            1.616094
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 208
+            }
+          ]
+        },
+        {
+          "index": 135,
+          "polygons": 208,
+          "vertices": 115,
+          "area": 0.100003,
+          "bounds_min": [
+            1.548629,
+            -0.36369,
+            1.51877
+          ],
+          "bounds_max": [
+            1.735098,
+            -0.080278,
+            1.616094
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 208
+            }
+          ]
+        },
+        {
+          "index": 181,
+          "polygons": 32,
+          "vertices": 34,
+          "area": 0.098814,
+          "bounds_min": [
+            -0.357124,
+            -0.414525,
+            1.137719
+          ],
+          "bounds_max": [
+            0.359298,
+            -0.129403,
+            1.14267
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 32
+            }
+          ]
+        },
+        {
+          "index": 94,
+          "polygons": 84,
+          "vertices": 51,
+          "area": 0.097924,
+          "bounds_min": [
+            -0.299223,
+            -0.257196,
+            0.977222
+          ],
+          "bounds_max": [
+            -0.010674,
+            -0.137821,
+            1.215937
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 84
+            }
+          ]
+        },
+        {
+          "index": 95,
+          "polygons": 84,
+          "vertices": 51,
+          "area": 0.097924,
+          "bounds_min": [
+            -0.299223,
+            -0.137821,
+            0.977222
+          ],
+          "bounds_max": [
+            -0.010674,
+            -0.018445,
+            1.215937
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 84
+            }
+          ]
+        },
+        {
+          "index": 96,
+          "polygons": 84,
+          "vertices": 51,
+          "area": 0.097924,
+          "bounds_min": [
+            0.010674,
+            -0.257196,
+            0.977222
+          ],
+          "bounds_max": [
+            0.299223,
+            -0.137821,
+            1.215937
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 84
+            }
+          ]
+        },
+        {
+          "index": 97,
+          "polygons": 84,
+          "vertices": 51,
+          "area": 0.097924,
+          "bounds_min": [
+            0.010674,
+            -0.137821,
+            0.977222
+          ],
+          "bounds_max": [
+            0.299223,
+            -0.018445,
+            1.215937
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 84
+            }
+          ]
+        },
+        {
+          "index": 121,
+          "polygons": 208,
+          "vertices": 115,
+          "area": 0.097086,
+          "bounds_min": [
+            -1.938227,
+            -0.371511,
+            1.523502
+          ],
+          "bounds_max": [
+            -1.682593,
+            -0.087313,
+            1.599202
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 121
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 83
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                240
+              ],
+              "triangles": 4
+            }
+          ]
+        },
+        {
+          "index": 123,
+          "polygons": 208,
+          "vertices": 115,
+          "area": 0.097086,
+          "bounds_min": [
+            1.682593,
+            -0.371511,
+            1.523502
+          ],
+          "bounds_max": [
+            1.938227,
+            -0.087313,
+            1.599202
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 107
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 100
+            },
+            {
+              "rgb": [
+                255,
+                240,
+                240
+              ],
+              "triangles": 1
+            }
+          ]
+        },
+        {
+          "index": 66,
+          "polygons": 72,
+          "vertices": 48,
+          "area": 0.092391,
+          "bounds_min": [
+            -0.254961,
+            -0.254946,
+            0.611477
+          ],
+          "bounds_max": [
+            -0.117653,
+            -0.015265,
+            0.851121
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 72
+            }
+          ]
+        },
+        {
+          "index": 67,
+          "polygons": 72,
+          "vertices": 48,
+          "area": 0.092391,
+          "bounds_min": [
+            -0.387211,
+            -0.254946,
+            0.611477
+          ],
+          "bounds_max": [
+            -0.249904,
+            -0.015265,
+            0.851121
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 72
+            }
+          ]
+        },
+        {
+          "index": 70,
+          "polygons": 72,
+          "vertices": 48,
+          "area": 0.092391,
+          "bounds_min": [
+            0.117653,
+            -0.254946,
+            0.611477
+          ],
+          "bounds_max": [
+            0.254961,
+            -0.015265,
+            0.851121
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 72
+            }
+          ]
+        },
+        {
+          "index": 71,
+          "polygons": 72,
+          "vertices": 48,
+          "area": 0.092391,
+          "bounds_min": [
+            0.249904,
+            -0.254946,
+            0.611477
+          ],
+          "bounds_max": [
+            0.387211,
+            -0.015265,
+            0.851121
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 72
+            }
+          ]
+        },
+        {
+          "index": 106,
+          "polygons": 40,
+          "vertices": 42,
+          "area": 0.07809,
+          "bounds_min": [
+            -0.493406,
+            -0.243708,
+            0.189073
+          ],
+          "bounds_max": [
+            -0.368699,
+            -0.036313,
+            0.398174
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 40
+            }
+          ]
+        },
+        {
+          "index": 109,
+          "polygons": 40,
+          "vertices": 42,
+          "area": 0.07809,
+          "bounds_min": [
+            0.368699,
+            -0.243708,
+            0.189073
+          ],
+          "bounds_max": [
+            0.493406,
+            -0.036313,
+            0.398174
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 40
+            }
+          ]
+        },
+        {
+          "index": 144,
+          "polygons": 40,
+          "vertices": 42,
+          "area": 0.07809,
+          "bounds_min": [
+            -0.175737,
+            -0.243708,
+            0.184485
+          ],
+          "bounds_max": [
+            -0.05103,
+            -0.036313,
+            0.393586
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 40
+            }
+          ]
+        },
+        {
+          "index": 147,
+          "polygons": 40,
+          "vertices": 42,
+          "area": 0.07809,
+          "bounds_min": [
+            0.05103,
+            -0.243708,
+            0.184485
+          ],
+          "bounds_max": [
+            0.175737,
+            -0.036313,
+            0.393586
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 40
+            }
+          ]
+        },
+        {
+          "index": 34,
+          "polygons": 40,
+          "vertices": 40,
+          "area": 0.077908,
+          "bounds_min": [
+            -0.21675,
+            -0.314719,
+            1.706476
+          ],
+          "bounds_max": [
+            0.21675,
+            0.049295,
+            1.823644
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 40
+            }
+          ]
+        },
+        {
+          "index": 76,
+          "polygons": 10,
+          "vertices": 12,
+          "area": 0.075948,
+          "bounds_min": [
+            -0.401945,
+            -0.300404,
+            0.739413
+          ],
+          "bounds_max": [
+            -0.104351,
+            0.011808,
+            0.824272
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 10
+            }
+          ]
+        },
+        {
+          "index": 82,
+          "polygons": 10,
+          "vertices": 12,
+          "area": 0.075944,
+          "bounds_min": [
+            0.104351,
+            -0.300404,
+            0.739413
+          ],
+          "bounds_max": [
+            0.401945,
+            0.011808,
+            0.824272
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                216,
+                216,
+                216
+              ],
+              "triangles": 10
+            }
+          ]
+        },
+        {
+          "index": 120,
+          "polygons": 128,
+          "vertices": 75,
+          "area": 0.070052,
+          "bounds_min": [
+            -1.935965,
+            -0.370638,
+            1.503985
+          ],
+          "bounds_max": [
+            -1.683236,
+            -0.088863,
+            1.551482
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 82
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 45
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                240
+              ],
+              "triangles": 1
+            }
+          ]
+        },
+        {
+          "index": 122,
+          "polygons": 128,
+          "vertices": 75,
+          "area": 0.070052,
+          "bounds_min": [
+            1.683236,
+            -0.370638,
+            1.503985
+          ],
+          "bounds_max": [
+            1.935965,
+            -0.088863,
+            1.551482
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 93
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 34
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                240
+              ],
+              "triangles": 1
+            }
+          ]
+        },
+        {
+          "index": 28,
+          "polygons": 18,
+          "vertices": 20,
+          "area": 0.068551,
+          "bounds_min": [
+            -0.163752,
+            -0.267231,
+            1.843401
+          ],
+          "bounds_max": [
+            0.163752,
+            0.003711,
+            1.843401
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 18
+            }
+          ]
+        },
+        {
+          "index": 56,
+          "polygons": 34,
+          "vertices": 36,
+          "area": 0.066939,
+          "bounds_min": [
+            0.066184,
+            -0.29511,
+            0.958335
+          ],
+          "bounds_max": [
+            0.310564,
+            0.033185,
+            1.132282
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 34
+            }
+          ]
+        },
+        {
+          "index": 57,
+          "polygons": 34,
+          "vertices": 36,
+          "area": 0.066939,
+          "bounds_min": [
+            -0.310564,
+            -0.29511,
+            0.958335
+          ],
+          "bounds_max": [
+            -0.066184,
+            0.033185,
+            1.132282
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 34
+            }
+          ]
+        },
+        {
+          "index": 177,
+          "polygons": 32,
+          "vertices": 34,
+          "area": 0.064122,
+          "bounds_min": [
+            -0.419068,
+            -0.33682,
+            1.380574
+          ],
+          "bounds_max": [
+            -0.286427,
+            -0.131471,
+            1.756509
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 32
+            }
+          ]
+        },
+        {
+          "index": 183,
+          "polygons": 32,
+          "vertices": 34,
+          "area": 0.064122,
+          "bounds_min": [
+            0.288601,
+            -0.33682,
+            1.380574
+          ],
+          "bounds_max": [
+            0.421242,
+            -0.131471,
+            1.756509
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 32
+            }
+          ]
+        },
+        {
+          "index": 176,
+          "polygons": 32,
+          "vertices": 34,
+          "area": 0.063034,
+          "bounds_min": [
+            -0.419068,
+            -0.137104,
+            1.380574
+          ],
+          "bounds_max": [
+            -0.286377,
+            0.063949,
+            1.756509
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 32
+            }
+          ]
+        },
+        {
+          "index": 182,
+          "polygons": 32,
+          "vertices": 34,
+          "area": 0.063034,
+          "bounds_min": [
+            0.288551,
+            -0.137104,
+            1.380574
+          ],
+          "bounds_max": [
+            0.421242,
+            0.063949,
+            1.756509
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 32
+            }
+          ]
+        },
+        {
+          "index": 158,
+          "polygons": 10,
+          "vertices": 12,
+          "area": 0.062534,
+          "bounds_min": [
+            -0.924743,
+            -0.290477,
+            1.430026
+          ],
+          "bounds_max": [
+            -0.879295,
+            -0.004016,
+            1.717401
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                216,
+                216,
+                216
+              ],
+              "triangles": 10
+            }
+          ]
+        },
+        {
+          "index": 166,
+          "polygons": 10,
+          "vertices": 12,
+          "area": 0.062534,
+          "bounds_min": [
+            0.879295,
+            -0.290477,
+            1.430026
+          ],
+          "bounds_max": [
+            0.924743,
+            -0.004016,
+            1.717401
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                216,
+                216,
+                216
+              ],
+              "triangles": 10
+            }
+          ]
+        },
+        {
+          "index": 125,
+          "polygons": 168,
+          "vertices": 95,
+          "area": 0.061957,
+          "bounds_min": [
+            -1.924066,
+            -0.082636,
+            1.51644
+          ],
+          "bounds_max": [
+            -1.690032,
+            0.045229,
+            1.602409
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 90
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 78
+            }
+          ]
+        },
+        {
+          "index": 127,
+          "polygons": 168,
+          "vertices": 95,
+          "area": 0.061957,
+          "bounds_min": [
+            1.690032,
+            -0.082636,
+            1.51644
+          ],
+          "bounds_max": [
+            1.924066,
+            0.045229,
+            1.602409
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 87
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 81
+            }
+          ]
+        },
+        {
+          "index": 78,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.057796,
+          "bounds_min": [
+            -0.507927,
+            -0.398662,
+            0.193895
+          ],
+          "bounds_max": [
+            -0.022153,
+            0.109601,
+            0.335171
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 19
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 5
+            }
+          ]
+        },
+        {
+          "index": 84,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.057796,
+          "bounds_min": [
+            0.022153,
+            -0.398662,
+            0.193895
+          ],
+          "bounds_max": [
+            0.507927,
+            0.109601,
+            0.335171
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 18
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 6
+            }
+          ]
+        },
+        {
+          "index": 75,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.057365,
+          "bounds_min": [
+            -0.447999,
+            -0.347961,
+            0.705612
+          ],
+          "bounds_max": [
+            -0.059141,
+            0.0589,
+            0.824272
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 24
+            }
+          ]
+        },
+        {
+          "index": 81,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.057365,
+          "bounds_min": [
+            0.059141,
+            -0.347961,
+            0.705612
+          ],
+          "bounds_max": [
+            0.447999,
+            0.0589,
+            0.824272
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 24
+            }
+          ]
+        },
+        {
+          "index": 129,
+          "polygons": 128,
+          "vertices": 75,
+          "area": 0.052874,
+          "bounds_min": [
+            -1.728639,
+            -0.082325,
+            1.526301
+          ],
+          "bounds_max": [
+            -1.54686,
+            0.04282,
+            1.621275
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 128
+            }
+          ]
+        },
+        {
+          "index": 131,
+          "polygons": 128,
+          "vertices": 75,
+          "area": 0.052874,
+          "bounds_min": [
+            1.54686,
+            -0.082325,
+            1.526301
+          ],
+          "bounds_max": [
+            1.728639,
+            0.04282,
+            1.621275
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 128
+            }
+          ]
+        },
+        {
+          "index": 132,
+          "polygons": 128,
+          "vertices": 75,
+          "area": 0.052662,
+          "bounds_min": [
+            -1.733743,
+            -0.362749,
+            1.501639
+          ],
+          "bounds_max": [
+            -1.551237,
+            -0.081191,
+            1.532679
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 128
+            }
+          ]
+        },
+        {
+          "index": 134,
+          "polygons": 128,
+          "vertices": 75,
+          "area": 0.052662,
+          "bounds_min": [
+            1.551237,
+            -0.362749,
+            1.501639
+          ],
+          "bounds_max": [
+            1.733743,
+            -0.081191,
+            1.532679
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 128
+            }
+          ]
+        },
+        {
+          "index": 29,
+          "polygons": 40,
+          "vertices": 40,
+          "area": 0.049382,
+          "bounds_min": [
+            -0.172565,
+            -0.274522,
+            1.854949
+          ],
+          "bounds_max": [
+            0.172565,
+            0.011002,
+            1.904892
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 40
+            }
+          ]
+        },
+        {
+          "index": 141,
+          "polygons": 128,
+          "vertices": 75,
+          "area": 0.049122,
+          "bounds_min": [
+            -1.418157,
+            -0.002893,
+            1.525431
+          ],
+          "bounds_max": [
+            -1.274696,
+            0.151304,
+            1.615501
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 128
+            }
+          ]
+        },
+        {
+          "index": 143,
+          "polygons": 128,
+          "vertices": 75,
+          "area": 0.049122,
+          "bounds_min": [
+            1.274696,
+            -0.002893,
+            1.525431
+          ],
+          "bounds_max": [
+            1.418157,
+            0.151304,
+            1.615501
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 128
+            }
+          ]
+        },
+        {
+          "index": 18,
+          "polygons": 18,
+          "vertices": 20,
+          "area": 0.048697,
+          "bounds_min": [
+            -0.726413,
+            -0.273171,
+            2.17699
+          ],
+          "bounds_max": [
+            -0.726413,
+            -0.022103,
+            2.428058
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 14
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 4
+            }
+          ]
+        },
+        {
+          "index": 25,
+          "polygons": 18,
+          "vertices": 20,
+          "area": 0.048697,
+          "bounds_min": [
+            0.726413,
+            -0.273171,
+            2.17699
+          ],
+          "bounds_max": [
+            0.726413,
+            -0.022103,
+            2.428058
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 14
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 4
+            }
+          ]
+        },
+        {
+          "index": 12,
+          "polygons": 40,
+          "vertices": 40,
+          "area": 0.04852,
+          "bounds_min": [
+            -0.665949,
+            -0.319565,
+            2.130596
+          ],
+          "bounds_max": [
+            -0.620848,
+            0.024291,
+            2.474452
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 40
+            }
+          ]
+        },
+        {
+          "index": 19,
+          "polygons": 40,
+          "vertices": 40,
+          "area": 0.04852,
+          "bounds_min": [
+            0.620848,
+            -0.319565,
+            2.130596
+          ],
+          "bounds_max": [
+            0.665949,
+            0.024291,
+            2.474452
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 40
+            }
+          ]
+        },
+        {
+          "index": 47,
+          "polygons": 72,
+          "vertices": 48,
+          "area": 0.045857,
+          "bounds_min": [
+            -0.983472,
+            -0.232955,
+            1.57436
+          ],
+          "bounds_max": [
+            -0.777726,
+            -0.062744,
+            1.652988
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 72
+            }
+          ]
+        },
+        {
+          "index": 48,
+          "polygons": 72,
+          "vertices": 48,
+          "area": 0.045857,
+          "bounds_min": [
+            -0.983472,
+            -0.232955,
+            1.495733
+          ],
+          "bounds_max": [
+            -0.777726,
+            -0.062744,
+            1.57436
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 72
+            }
+          ]
+        },
+        {
+          "index": 51,
+          "polygons": 72,
+          "vertices": 48,
+          "area": 0.045857,
+          "bounds_min": [
+            0.777726,
+            -0.232955,
+            1.57436
+          ],
+          "bounds_max": [
+            0.983472,
+            -0.062744,
+            1.652988
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 72
+            }
+          ]
+        },
+        {
+          "index": 52,
+          "polygons": 72,
+          "vertices": 48,
+          "area": 0.045857,
+          "bounds_min": [
+            0.777726,
+            -0.232955,
+            1.495733
+          ],
+          "bounds_max": [
+            0.983472,
+            -0.062744,
+            1.57436
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 72
+            }
+          ]
+        },
+        {
+          "index": 137,
+          "polygons": 128,
+          "vertices": 75,
+          "area": 0.045269,
+          "bounds_min": [
+            -1.41927,
+            0.122221,
+            1.524976
+          ],
+          "bounds_max": [
+            -1.260719,
+            0.292416,
+            1.595287
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 70
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 58
+            }
+          ]
+        },
+        {
+          "index": 139,
+          "polygons": 128,
+          "vertices": 75,
+          "area": 0.045269,
+          "bounds_min": [
+            1.260719,
+            0.122221,
+            1.524976
+          ],
+          "bounds_max": [
+            1.41927,
+            0.292416,
+            1.595287
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 73
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 55
+            }
+          ]
+        },
+        {
+          "index": 136,
+          "polygons": 128,
+          "vertices": 75,
+          "area": 0.040494,
+          "bounds_min": [
+            -1.41927,
+            0.122245,
+            1.496219
+          ],
+          "bounds_max": [
+            -1.260697,
+            0.29347,
+            1.572828
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 86
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 40
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                240
+              ],
+              "triangles": 1
+            },
+            {
+              "rgb": [
+                255,
+                240,
+                240
+              ],
+              "triangles": 1
+            }
+          ]
+        },
+        {
+          "index": 138,
+          "polygons": 128,
+          "vertices": 75,
+          "area": 0.040494,
+          "bounds_min": [
+            1.260697,
+            0.122245,
+            1.496219
+          ],
+          "bounds_max": [
+            1.41927,
+            0.29347,
+            1.572828
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 84
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 42
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                240
+              ],
+              "triangles": 2
+            }
+          ]
+        },
+        {
+          "index": 1,
+          "polygons": 10,
+          "vertices": 12,
+          "area": 0.036407,
+          "bounds_min": [
+            -0.870598,
+            -0.261071,
+            1.466171
+          ],
+          "bounds_max": [
+            -0.806067,
+            -0.041844,
+            1.67866
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                216,
+                216,
+                216
+              ],
+              "triangles": 10
+            }
+          ]
+        },
+        {
+          "index": 4,
+          "polygons": 10,
+          "vertices": 12,
+          "area": 0.036407,
+          "bounds_min": [
+            0.808241,
+            -0.261071,
+            1.466171
+          ],
+          "bounds_max": [
+            0.872772,
+            -0.041844,
+            1.67866
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                216,
+                216,
+                216
+              ],
+              "triangles": 10
+            }
+          ]
+        },
+        {
+          "index": 39,
+          "polygons": 84,
+          "vertices": 53,
+          "area": 0.035933,
+          "bounds_min": [
+            -0.486559,
+            -0.141483,
+            1.425886
+          ],
+          "bounds_max": [
+            -0.42475,
+            -0.001778,
+            1.734758
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 84
+            }
+          ]
+        },
+        {
+          "index": 42,
+          "polygons": 84,
+          "vertices": 53,
+          "area": 0.035933,
+          "bounds_min": [
+            -0.486559,
+            -0.281189,
+            1.425886
+          ],
+          "bounds_max": [
+            -0.42475,
+            -0.141483,
+            1.734758
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 84
+            }
+          ]
+        },
+        {
+          "index": 43,
+          "polygons": 84,
+          "vertices": 53,
+          "area": 0.035933,
+          "bounds_min": [
+            0.42475,
+            -0.141483,
+            1.425886
+          ],
+          "bounds_max": [
+            0.486559,
+            -0.001778,
+            1.734758
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 84
+            }
+          ]
+        },
+        {
+          "index": 46,
+          "polygons": 84,
+          "vertices": 53,
+          "area": 0.035933,
+          "bounds_min": [
+            0.42475,
+            -0.281189,
+            1.425886
+          ],
+          "bounds_max": [
+            0.486559,
+            -0.141483,
+            1.734758
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 84
+            }
+          ]
+        },
+        {
+          "index": 128,
+          "polygons": 128,
+          "vertices": 75,
+          "area": 0.032825,
+          "bounds_min": [
+            -1.726024,
+            -0.082325,
+            1.500461
+          ],
+          "bounds_max": [
+            -1.54689,
+            0.04282,
+            1.547664
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 128
+            }
+          ]
+        },
+        {
+          "index": 130,
+          "polygons": 128,
+          "vertices": 75,
+          "area": 0.032825,
+          "bounds_min": [
+            1.54689,
+            -0.082325,
+            1.500461
+          ],
+          "bounds_max": [
+            1.726025,
+            0.04282,
+            1.547664
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 128
+            }
+          ]
+        },
+        {
+          "index": 124,
+          "polygons": 88,
+          "vertices": 55,
+          "area": 0.031722,
+          "bounds_min": [
+            -1.924066,
+            -0.082249,
+            1.50585
+          ],
+          "bounds_max": [
+            -1.690786,
+            0.045229,
+            1.561614
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 62
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 26
+            }
+          ]
+        },
+        {
+          "index": 126,
+          "polygons": 88,
+          "vertices": 55,
+          "area": 0.031722,
+          "bounds_min": [
+            1.690786,
+            -0.082249,
+            1.50585
+          ],
+          "bounds_max": [
+            1.924066,
+            0.045229,
+            1.561614
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 59
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 29
+            }
+          ]
+        },
+        {
+          "index": 163,
+          "polygons": 10,
+          "vertices": 12,
+          "area": 0.031464,
+          "bounds_min": [
+            -1.235792,
+            -0.253975,
+            1.47155
+          ],
+          "bounds_max": [
+            -1.221094,
+            -0.047061,
+            1.6738
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                192,
+                96
+              ],
+              "triangles": 10
+            }
+          ]
+        },
+        {
+          "index": 171,
+          "polygons": 10,
+          "vertices": 12,
+          "area": 0.031464,
+          "bounds_min": [
+            1.221094,
+            -0.253975,
+            1.47155
+          ],
+          "bounds_max": [
+            1.235792,
+            -0.047061,
+            1.6738
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                0,
+                216,
+                0
+              ],
+              "triangles": 10
+            }
+          ]
+        },
+        {
+          "index": 140,
+          "polygons": 128,
+          "vertices": 75,
+          "area": 0.031112,
+          "bounds_min": [
+            -1.418157,
+            -0.002868,
+            1.500924
+          ],
+          "bounds_max": [
+            -1.274696,
+            0.149086,
+            1.545691
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 128
+            }
+          ]
+        },
+        {
+          "index": 142,
+          "polygons": 128,
+          "vertices": 75,
+          "area": 0.031112,
+          "bounds_min": [
+            1.274696,
+            -0.002868,
+            1.500924
+          ],
+          "bounds_max": [
+            1.418157,
+            0.149086,
+            1.545691
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 128
+            }
+          ]
+        },
+        {
+          "index": 58,
+          "polygons": 72,
+          "vertices": 48,
+          "area": 0.030241,
+          "bounds_min": [
+            -1.293152,
+            -0.216962,
+            1.57436
+          ],
+          "bounds_max": [
+            -1.12607,
+            -0.078737,
+            1.638213
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 72
+            }
+          ]
+        },
+        {
+          "index": 59,
+          "polygons": 72,
+          "vertices": 48,
+          "area": 0.030241,
+          "bounds_min": [
+            -1.293152,
+            -0.216962,
+            1.510509
+          ],
+          "bounds_max": [
+            -1.12607,
+            -0.078737,
+            1.57436
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 72
+            }
+          ]
+        },
+        {
+          "index": 62,
+          "polygons": 72,
+          "vertices": 48,
+          "area": 0.030241,
+          "bounds_min": [
+            1.12607,
+            -0.216962,
+            1.57436
+          ],
+          "bounds_max": [
+            1.293152,
+            -0.078737,
+            1.638213
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 72
+            }
+          ]
+        },
+        {
+          "index": 63,
+          "polygons": 72,
+          "vertices": 48,
+          "area": 0.030241,
+          "bounds_min": [
+            1.12607,
+            -0.216962,
+            1.510509
+          ],
+          "bounds_max": [
+            1.293152,
+            -0.078737,
+            1.57436
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 72
+            }
+          ]
+        },
+        {
+          "index": 179,
+          "polygons": 32,
+          "vertices": 34,
+          "area": 0.028256,
+          "bounds_min": [
+            -0.378286,
+            -0.132103,
+            1.137719
+          ],
+          "bounds_max": [
+            0.38046,
+            0.191617,
+            1.158386
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 16
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 15
+            },
+            {
+              "rgb": [
+                255,
+                240,
+                240
+              ],
+              "triangles": 1
+            }
+          ]
+        },
+        {
+          "index": 152,
+          "polygons": 10,
+          "vertices": 12,
+          "area": 0.027947,
+          "bounds_min": [
+            -0.343018,
+            -0.212638,
+            0.985526
+          ],
+          "bounds_max": [
+            -0.153968,
+            -0.051744,
+            1.120798
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 10
+            }
+          ]
+        },
+        {
+          "index": 155,
+          "polygons": 10,
+          "vertices": 12,
+          "area": 0.027947,
+          "bounds_min": [
+            0.156142,
+            -0.212638,
+            0.985526
+          ],
+          "bounds_max": [
+            0.345192,
+            -0.051744,
+            1.120798
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                216,
+                216,
+                216
+              ],
+              "triangles": 10
+            }
+          ]
+        },
+        {
+          "index": 178,
+          "polygons": 32,
+          "vertices": 34,
+          "area": 0.027146,
+          "bounds_min": [
+            -0.378286,
+            -0.431908,
+            1.137719
+          ],
+          "bounds_max": [
+            0.38046,
+            -0.131774,
+            1.158583
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 18
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 13
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                240
+              ],
+              "triangles": 1
+            }
+          ]
+        },
+        {
+          "index": 156,
+          "polygons": 24,
+          "vertices": 24,
+          "area": 0.02609,
+          "bounds_min": [
+            -1.227813,
+            -0.273816,
+            1.451415
+          ],
+          "bounds_max": [
+            -1.170821,
+            -0.026779,
+            1.693941
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                192,
+                96
+              ],
+              "triangles": 24
+            }
+          ]
+        },
+        {
+          "index": 164,
+          "polygons": 24,
+          "vertices": 24,
+          "area": 0.02609,
+          "bounds_min": [
+            1.170821,
+            -0.273816,
+            1.451415
+          ],
+          "bounds_max": [
+            1.227813,
+            -0.026779,
+            1.693941
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                0,
+                216,
+                0
+              ],
+              "triangles": 24
+            }
+          ]
+        },
+        {
+          "index": 13,
+          "polygons": 40,
+          "vertices": 40,
+          "area": 0.025713,
+          "bounds_min": [
+            -0.680556,
+            -0.319565,
+            2.130596
+          ],
+          "bounds_max": [
+            -0.665949,
+            0.024291,
+            2.474452
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 40
+            }
+          ]
+        },
+        {
+          "index": 20,
+          "polygons": 40,
+          "vertices": 40,
+          "area": 0.025713,
+          "bounds_min": [
+            0.665949,
+            -0.319565,
+            2.130596
+          ],
+          "bounds_max": [
+            0.680556,
+            0.024291,
+            2.474452
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 40
+            }
+          ]
+        },
+        {
+          "index": 79,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.025035,
+          "bounds_min": [
+            -0.482416,
+            -0.371287,
+            0.193895
+          ],
+          "bounds_max": [
+            -0.048969,
+            0.082226,
+            0.304239
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                216,
+                216,
+                216
+              ],
+              "triangles": 24
+            }
+          ]
+        },
+        {
+          "index": 85,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.025035,
+          "bounds_min": [
+            0.048969,
+            -0.371287,
+            0.193895
+          ],
+          "bounds_max": [
+            0.482416,
+            0.082226,
+            0.304239
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                216,
+                216,
+                216
+              ],
+              "triangles": 24
+            }
+          ]
+        },
+        {
+          "index": 101,
+          "polygons": 32,
+          "vertices": 34,
+          "area": 0.023329,
+          "bounds_min": [
+            -0.438708,
+            0.010891,
+            0.041682
+          ],
+          "bounds_max": [
+            -0.073245,
+            0.348816,
+            0.046641
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 32
+            }
+          ]
+        },
+        {
+          "index": 105,
+          "polygons": 32,
+          "vertices": 34,
+          "area": 0.023329,
+          "bounds_min": [
+            0.073245,
+            0.010891,
+            0.041682
+          ],
+          "bounds_max": [
+            0.438708,
+            0.348816,
+            0.046641
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 32
+            }
+          ]
+        },
+        {
+          "index": 107,
+          "polygons": 40,
+          "vertices": 42,
+          "area": 0.0228,
+          "bounds_min": [
+            -0.525908,
+            -0.243708,
+            0.19081
+          ],
+          "bounds_max": [
+            -0.48903,
+            -0.036313,
+            0.398174
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 33
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 5
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                240
+              ],
+              "triangles": 2
+            }
+          ]
+        },
+        {
+          "index": 110,
+          "polygons": 40,
+          "vertices": 42,
+          "area": 0.0228,
+          "bounds_min": [
+            0.48903,
+            -0.243708,
+            0.19081
+          ],
+          "bounds_max": [
+            0.525908,
+            -0.036313,
+            0.398174
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 31
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 9
+            }
+          ]
+        },
+        {
+          "index": 145,
+          "polygons": 40,
+          "vertices": 42,
+          "area": 0.0228,
+          "bounds_min": [
+            -0.055405,
+            -0.243708,
+            0.184485
+          ],
+          "bounds_max": [
+            -0.018527,
+            -0.036313,
+            0.391849
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 40
+            }
+          ]
+        },
+        {
+          "index": 148,
+          "polygons": 40,
+          "vertices": 42,
+          "area": 0.0228,
+          "bounds_min": [
+            0.018527,
+            -0.243708,
+            0.184485
+          ],
+          "bounds_max": [
+            0.055405,
+            -0.036313,
+            0.391849
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 40
+            }
+          ]
+        },
+        {
+          "index": 88,
+          "polygons": 34,
+          "vertices": 24,
+          "area": 0.021852,
+          "bounds_min": [
+            -0.076068,
+            -0.210287,
+            0.221412
+          ],
+          "bounds_max": [
+            -0.051687,
+            -0.06742,
+            0.364257
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 34
+            }
+          ]
+        },
+        {
+          "index": 89,
+          "polygons": 34,
+          "vertices": 24,
+          "area": 0.021852,
+          "bounds_min": [
+            -0.471553,
+            -0.210287,
+            0.227432
+          ],
+          "bounds_max": [
+            -0.447172,
+            -0.06742,
+            0.370277
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 34
+            }
+          ]
+        },
+        {
+          "index": 92,
+          "polygons": 34,
+          "vertices": 24,
+          "area": 0.021852,
+          "bounds_min": [
+            0.051687,
+            -0.210287,
+            0.221412
+          ],
+          "bounds_max": [
+            0.076068,
+            -0.06742,
+            0.364257
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 34
+            }
+          ]
+        },
+        {
+          "index": 93,
+          "polygons": 34,
+          "vertices": 24,
+          "area": 0.021852,
+          "bounds_min": [
+            0.447172,
+            -0.210287,
+            0.227432
+          ],
+          "bounds_max": [
+            0.471553,
+            -0.06742,
+            0.370277
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 34
+            }
+          ]
+        },
+        {
+          "index": 32,
+          "polygons": 40,
+          "vertices": 40,
+          "area": 0.021249,
+          "bounds_min": [
+            -0.21675,
+            -0.305066,
+            1.76846
+          ],
+          "bounds_max": [
+            0.21675,
+            0.049295,
+            1.836567
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 40
+            }
+          ]
+        },
+        {
+          "index": 108,
+          "polygons": 18,
+          "vertices": 20,
+          "area": 0.02089,
+          "bounds_min": [
+            -0.525908,
+            -0.222229,
+            0.212762
+          ],
+          "bounds_max": [
+            -0.522439,
+            -0.057792,
+            0.377174
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 18
+            }
+          ]
+        },
+        {
+          "index": 111,
+          "polygons": 18,
+          "vertices": 20,
+          "area": 0.02089,
+          "bounds_min": [
+            0.522439,
+            -0.222229,
+            0.212762
+          ],
+          "bounds_max": [
+            0.525908,
+            -0.057792,
+            0.377174
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 18
+            }
+          ]
+        },
+        {
+          "index": 146,
+          "polygons": 18,
+          "vertices": 20,
+          "area": 0.02089,
+          "bounds_min": [
+            -0.021996,
+            -0.222229,
+            0.205486
+          ],
+          "bounds_max": [
+            -0.018527,
+            -0.057792,
+            0.369897
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 18
+            }
+          ]
+        },
+        {
+          "index": 149,
+          "polygons": 18,
+          "vertices": 20,
+          "area": 0.02089,
+          "bounds_min": [
+            0.018527,
+            -0.222229,
+            0.205486
+          ],
+          "bounds_max": [
+            0.021996,
+            -0.057792,
+            0.369897
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 18
+            }
+          ]
+        },
+        {
+          "index": 160,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.01938,
+          "bounds_min": [
+            -1.19837,
+            -0.301796,
+            1.424198
+          ],
+          "bounds_max": [
+            -1.152438,
+            0.000363,
+            1.72078
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 17
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 6
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                240
+              ],
+              "triangles": 1
+            }
+          ]
+        },
+        {
+          "index": 168,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.01938,
+          "bounds_min": [
+            1.152438,
+            -0.301796,
+            1.424198
+          ],
+          "bounds_max": [
+            1.19837,
+            0.000363,
+            1.72078
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 15
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 8
+            },
+            {
+              "rgb": [
+                255,
+                240,
+                240
+              ],
+              "triangles": 1
+            }
+          ]
+        },
+        {
+          "index": 100,
+          "polygons": 28,
+          "vertices": 30,
+          "area": 0.019188,
+          "bounds_min": [
+            -0.438708,
+            0.010891,
+            0.045167
+          ],
+          "bounds_max": [
+            -0.073245,
+            0.131725,
+            0.283114
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 28
+            }
+          ]
+        },
+        {
+          "index": 104,
+          "polygons": 28,
+          "vertices": 30,
+          "area": 0.019188,
+          "bounds_min": [
+            0.073245,
+            0.010891,
+            0.045167
+          ],
+          "bounds_max": [
+            0.438708,
+            0.131725,
+            0.283114
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 28
+            }
+          ]
+        },
+        {
+          "index": 14,
+          "polygons": 40,
+          "vertices": 40,
+          "area": 0.019047,
+          "bounds_min": [
+            -0.70074,
+            -0.298446,
+            2.151715
+          ],
+          "bounds_max": [
+            -0.680556,
+            0.003172,
+            2.453333
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                0,
+                216,
+                0
+              ],
+              "triangles": 40
+            }
+          ]
+        },
+        {
+          "index": 21,
+          "polygons": 40,
+          "vertices": 40,
+          "area": 0.019047,
+          "bounds_min": [
+            0.680556,
+            -0.298446,
+            2.151715
+          ],
+          "bounds_max": [
+            0.700741,
+            0.003172,
+            2.453333
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                192,
+                96
+              ],
+              "triangles": 40
+            }
+          ]
+        },
+        {
+          "index": 157,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.016724,
+          "bounds_min": [
+            -0.939785,
+            -0.302562,
+            1.418272
+          ],
+          "bounds_max": [
+            -0.879295,
+            0.006333,
+            1.728547
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 24
+            }
+          ]
+        },
+        {
+          "index": 165,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.016724,
+          "bounds_min": [
+            0.879295,
+            -0.302562,
+            1.418272
+          ],
+          "bounds_max": [
+            0.939785,
+            0.006333,
+            1.728547
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 24
+            }
+          ]
+        },
+        {
+          "index": 15,
+          "polygons": 40,
+          "vertices": 40,
+          "area": 0.015305,
+          "bounds_min": [
+            -0.70998,
+            -0.298446,
+            2.151715
+          ],
+          "bounds_max": [
+            -0.70074,
+            0.003172,
+            2.453333
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                0,
+                216,
+                0
+              ],
+              "triangles": 40
+            }
+          ]
+        },
+        {
+          "index": 22,
+          "polygons": 40,
+          "vertices": 40,
+          "area": 0.015305,
+          "bounds_min": [
+            0.700741,
+            -0.298446,
+            2.151715
+          ],
+          "bounds_max": [
+            0.70998,
+            0.003172,
+            2.453333
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                192,
+                96
+              ],
+              "triangles": 40
+            }
+          ]
+        },
+        {
+          "index": 27,
+          "polygons": 40,
+          "vertices": 40,
+          "area": 0.013469,
+          "bounds_min": [
+            -0.172565,
+            -0.274522,
+            1.843401
+          ],
+          "bounds_max": [
+            0.172565,
+            0.011002,
+            1.854949
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 40
+            }
+          ]
+        },
+        {
+          "index": 150,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.012971,
+          "bounds_min": [
+            -0.353391,
+            -0.223297,
+            0.961096
+          ],
+          "bounds_max": [
+            -0.142527,
+            -0.041086,
+            1.120798
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 24
+            }
+          ]
+        },
+        {
+          "index": 153,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.012971,
+          "bounds_min": [
+            0.144701,
+            -0.223297,
+            0.961096
+          ],
+          "bounds_max": [
+            0.355565,
+            -0.041086,
+            1.120798
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 24
+            }
+          ]
+        },
+        {
+          "index": 17,
+          "polygons": 40,
+          "vertices": 40,
+          "area": 0.009941,
+          "bounds_min": [
+            -0.726413,
+            -0.283953,
+            2.166208
+          ],
+          "bounds_max": [
+            -0.720596,
+            -0.011321,
+            2.43884
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 38
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 1
+            },
+            {
+              "rgb": [
+                255,
+                240,
+                240
+              ],
+              "triangles": 1
+            }
+          ]
+        },
+        {
+          "index": 24,
+          "polygons": 40,
+          "vertices": 40,
+          "area": 0.009941,
+          "bounds_min": [
+            0.720597,
+            -0.283953,
+            2.166208
+          ],
+          "bounds_max": [
+            0.726413,
+            -0.011321,
+            2.43884
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 34
+            },
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 6
+            }
+          ]
+        },
+        {
+          "index": 0,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.009271,
+          "bounds_min": [
+            -0.870598,
+            -0.269674,
+            1.457368
+          ],
+          "bounds_max": [
+            -0.794096,
+            -0.032921,
+            1.687463
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 24
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.009271,
+          "bounds_min": [
+            0.79627,
+            -0.269674,
+            1.457368
+          ],
+          "bounds_max": [
+            0.872772,
+            -0.032921,
+            1.687463
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 24
+            }
+          ]
+        },
+        {
+          "index": 16,
+          "polygons": 40,
+          "vertices": 40,
+          "area": 0.009056,
+          "bounds_min": [
+            -0.720596,
+            -0.283953,
+            2.166208
+          ],
+          "bounds_max": [
+            -0.70998,
+            -0.011321,
+            2.43884
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 31
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 9
+            }
+          ]
+        },
+        {
+          "index": 23,
+          "polygons": 40,
+          "vertices": 40,
+          "area": 0.009055,
+          "bounds_min": [
+            0.70998,
+            -0.283953,
+            2.166208
+          ],
+          "bounds_max": [
+            0.720597,
+            -0.011321,
+            2.43884
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 35
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                255
+              ],
+              "triangles": 4
+            },
+            {
+              "rgb": [
+                255,
+                255,
+                240
+              ],
+              "triangles": 1
+            }
+          ]
+        },
+        {
+          "index": 68,
+          "polygons": 34,
+          "vertices": 24,
+          "area": 0.009007,
+          "bounds_min": [
+            -0.133306,
+            -0.180967,
+            0.683513
+          ],
+          "bounds_max": [
+            -0.117653,
+            -0.089245,
+            0.775221
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 34
+            }
+          ]
+        },
+        {
+          "index": 69,
+          "polygons": 34,
+          "vertices": 24,
+          "area": 0.009007,
+          "bounds_min": [
+            -0.387211,
+            -0.180967,
+            0.687377
+          ],
+          "bounds_max": [
+            -0.371559,
+            -0.089245,
+            0.779085
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 34
+            }
+          ]
+        },
+        {
+          "index": 72,
+          "polygons": 34,
+          "vertices": 24,
+          "area": 0.009007,
+          "bounds_min": [
+            0.117653,
+            -0.180967,
+            0.683513
+          ],
+          "bounds_max": [
+            0.133306,
+            -0.089245,
+            0.775221
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 34
+            }
+          ]
+        },
+        {
+          "index": 73,
+          "polygons": 34,
+          "vertices": 24,
+          "area": 0.009007,
+          "bounds_min": [
+            0.371559,
+            -0.180967,
+            0.687377
+          ],
+          "bounds_max": [
+            0.387211,
+            -0.089245,
+            0.779085
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 34
+            }
+          ]
+        },
+        {
+          "index": 162,
+          "polygons": 24,
+          "vertices": 24,
+          "area": 0.008825,
+          "bounds_min": [
+            -1.235792,
+            -0.263553,
+            1.462099
+          ],
+          "bounds_max": [
+            -1.210191,
+            -0.037498,
+            1.683203
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                255,
+                192,
+                96
+              ],
+              "triangles": 24
+            }
+          ]
+        },
+        {
+          "index": 170,
+          "polygons": 24,
+          "vertices": 24,
+          "area": 0.008825,
+          "bounds_min": [
+            1.210191,
+            -0.263553,
+            1.462099
+          ],
+          "bounds_max": [
+            1.235792,
+            -0.037498,
+            1.683203
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                0,
+                216,
+                0
+              ],
+              "triangles": 24
+            }
+          ]
+        },
+        {
+          "index": 161,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.008455,
+          "bounds_min": [
+            -1.19837,
+            -0.285143,
+            1.440518
+          ],
+          "bounds_max": [
+            -1.170067,
+            -0.015878,
+            1.704669
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 24
+            }
+          ]
+        },
+        {
+          "index": 169,
+          "polygons": 24,
+          "vertices": 26,
+          "area": 0.008455,
+          "bounds_min": [
+            1.170067,
+            -0.285143,
+            1.440518
+          ],
+          "bounds_max": [
+            1.19837,
+            -0.015878,
+            1.704669
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                240,
+                240,
+                240
+              ],
+              "triangles": 24
+            }
+          ]
+        },
+        {
+          "index": 49,
+          "polygons": 34,
+          "vertices": 24,
+          "area": 0.004975,
+          "bounds_min": [
+            -0.919967,
+            -0.180418,
+            1.644869
+          ],
+          "bounds_max": [
+            -0.841231,
+            -0.115281,
+            1.652988
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 34
+            }
+          ]
+        },
+        {
+          "index": 50,
+          "polygons": 34,
+          "vertices": 24,
+          "area": 0.004975,
+          "bounds_min": [
+            -0.919967,
+            -0.180418,
+            1.495733
+          ],
+          "bounds_max": [
+            -0.841231,
+            -0.115281,
+            1.503852
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 34
+            }
+          ]
+        },
+        {
+          "index": 53,
+          "polygons": 34,
+          "vertices": 24,
+          "area": 0.004975,
+          "bounds_min": [
+            0.841231,
+            -0.180418,
+            1.644869
+          ],
+          "bounds_max": [
+            0.919967,
+            -0.115281,
+            1.652988
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 34
+            }
+          ]
+        },
+        {
+          "index": 54,
+          "polygons": 34,
+          "vertices": 24,
+          "area": 0.004975,
+          "bounds_min": [
+            0.841231,
+            -0.180418,
+            1.495733
+          ],
+          "bounds_max": [
+            0.919967,
+            -0.115281,
+            1.503852
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 34
+            }
+          ]
+        },
+        {
+          "index": 60,
+          "polygons": 34,
+          "vertices": 24,
+          "area": 0.003281,
+          "bounds_min": [
+            -1.241581,
+            -0.174298,
+            1.631619
+          ],
+          "bounds_max": [
+            -1.177641,
+            -0.121401,
+            1.638213
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 34
+            }
+          ]
+        },
+        {
+          "index": 61,
+          "polygons": 34,
+          "vertices": 24,
+          "area": 0.003281,
+          "bounds_min": [
+            -1.241581,
+            -0.174298,
+            1.510509
+          ],
+          "bounds_max": [
+            -1.177641,
+            -0.121401,
+            1.517102
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 34
+            }
+          ]
+        },
+        {
+          "index": 64,
+          "polygons": 34,
+          "vertices": 24,
+          "area": 0.003281,
+          "bounds_min": [
+            1.177641,
+            -0.174298,
+            1.631619
+          ],
+          "bounds_max": [
+            1.241581,
+            -0.121401,
+            1.638213
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 34
+            }
+          ]
+        },
+        {
+          "index": 65,
+          "polygons": 34,
+          "vertices": 24,
+          "area": 0.003281,
+          "bounds_min": [
+            1.177641,
+            -0.174298,
+            1.510509
+          ],
+          "bounds_max": [
+            1.241581,
+            -0.121401,
+            1.517102
+          ],
+          "top_colors": [
+            {
+              "rgb": [
+                168,
+                168,
+                168
+              ],
+              "triangles": 34
+            }
+          ]
+        }
+      ],
+      "top_colors": [
+        {
+          "rgb": [
+            168,
+            168,
+            168
+          ],
+          "triangles": 6732
+        },
+        {
+          "rgb": [
+            240,
+            240,
+            240
+          ],
+          "triangles": 3500
+        },
+        {
+          "rgb": [
+            255,
+            255,
+            255
+          ],
+          "triangles": 2546
+        },
+        {
+          "rgb": [
+            216,
+            216,
+            216
+          ],
+          "triangles": 796
+        },
+        {
+          "rgb": [
+            255,
+            192,
+            96
+          ],
+          "triangles": 520
+        },
+        {
+          "rgb": [
+            0,
+            216,
+            0
+          ],
+          "triangles": 513
+        },
+        {
+          "rgb": [
+            120,
+            120,
+            120
+          ],
+          "triangles": 118
+        },
+        {
+          "rgb": [
+            255,
+            255,
+            240
+          ],
+          "triangles": 25
+        },
+        {
+          "rgb": [
+            96,
+            96,
+            72
+          ],
+          "triangles": 23
+        },
+        {
+          "rgb": [
+            96,
+            96,
+            120
+          ],
+          "triangles": 20
+        },
+        {
+          "rgb": [
+            96,
+            96,
+            96
+          ],
+          "triangles": 19
+        },
+        {
+          "rgb": [
+            255,
+            240,
+            240
+          ],
+          "triangles": 10
+        },
+        {
+          "rgb": [
+            240,
+            240,
+            255
+          ],
+          "triangles": 7
+        },
+        {
+          "rgb": [
+            96,
+            120,
+            120
+          ],
+          "triangles": 3
+        },
+        {
+          "rgb": [
+            255,
+            240,
+            96
+          ],
+          "triangles": 3
+        },
+        {
+          "rgb": [
+            192,
+            216,
+            216
+          ],
+          "triangles": 2
+        },
+        {
+          "rgb": [
+            120,
+            216,
+            24
+          ],
+          "triangles": 1
+        },
+        {
+          "rgb": [
+            255,
+            216,
+            192
+          ],
+          "triangles": 1
+        },
+        {
+          "rgb": [
+            255,
+            192,
+            120
+          ],
+          "triangles": 1
+        }
+      ],
+      "sample_triangles": [
+        {
+          "polygon": 0,
+          "uv": [
+            0.745937,
+            0.077969
+          ],
+          "rgba": [
+            251,
+            251,
+            251,
+            255
+          ]
+        },
+        {
+          "polygon": 1,
+          "uv": [
+            0.744505,
+            0.072959
+          ],
+          "rgba": [
+            251,
+            251,
+            251,
+            255
+          ]
+        },
+        {
+          "polygon": 2,
+          "uv": [
+            0.749481,
+            0.092228
+          ],
+          "rgba": [
+            251,
+            251,
+            251,
+            255
+          ]
+        },
+        {
+          "polygon": 3,
+          "uv": [
+            0.747338,
+            0.087961
+          ],
+          "rgba": [
+            251,
+            251,
+            251,
+            255
+          ]
+        },
+        {
+          "polygon": 4,
+          "uv": [
+            0.754691,
+            0.104647
+          ],
+          "rgba": [
+            249,
+            249,
+            249,
+            255
+          ]
+        },
+        {
+          "polygon": 5,
+          "uv": [
+            0.7522,
+            0.101185
+          ],
+          "rgba": [
+            251,
+            251,
+            251,
+            255
+          ]
+        },
+        {
+          "polygon": 6,
+          "uv": [
+            0.760656,
+            0.115229
+          ],
+          "rgba": [
+            250,
+            250,
+            250,
+            255
+          ]
+        },
+        {
+          "polygon": 7,
+          "uv": [
+            0.758099,
+            0.112404
+          ],
+          "rgba": [
+            249,
+            249,
+            249,
+            255
+          ]
+        },
+        {
+          "polygon": 8,
+          "uv": [
+            0.766955,
+            0.124176
+          ],
+          "rgba": [
+            248,
+            248,
+            248,
+            255
+          ]
+        },
+        {
+          "polygon": 9,
+          "uv": [
+            0.764394,
+            0.121872
+          ],
+          "rgba": [
+            248,
+            248,
+            248,
+            255
+          ]
+        },
+        {
+          "polygon": 10,
+          "uv": [
+            0.773569,
+            0.131477
+          ],
+          "rgba": [
+            248,
+            248,
+            248,
+            255
+          ]
+        },
+        {
+          "polygon": 11,
+          "uv": [
+            0.770902,
+            0.129661
+          ],
+          "rgba": [
+            248,
+            248,
+            248,
+            255
+          ]
+        }
+      ]
+    }
+  ]
+}

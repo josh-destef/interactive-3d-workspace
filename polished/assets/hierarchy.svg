@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" width="800" height="520" role="img"
+    aria-label="A jointed robot arm reaching for a floating block, beside a scene tree">
+    <defs>
+        <radialGradient id="h-glow" cx="52%" cy="42%" r="62%">
+            <stop offset="0%" stop-color="#243154" />
+            <stop offset="100%" stop-color="#171e35" />
+        </radialGradient>
+        <linearGradient id="h-upper" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#f4f4ef" />
+            <stop offset="100%" stop-color="#cfd4dc" />
+        </linearGradient>
+        <radialGradient id="h-target" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffda22" stop-opacity="0.34" />
+            <stop offset="100%" stop-color="#ffda22" stop-opacity="0" />
+        </radialGradient>
+    </defs>
+
+    <rect width="800" height="520" fill="url(#h-glow)" />
+
+    <!-- ground plane: a few converging lines is enough to read as a floor -->
+    <g stroke="#5d687c" stroke-opacity="0.22" stroke-width="1.5">
+        <path d="M40 452H760" />
+        <path d="M120 486H680" stroke-opacity="0.12" />
+        <path d="M300 452 250 486M380 452 360 486M460 452 470 486M540 452 580 486" stroke-opacity="0.12" />
+    </g>
+
+    <!-- scene tree, left: the same four nodes as the arm, drawn as an outliner -->
+    <g font-family="'DM Mono', monospace" font-size="15" fill="#8b95ab">
+        <g stroke="#8b95ab" stroke-opacity="0.35" stroke-width="1.5" fill="none">
+            <path d="M64 128v130" />
+            <path d="M64 168h18M78 208h18M92 248h18" />
+            <path d="M78 168v40M92 208v40" />
+        </g>
+        <circle cx="64" cy="128" r="5" fill="#ff9022" />
+        <text x="80" y="133" fill="#c3cad8">Base</text>
+        <circle cx="88" cy="168" r="5" fill="#ff9022" />
+        <text x="104" y="173">Shoulder</text>
+        <circle cx="102" cy="208" r="5" fill="#3a6fa8" />
+        <text x="118" y="213">Elbow</text>
+        <circle cx="116" cy="248" r="5" fill="#00aa00" />
+        <text x="132" y="253">Wrist</text>
+    </g>
+
+    <!-- the arm: one chain, each segment hanging off the joint before it -->
+    <g stroke-linecap="round" fill="none">
+        <path d="M352 434 448 300" stroke="url(#h-upper)" stroke-width="34" />
+        <path d="M448 300 552 214" stroke="#d7dbe2" stroke-width="27" />
+        <path d="M552 214 590 178" stroke="#26334c" stroke-width="20" />
+    </g>
+
+    <!-- pedestal -->
+    <path d="M300 452 316 414h72l16 38z" fill="#26334c" />
+
+    <!-- joints, coloured to match the tree nodes -->
+    <circle cx="352" cy="434" r="17" fill="#ff9022" />
+    <circle cx="448" cy="300" r="14" fill="#3a6fa8" />
+    <circle cx="552" cy="214" r="12" fill="#00aa00" />
+
+    <!-- claw: both fingers hang off the wrist end of the last segment -->
+    <g stroke="#ff9022" stroke-width="9" stroke-linecap="round" fill="none">
+        <path d="M584 172 574 140 598 122" />
+        <path d="M596 184 618 160 644 168" />
+    </g>
+
+    <!-- the block being reached for, still a root object -->
+    <circle cx="646" cy="126" r="72" fill="url(#h-target)" />
+    <g transform="rotate(-14 640 128)">
+        <rect x="616" y="104" width="48" height="48" rx="6" fill="#3a6fa8" />
+        <path d="M616 116h48" stroke="#5b8dc4" stroke-width="2" stroke-opacity="0.6" />
+    </g>
+
+    <!-- local axes on the selected node -->
+    <g stroke-width="3" stroke-linecap="round">
+        <path d="M552 214 596 232" stroke="#e0483d" />
+        <path d="M552 214 540 170" stroke="#5cc85c" />
+        <path d="M552 214 512 226" stroke="#4b8fe0" />
+    </g>
+</svg>

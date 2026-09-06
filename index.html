@@ -264,6 +264,148 @@
       background: var(--accent-green);
     }
 
+    /* Status tiers use the landing page's existing headings, cards and palette. */
+    .section-heading.tier-done {
+      border-bottom-color: rgba(0, 170, 0, 0.35);
+    }
+
+    /* auto-fill keeps a short row at card width instead of stretching one card
+       across the whole container */
+    .grid.short-row {
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    }
+
+    .card-image {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      transition: transform 0.4s ease;
+    }
+
+    .card:hover .card-image {
+      transform: scale(1.05);
+    }
+
+    .card-header.shot {
+      align-items: stretch;
+      justify-content: stretch;
+      padding: 0;
+    }
+
+    .card-header.shot::before {
+      display: none;
+    }
+
+    .section-heading.tier-wip {
+      border-bottom-color: rgba(255, 144, 34, 0.35);
+    }
+
+    .section-heading.tier-review {
+      border-bottom-color: rgba(58, 111, 168, 0.42);
+    }
+
+    .status-pill {
+      display: inline-block;
+      margin-left: 0.6rem;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      vertical-align: middle;
+      text-transform: uppercase;
+    }
+
+    .status-pill.done {
+      color: #fff;
+      background: var(--accent-green);
+    }
+
+    .status-pill.wip {
+      color: #7a4200;
+      background: var(--accent-yellow);
+    }
+
+    .status-pill.review {
+      color: #fff;
+      background: #3a6fa8;
+    }
+
+    .card-header.done {
+      background: #f2f8f2;
+    }
+
+    .card-header.done::before {
+      background: radial-gradient(circle at center, rgba(0, 170, 0, 0.18) 0%, transparent 62%);
+    }
+
+    .done .visual {
+      color: var(--accent-green);
+      background: #fff;
+      border-color: rgba(0, 170, 0, 0.25);
+      box-shadow: 0 16px 38px rgba(23, 30, 53, 0.12);
+    }
+
+    .done .card-number {
+      color: rgba(23, 30, 53, 0.45);
+    }
+
+    .card-header.wip {
+      background: #fbf7ef;
+    }
+
+    .card-header.wip::before {
+      background:
+        repeating-linear-gradient(135deg,
+          rgba(255, 144, 34, 0.14) 0 10px,
+          transparent 10px 20px);
+      opacity: 1;
+    }
+
+    .wip .visual {
+      color: var(--accent-orange);
+      background: #fff;
+      border-color: rgba(255, 144, 34, 0.28);
+      box-shadow: 0 16px 38px rgba(23, 30, 53, 0.1);
+    }
+
+    .wip .card-number {
+      color: rgba(23, 30, 53, 0.45);
+    }
+
+    .card-header.review {
+      background: #eef4fa;
+    }
+
+    .card-header.review::before {
+      background: radial-gradient(circle at center, rgba(58, 111, 168, 0.2) 0%, transparent 62%);
+    }
+
+    .review .visual {
+      color: #3a6fa8;
+      background: #fff;
+      border-color: rgba(58, 111, 168, 0.28);
+      box-shadow: 0 16px 38px rgba(23, 30, 53, 0.1);
+    }
+
+    .done-tag {
+      color: #fff;
+      background: var(--accent-green);
+    }
+
+    .wip-tag {
+      color: #7a4200;
+      background: var(--accent-yellow);
+    }
+
+    .review-tag {
+      color: #fff;
+      background: #3a6fa8;
+    }
+
     @media (max-width: 600px) {
       body {
         padding: 2.5rem 1rem;
@@ -288,9 +430,90 @@
     <h1 class="page-title">Interactive Labs</h1>
     <p class="page-subtitle">Select an experience to begin exploring 3D fundamentals.</p>
 
+    <div class="section-heading tier-done">
+      <h2 class="section-title">Ready<span class="status-pill done">complete</span></h2>
+      <span class="section-kicker">Finished and ready for students</span>
+    </div>
+
+    <div class="grid short-row">
+      <a href="polished/labs/navigate-and-transform/" class="card">
+        <div class="card-header done shot">
+          <img class="card-image" src="polished/assets/navigate-and-transform.png"
+            alt="Gizmo standing on a grid floor inside the Navigate and Transform lab">
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Navigate + Transform</h2>
+          <p class="card-desc">Orbit the scene, then move, rotate, and scale a model with a real gizmo. Finished and ready for students.</p>
+          <div class="card-tags"><span class="tag done-tag">done</span><span class="tag">camera</span><span class="tag">gizmo</span><span class="tag">transforms</span></div>
+        </div>
+      </a>
+    </div>
+
+    <div class="section-heading tier-review">
+      <h2 class="section-title">Needs Review<span class="status-pill review">review</span></h2>
+      <span class="section-kicker">Working end to end and awaiting final feedback</span>
+    </div>
+
+    <div class="grid short-row">
+      <a href="polished/labs/material-lab/" class="card">
+        <div class="card-header review shot">
+          <img class="card-image" src="polished/assets/material-lab.png"
+            alt="Two Gizmobots comparing shell materials in the Material Lab challenge">
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Material Lab</h2>
+          <p class="card-desc">Build colour, roughness, metal, light and glow &mdash; then match a reference.</p>
+          <div class="card-tags"><span class="tag review-tag">needs review</span><span class="tag">PBR</span><span class="tag">challenge</span><span class="tag">quiz</span></div>
+        </div>
+      </a>
+    </div>
+
+    <div class="section-heading tier-wip">
+      <h2 class="section-title">Work In Progress<span class="status-pill wip">WIP</span></h2>
+      <span class="section-kicker">Still being built and not ready for final review</span>
+    </div>
+
+    <div class="grid">
+      <a href="polished/labs/hierarchy/" class="card">
+        <div class="card-header wip shot">
+          <img class="card-image" src="polished/assets/hierarchy.svg"
+            alt="A jointed robot arm reaching for a block beside its scene tree">
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Hierarchy</h2>
+          <p class="card-desc">Drive a modelled robot arm, compare local and world space, and reparent a block by picking it up.</p>
+          <div class="card-tags"><span class="tag wip-tag">WIP</span><span class="tag">parenting</span><span class="tag">joints</span><span class="tag">scene tree</span></div>
+        </div>
+      </a>
+
+      <a href="polished/labs/keyframes/" class="card">
+        <div class="card-header wip shot">
+          <img class="card-image" src="polished/assets/keyframes.svg"
+            alt="A rocket following an animated curve above keyframe diamonds">
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Keyframes</h2>
+          <p class="card-desc">Store poses on a timeline, scrub the in-betweens, compare interpolation, and author a complete animation.</p>
+          <div class="card-tags"><span class="tag wip-tag">WIP</span><span class="tag">timing</span><span class="tag">interpolation</span><span class="tag">motion graph</span></div>
+        </div>
+      </a>
+
+      <a href="polished/labs/particles/" class="card">
+        <div class="card-header wip shot">
+          <img class="card-image" src="polished/assets/particles.svg"
+            alt="A fountain of sparks cooling from orange to blue">
+        </div>
+        <div class="card-body">
+          <h2 class="card-title">Particles</h2>
+          <p class="card-desc">Follow one particle through its life, then turn a pooled simulation into a readable spark fountain.</p>
+          <div class="card-tags"><span class="tag wip-tag">WIP</span><span class="tag">emitters</span><span class="tag">forces</span><span class="tag">pooling</span></div>
+        </div>
+      </a>
+    </div>
+
     <div class="section-heading">
       <h2 class="section-title">Foundations</h2>
-      <span class="section-kicker">Understand space, geometry, and transforms</span>
+      <span class="section-kicker">Earlier drafts &mdash; understand space, geometry, and transforms</span>
     </div>
 
     <div class="grid">
@@ -349,8 +572,8 @@
         </div>
         <div class="card-body">
           <h2 class="card-title">Navigate + Transform</h2>
-          <p class="card-desc">Full 3D control. Navigate the space, rotate models, and scale your creations in a fully interactive 3D software environment.</p>
-          <div class="card-tags"><span class="tag">camera</span><span class="tag">rotate</span><span class="tag">scale</span></div>
+          <p class="card-desc">The original build of the lab above. Navigate the space, rotate models, and scale your creations &mdash; superseded by the polished rebuild in <strong>Done</strong>.</p>
+          <div class="card-tags"><span class="tag">camera</span><span class="tag">rotate</span><span class="tag">scale</span><span class="tag">superseded</span></div>
         </div>
       </a>
     </div>
