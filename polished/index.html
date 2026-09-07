@@ -4,9 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="0; url=../">
-  <title>3D Learning Experiences</title>
-  <script>window.location.replace('../');</script>
+  <title>Gizmobot 3D Labs</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -126,27 +124,11 @@
 
     .lab-sections {
       display: grid;
-      gap: 2rem;
+      gap: 3rem;
     }
 
     .lab-section {
-      --status-color: var(--status-ready);
-      --status-bg: var(--status-ready-bg);
-      padding: 1.35rem;
-      border: 1px solid color-mix(in srgb, var(--status-color) 24%, transparent);
-      border-left: 6px solid var(--status-color);
-      border-radius: 16px;
-      background: var(--status-bg);
-    }
-
-    .lab-section[data-status="review"] {
-      --status-color: var(--status-review);
-      --status-bg: var(--status-review-bg);
-    }
-
-    .lab-section[data-status="wip"] {
-      --status-color: var(--status-wip);
-      --status-bg: var(--status-wip-bg);
+      padding: 0;
     }
 
     .section-header {
@@ -154,7 +136,9 @@
       align-items: flex-end;
       justify-content: space-between;
       gap: 1.5rem;
-      margin-bottom: 1.15rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.8rem;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     }
 
     .section-heading {
@@ -171,27 +155,10 @@
     }
 
     .status-label {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      padding: 0.3rem 0.65rem;
-      border: 1px solid color-mix(in srgb, var(--status-color) 28%, transparent);
-      border-radius: 999px;
-      background: #fff;
-      color: var(--status-color);
+      color: var(--text-muted);
       font-family: 'Lexend', sans-serif;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-
-    .status-label::before {
-      width: 0.5rem;
-      height: 0.5rem;
-      border-radius: 50%;
-      background: currentColor;
-      content: '';
+      font-size: 0.78rem;
+      font-weight: 500;
     }
 
     .section-note {
@@ -201,7 +168,7 @@
     }
 
     .section-count {
-      color: var(--status-color);
+      color: var(--text-muted);
       font-family: 'Lexend', sans-serif;
       font-size: 0.78rem;
       font-weight: 600;
@@ -210,7 +177,7 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 1.5rem;
     }
 
@@ -226,23 +193,14 @@
       flex-direction: column;
       position: relative;
       border: 1px solid rgba(0, 0, 0, 0.05);
-      max-width: 360px;
+      height: 340px;
       width: 100%;
     }
 
-    .card::before {
-      position: absolute;
-      inset: 0 0 auto;
-      z-index: 2;
-      height: 4px;
-      background: var(--status-color);
-      content: '';
-    }
-
     .card:hover {
-      transform: translateY(-8px);
+      transform: translateY(-5px);
       box-shadow: 0 12px 20px rgba(0, 0, 0, 0.08), 0 20px 30px rgba(0, 0, 0, 0.1);
-      border-color: var(--status-color);
+      border-color: var(--accent-orange);
     }
 
     .card-header {
@@ -350,6 +308,12 @@
       transform: translateY(-2px);
     }
 
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
     @media (max-width: 600px) {
       .container {
         padding: calc(var(--edge) + 3.5rem) 1rem 2.5rem;
@@ -367,8 +331,8 @@
         gap: 1.25rem;
       }
 
-      .lab-section {
-        padding: 1rem;
+      .grid {
+        grid-template-columns: 1fr;
       }
 
       .section-header {
@@ -400,11 +364,11 @@
     <span>Back</span>
   </a>
 
-  <img src="assets/Logo.png" alt="CreateAccess Logo" class="logo-top-right">
+  <img src="../assets/brand/logo-wordmark.png" alt="CreateAccess Logo" class="logo-top-right">
 
   <div class="container">
     <h1 class="page-title">Interactive Labs</h1>
-    <p class="page-subtitle">Select an experience to begin exploring 3D fundamentals.</p>
+    <p class="page-subtitle">Learn 3D fundamentals by building, posing, and experimenting with Gizmobot.</p>
 
     <div class="lab-sections">
       <section class="lab-section" data-status="ready" aria-labelledby="ready-title">
@@ -421,7 +385,7 @@
         <div class="grid">
           <a href="labs/navigate-and-transform/" class="card">
             <div class="card-header">
-              <img class="card-image" src="assets/navigate-and-transform.png"
+              <img class="card-image" src="../assets/lab-previews/navigate-and-transform.png"
                 alt="Gizmobot standing on a grid floor inside the Navigate and Transform lab">
             </div>
             <div class="card-body">
@@ -445,12 +409,12 @@
         </header>
         <div class="grid">
           <a href="labs/model-an-accessory/" class="card">
-            <div class="card-header review shot"><img class="card-image" src="assets/model-an-accessory.jpg" alt="A back module modelled from a cube, strapped to Gizmobot"></div>
+            <div class="card-header review shot"><img class="card-image" src="../assets/lab-previews/model-an-accessory.jpg" alt="A back module modelled from a cube, strapped to Gizmobot"></div>
             <div class="card-body"><h3 class="card-title">Gizmobot's Back Module</h3><p class="card-desc">Model a back module from one cube: extrude, bevel, build an antenna and strap it on. No sliders - every value is dragged in the viewport.</p></div>
           </a>
           <a href="labs/material-lab/" class="card">
             <div class="card-header">
-              <img class="card-image" src="assets/material-lab.png"
+              <img class="card-image" src="../assets/lab-previews/material-lab.png"
                 alt="Two Gizmobots comparing shell materials in the Material Lab challenge">
             </div>
             <div class="card-body">
@@ -475,7 +439,7 @@
         <div class="grid">
           <a href="labs/animation-lab/" class="card">
             <div class="card-header">
-              <img class="card-image" src="assets/keyframes.svg"
+              <img class="card-image" src="../assets/lab-previews/keyframes.svg"
                 alt="Keyframe diamonds on a timeline beneath a waving robot">
             </div>
             <div class="card-body">
@@ -485,12 +449,12 @@
           </a>
 
           <a href="labs/gizmobot-mirror/" class="card">
-            <div class="card-header"><img class="card-image" src="assets/gizmobot-mirror.png" alt="Gizmobot waving on a green motion playground"></div>
+            <div class="card-header"><img class="card-image" src="../assets/lab-previews/gizmobot-mirror.png" alt="Gizmobot waving on a green motion playground"></div>
             <div class="card-body"><h3 class="card-title">Gizmobot Mirror</h3><p class="card-desc">Be the bot. Turn on your webcam and let Gizmobot mirror your moves. Just play.</p></div>
           </a>
           <a href="labs/robot-assembly/" class="card">
             <div class="card-header">
-              <img class="card-image" src="assets/robot-assembly.png" alt="Gizmobot separated into fourteen assembly pieces">
+              <img class="card-image" src="../assets/lab-previews/robot-assembly.png" alt="Gizmobot separated into fourteen assembly pieces">
             </div>
             <div class="card-body">
               <h3 class="card-title">Build Gizmobot</h3>
@@ -500,7 +464,7 @@
 
           <a href="labs/hierarchy/" class="card">
             <div class="card-header">
-              <img class="card-image" src="assets/hierarchy.svg"
+              <img class="card-image" src="../assets/lab-previews/hierarchy.svg"
                 alt="A jointed robot arm reaching for a floating block, beside its scene tree">
             </div>
             <div class="card-body">
@@ -511,7 +475,7 @@
 
 <a href="labs/hierarchy-gizmobot/" class="card">
             <div class="card-header">
-              <img class="card-image" src="assets/hierarchy.svg"
+              <img class="card-image" src="../assets/lab-previews/hierarchy.svg"
                 alt="A jointed robot arm reaching for a floating block, beside its scene tree">
             </div>
             <div class="card-body">
@@ -522,7 +486,7 @@
 
           <a href="labs/keyframes/" class="card">
             <div class="card-header">
-              <img class="card-image" src="assets/keyframes.svg"
+              <img class="card-image" src="../assets/lab-previews/keyframes.svg"
                 alt="A rocket arcing over a timeline of keyframe diamonds">
             </div>
             <div class="card-body">
@@ -533,7 +497,7 @@
 
           <a href="labs/particles/" class="card">
             <div class="card-header">
-              <img class="card-image" src="assets/particles.svg"
+              <img class="card-image" src="../assets/lab-previews/particles.svg"
                 alt="A fountain of spark particles cooling from yellow to ember">
             </div>
             <div class="card-body">
@@ -544,7 +508,7 @@
 
           <a href="labs/topology-gizmobot/" class="card">
             <div class="card-header">
-              <img class="card-image" src="assets/topology-gizmobot.png"
+              <img class="card-image" src="../assets/lab-previews/topology-gizmobot.png"
                 alt="Gizmobot with his triangle mesh drawn over the surface">
             </div>
             <div class="card-body">
@@ -569,6 +533,7 @@
         </svg>
         <span>View the code on GitHub</span>
       </a>
+      <p><a href="../deprecated/">Legacy labs</a> — earlier standalone experiments, preserved outside the current Gizmobot curriculum.</p>
     </section>
   </div>
 </body>

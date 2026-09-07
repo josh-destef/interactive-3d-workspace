@@ -7,7 +7,7 @@ import json
 import struct
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / 'polished/labs/navigate-and-transform/assets/gizmobot.glb'
+SOURCE = ROOT / 'assets/models/gizmobot.glb'
 OUT = ROOT / 'polished/labs/robot-assembly/assets'
 original = SOURCE.read_bytes()
 n = struct.unpack_from('<I', original, 12)[0]

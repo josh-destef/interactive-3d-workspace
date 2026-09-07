@@ -36,7 +36,7 @@ function readGlb(file) {
 }
 
 const baked = readGlb(path.join(lab, 'assets/gizmobot-topology.glb'));
-const source = readGlb(path.join(root, 'polished/labs/navigate-and-transform/assets/gizmobot.glb'));
+const source = readGlb(path.join(root, 'assets/models/gizmobot.glb'));
 const report = JSON.parse(fs.readFileSync(path.join(lab, 'assets/topology-report.json'), 'utf8'));
 
 const SIZES = { SCALAR: 1, VEC2: 2, VEC3: 3, VEC4: 4 };

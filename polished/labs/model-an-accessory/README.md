@@ -49,7 +49,7 @@ transform.
 - `js/outliner.js`, `js/history.js` - new, self-contained.
 - Swatches come from Material Lab; the GLB export path is the previous version
   of this lab's, unchanged apart from the root name.
-- Gizmobot is a copy of `navigate-and-transform/assets/gizmobot.glb`.
+- Gizmobot loads from the canonical `assets/models/gizmobot.glb`.
 
 ## Measured, not eyeballed
 

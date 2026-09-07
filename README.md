@@ -1,57 +1,42 @@
-# Fundamentals of 3D — Dev Setup
+# Gizmobot 3D Learning Labs
 
-No build step. Static HTML/JS/CSS only.
+Interactive, browser-based 3D lessons for beginners. The current curriculum
+uses Gizmobot as a familiar subject while learners explore navigation,
+transforms, modeling, materials, hierarchy, animation, particles, topology,
+and assembly. It is a static site: no build step is required for normal use.
 
-## Run the dev server
+Open the repository root with any static server, then visit `/` (which forwards
+to `/polished/`). For example: `npx serve .` or `python -m http.server`.
+The site is designed for GitHub Pages; paths are relative and `.nojekyll` keeps
+the static files available as published.
 
-From the project root (`fundamentals_of_3d/`):
+## Layout
 
-```bash
-npx serve .
+```text
+assets/                 canonical brand, models, and landing-page previews
+  models/gizmobot.glb   canonical full Gizmobot
+polished/               current Gizmobot curriculum and its public hub
+  labs/                 one folder per active lesson
+  kit/                  shared lesson shell and runnable starter template
+deprecated/             preserved pre-Gizmobot experiments and archive page
+docs/                   architecture, research, and asset conventions
+scripts/                builders and lightweight QA checks
 ```
 
-Then open the URL it prints (usually `http://localhost:3000`).
+Current lessons live in `polished/labs/`; legacy work lives in
+`deprecated/` and is linked as **Legacy labs** from the course hub. Legacy
+experiments are available for reference but are not part of the learner path.
 
-### Alternatives
+## Add a lesson
 
-```bash
-# Python (if you have Python 3)
-python -m http.server 8080
-# → open http://localhost:8080
+Copy `polished/kit/template/` into `polished/labs/<lesson-name>/`, then update
+its configuration, subject code, and README. The kit README explains its shared
+CSS, controls, staged lesson flow, demos, gates, and quiz. Prefer the shared
+kit over copying its infrastructure. Put a reusable model, logo, or preview in
+`assets/`; keep a local asset only when it is a documented lesson-specific
+variant. See [asset conventions](docs/ASSET_CONVENTIONS.md).
 
-# Node http-server (if preferred over serve)
-npx http-server . -p 3000
-# → open http://localhost:3000
-```
-
-## Open a specific lesson
-
-Navigate to the lesson file in your browser after the server is running:
-
-| Lesson | URL |
-|--------|-----|
-| Fundamentals 1 | `http://localhost:3000/fundamentals1.html` |
-| Fundamentals 2 | `http://localhost:3000/fundamentals2.html` |
-| Fundamentals 3 | `http://localhost:3000/fundamentals3.html` |
-| Fundamentals 4 | `http://localhost:3000/fundamentals4.html` |
-| Fundamentals 5 | `http://localhost:3000/fundamentals5/` |
-
-## Project structure
-
-```
-fundamentals_of_3d/
-├── index.html                 # course landing page
-├── fundamentals1.html         # standalone lesson pages
-├── fundamentals2.html
-├── fundamentals3.html
-├── fundamentals4.html
-├── fundamentals5/             # lesson 5 (multi-file)
-│   ├── index.html
-│   ├── css/styles.css
-│   └── js/                    # main.js, stage.js, anim.js, etc.
-├── labs/                      # extra labs & mini-courses (+ test-labs.html)
-├── shared/                    # css/js shared by the lab pages
-├── assets/                    # logos and 3D models (gizmo.glb, …)
-├── docs/                      # roadmap / progress notes
-└── scripts/                   # QA scripts
-```
+Each active lab has a local README describing what it teaches, its important
+files, and any non-obvious implementation constraints. Run `node
+scripts/qa-links.mjs` after moving web files; lesson-specific scripts in
+`scripts/` provide additional checks where available.

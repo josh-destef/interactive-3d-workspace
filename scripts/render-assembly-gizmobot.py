@@ -36,7 +36,7 @@ floor=bpy.context.object
 mat=bpy.data.materials.new('Warm grey studio');mat.diffuse_color=(.62,.65,.60,1);floor.data.materials.append(mat)
 data=bpy.data.cameras.new('Camera');camera=bpy.data.objects.new('Camera',data);scene.collection.objects.link(camera)
 camera.location=(0,12,3.6);aim(camera,(0,0,1.65));data.type='ORTHO';data.ortho_scale=8.0;scene.camera=camera
-scene.render.filepath=str(ROOT/'polished/assets/robot-assembly.png')
+scene.render.filepath=str(ROOT/'assets/lab-previews/robot-assembly.png')
 bpy.ops.render.render(write_still=True)
 camera.location=(4,12,3.6);aim(camera,(0,0,1.65))
 scene.render.filepath=str(LAB/'qa/exploded-perspective.png')

@@ -22,7 +22,7 @@ import struct
 import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / 'polished/labs/navigate-and-transform/assets/gizmobot.glb'
+SOURCE = ROOT / 'assets/models/gizmobot.glb'
 OUT = ROOT / 'polished/labs/topology-gizmobot/assets'
 
 # Each rung roughly halves the one above. LOD0 is the source mesh untouched.

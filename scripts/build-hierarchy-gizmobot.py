@@ -44,7 +44,7 @@ expected = groups['LeftUpperArm'] + groups['LeftForearm'] + groups['LeftHand']
 assert sorted(assigned) == sorted(expected) and len(set(assigned)) == len(assigned)
 assert all(arm.values())
 assert scope['SOURCE'].read_bytes() == scope['original']
-report = dict(source='navigate-and-transform/assets/gizmobot.glb',
+report = dict(source='assets/models/gizmobot.glb',
               sourceSha256=scope['hashlib'].sha256(scope['original']).hexdigest(),
               triangles={key:len(value) for key,value in arm.items()},
               fingerCount=3, originalAttributesCopiedExactly=True,

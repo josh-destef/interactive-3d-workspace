@@ -1,6 +1,6 @@
 # Gizmobot assembly preparation
 
-Source: `../navigate-and-transform/assets/gizmobot.glb`, the original navigation lesson asset. The Material Lab variant changes its materials and is not used here.
+Source: `../../../assets/models/gizmobot.glb`, the canonical full Gizmobot asset. The Material Lab variant changes its materials and is not used here.
 
 ## Proposed grouping, before export
 

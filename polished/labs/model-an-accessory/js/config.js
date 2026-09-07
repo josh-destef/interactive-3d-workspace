@@ -15,7 +15,7 @@
 ═══════════════════════════════════════════════ */
 import { V3 } from '../../../kit/js/stage.js';
 
-export const GIZMOBOT_URL = 'assets/gizmobot.glb';
+export const GIZMOBOT_URL = '../../../assets/models/gizmobot.glb';
 
 /* ── beats ──
    0 is the intro and 14 the celebration, so the numbered steps a student

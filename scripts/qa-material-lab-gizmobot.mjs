@@ -4,7 +4,7 @@ import path from 'node:path';
 import process from 'node:process';
 
 const workspace = process.cwd();
-const sourcePath = path.join(workspace, 'polished', 'labs', 'navigate-and-transform', 'assets', 'gizmobot.glb');
+const sourcePath = path.join(workspace, 'assets', 'models', 'gizmobot.glb');
 const assetPath = path.join(workspace, 'polished', 'labs', 'material-lab', 'assets', 'gizmobot-material-lab.glb');
 const reportPath = path.join(workspace, 'polished', 'labs', 'material-lab', 'assets', 'gizmobot-material-lab.report.json');
 const subjectPath = path.join(workspace, 'polished', 'labs', 'material-lab', 'js', 'subject.js');

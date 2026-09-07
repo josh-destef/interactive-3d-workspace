@@ -26,7 +26,7 @@ def triangles(doc,data,mesh):
     ix=[i[0] for i in accessor(doc,data,p['indices'])]
     return [tuple(tuple(a[v] for a in attributes) for v in ix[t:t+3]) for t in range(0,len(ix),3)]
 
-source=ROOT/'polished/labs/navigate-and-transform/assets/gizmobot.glb'
+source=ROOT/'assets/models/gizmobot.glb'
 s,sb=load(source);d,b=load(ASSETS/'gizmobot-assembly.glb')
 m=json.loads((ASSETS/'assembly-manifest.json').read_text())
 assert Counter(triangles(s,sb,s['meshes'][0]))==Counter(t for mesh in d['meshes'] for t in triangles(d,b,mesh))

@@ -5,7 +5,7 @@
 import { V3 } from './utils.js';
 
 /* path to the character model, relative to index.html */
-export const GIZMOBOT_URL = 'assets/gizmobot.glb';
+export const GIZMOBOT_URL = '../../../assets/models/gizmobot.glb';
 
 /* total beats in the lesson (beats 0-12). Beat 0 is the intro and beat 12 is the
    celebration, so the numbered steps a student sees run 1-11 - same convention as
