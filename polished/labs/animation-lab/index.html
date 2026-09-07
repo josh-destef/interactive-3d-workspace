@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Animation Lab · CreateAccess</title>
+<meta name="description" content="Make Gizmobot wave hello. Learn to save poses, move through time, and create your first keyframe animation.">
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=DM+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}</script>
+</head><body>
+<header><a href="../../"><img src="../../assets/Logo.png" alt="CreateAccess"></a><span class="divider"></span><span>Animation Lab</span><a class="back" href="../../">All labs ↗</a></header>
+<main>
+<section id="workbench" aria-label="Gizmobot animation workspace">
+ <div class="stage-heading"><span class="eyebrow">A LITTLE MOTION. A BIG HELLO.</span><h1>Make Gizmobot wave.</h1></div>
+ <div id="viewport"><canvas id="scene" aria-label="Gizmobot. Select its waving arm or hand, or use the joint buttons." tabindex="0"></canvas></div>
+ <div id="loading" role="status">Getting Gizmobot ready…</div>
+ <div class="stage-footer"><span id="stage-status">Your first animation</span><button id="reset-view" type="button">Reset view</button></div>
+ <section id="timeline" aria-label="Animation timeline">
+  <div class="transport"><button id="beginning" aria-label="Return to beginning">↤ Start</button><button id="play">▶ Play</button><output id="time-display" for="playhead">0.0 s</output><span class="timeline-legend"><b>◆</b> Saved pose <i>│</i> Now</span></div>
+  <div id="track"><div id="key-markers" aria-label="Saved keyframes"></div><div id="playhead-line" aria-hidden="true"></div></div>
+  <label class="sr-only" for="playhead">Time in seconds</label><input id="playhead" type="range" min="0" max="4" step="0.1" value="0">
+  <div class="ticks" aria-hidden="true"><span>0 s</span><span>1 s</span><span>2 s</span><span>3 s</span><span>4 s</span></div>
+ </section>
+</section>
+<aside>
+ <div class="progress-label"><span>ANIMATION LAB</span><span id="step-count">1 / 7</span></div><progress id="progress" max="7" value="1" aria-label="Lesson progress"></progress>
+ <span id="mode" class="badge">Hello</span><h2 id="title" tabindex="-1"></h2><p id="body"></p>
+ <div id="feedback" role="status" aria-live="polite"></div>
+ <button id="demo" class="secondary">Watch the wave</button>
+ <fieldset id="pose-controls"><legend>Choose a joint</legend><div class="joint-buttons"><button id="select-arm" type="button" aria-pressed="false">◉ Arm</button><button id="select-wrist" type="button" aria-pressed="false">◉ Wrist</button></div>
+ <div id="rotation-wrap"><label for="rotation"><span id="rotation-label">Raise the arm</span><output id="rotation-value"></output></label><input id="rotation" type="range" min="-85" max="75" step="1" value="-75"><div class="range-labels"><span id="low-label">Down</span><span id="high-label">Up</span></div></div>
+ <button id="save" class="primary">◆ Save keyframe</button><p id="pose-note" class="hint">A pose is only saved when you add a keyframe.</p>
+ <div class="edit-actions"><button id="undo">Undo</button><button id="delete">Delete keyframe</button><button id="reset">Reset work</button></div></fieldset>
+ <div class="lesson-nav"><button id="next" class="primary">Let’s begin →</button><button id="restart" class="text-button">Restart lesson</button></div>
+</aside>
+</main><script type="module" src="js/main.js"></script>
+</body></html>

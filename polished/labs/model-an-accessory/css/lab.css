@@ -1,0 +1,184 @@
+/* ══════════════════════════════════════════════════════════════════════
+   MODEL AN ACCESSORY - lab styles
+   Viewport chrome unique to this lab: the tool rail, the outliner and its
+   rows, the drag readout chip, and the closing checklist. The kit already
+   owns the dock, panel and shell pieces, so none of that is redeclared here.
+   ══════════════════════════════════════════════════════════════════════ */
+
+#canvas-wrap { bottom: var(--console-h, 220px); height: auto; }
+#cv.grabbing { cursor: grabbing; }
+#cv.modal { cursor: crosshair; }
+#cv:focus-visible { outline: 3px solid var(--orange-dark); outline-offset: -4px; }
+#btn-replay { top: 142px; }
+
+/* ── tool rail ──
+   Floats over the canvas's left edge; JS reveals it, and its buttons one at
+   a time, as the beats that teach them arrive. */
+#rail {
+    display: none;
+    position: absolute; top: 140px; left: 14px; z-index: 35;
+    flex-direction: column; gap: 6px; padding: 6px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .10), 0 2px 8px rgba(0, 0, 0, .05);
+}
+#rail.on { display: flex; }
+
+/* A persistent landmark prevents the tool rail from reading as decoration.
+   The lesson tool briefly pulses when it is introduced. */
+.rail-btn.teach, .transform-btn.teach { animation: toolTeach 1.1s ease-in-out 3; box-shadow: 0 0 0 3px rgba(255, 144, 34, .24); }
+
+/* Core transforms are deliberately explicit: icon + word, in one glance. */
+#transform-bar {
+    display: none;
+    position: absolute; top: 72px; left: 14px; z-index: 36;
+    align-items: center; gap: 6px; padding: 8px;
+    background: rgba(255, 255, 255, .97); border: 1px solid rgba(0, 0, 0, .06);
+    border-radius: 16px; box-shadow: 0 12px 36px rgba(0, 0, 0, .14), 0 2px 8px rgba(0, 0, 0, .06);
+}
+#transform-bar.on { display: flex; }
+.transform-btn {
+    display: inline-flex; align-items: center; gap: 8px; min-width: 112px; justify-content: center;
+    padding: 11px 20px; border: none; border-radius: 10px; background: transparent;
+    color: #555; font: 500 var(--fs-btn) var(--font); cursor: pointer; transition: all .2s;
+}
+.transform-btn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.transform-btn[aria-pressed="true"] { background: var(--orange); color: #fff; box-shadow: 0 4px 14px rgba(255, 144, 34, .45); }
+.transform-btn:hover:not([aria-pressed="true"]) { background: rgba(0, 0, 0, .05); color: #222; }
+.transform-btn:focus-visible,
+.home-btn:focus-visible,
+.util-btn:focus-visible,
+#btn-replay:focus-visible,
+#btn-continue:focus-visible,
+#btn-finish:focus-visible { outline: 3px solid var(--orange-dark); outline-offset: 3px; }
+/* The transform bar is the home for these three tools; leave the secondary
+   rail for selection, modelling, duplicate, undo and redo. */
+#rail .rail-btn[data-tool="move"],
+#rail .rail-btn[data-tool="rotate"],
+#rail .rail-btn[data-tool="scale"] { display: none !important; }
+@keyframes toolTeach { 50% { transform: scale(1.12); background: rgba(255, 144, 34, .18); color: var(--orange-dark); } }
+
+.rail-group { display: flex; flex-direction: column; gap: 4px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.rail-group:last-child { border-bottom: none; padding-bottom: 0; }
+/* an empty group (no tool in it revealed yet) leaves no stray divider */
+.rail-group:not(:has(.rail-btn.on)) { display: none; }
+
+.rail-btn {
+    display: none;
+    position: relative; width: 42px; height: 42px;
+    border: none; border-radius: 8px; background: transparent; color: var(--muted);
+    cursor: pointer; transition: background .15s, color .15s;
+}
+.rail-btn.on { display: grid; place-items: center; }
+.rail-btn svg { width: 21px; height: 21px; fill: currentColor; stroke: none; }
+.rail-btn svg.stroke { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.rail-btn:hover:not(:disabled) { background: var(--page); color: var(--dark); }
+.rail-btn[aria-pressed="true"] { background: rgba(255, 144, 34, .12); border: 1.4px solid var(--orange); color: var(--orange-dark); }
+.rail-btn:disabled { opacity: .35; cursor: default; }
+.rail-btn:disabled:hover { background: transparent; color: var(--muted); }
+.rail-btn:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+/* tooltip: right of the button, hover/focus only */
+.rail-tip {
+    position: absolute; left: calc(100% + 9px); top: 50%; transform: translateY(-50%); z-index: 40;
+    display: flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: 6px;
+    background: var(--dark); color: #fff; font-family: var(--mono); font-size: 10.5px;
+    white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .12s ease;
+}
+.rail-btn:hover .rail-tip, .rail-btn:focus-visible .rail-tip { opacity: 1; }
+.rail-tip kbd { padding: 1px 5px; border: 1px solid rgba(255, 255, 255, .25); border-radius: 3px; background: rgba(255, 255, 255, .12); font-size: 9.5px; }
+
+/* ── outliner ── floats over the canvas's right edge */
+#outliner {
+    display: none;
+    /* clears the util bar, which sits at edge + logo + 14 and is ~34 tall */
+    position: absolute; top: calc(var(--edge) + var(--logo-h) + 62px); right: 14px; z-index: 35;
+    width: clamp(215px, 18vw, 235px);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .10), 0 2px 8px rgba(0, 0, 0, .05);
+    overflow: hidden;
+}
+#outliner.on { display: block; }
+
+.out-head { padding: 9px 12px; border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+#out-rows { max-height: 210px; overflow-y: auto; }
+#out-empty { padding: 18px 14px; text-align: center; font-size: 12px; color: var(--muted); }
+#out-xform { padding: 8px 12px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; }
+.xf-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.xf-row span { font-family: var(--mono); font-size: 10.5px; color: var(--muted); flex-shrink: 0; }
+.xf-row b { font-family: var(--mono); font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--dark); text-align: right; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* rows JS builds inside #out-rows */
+.out-row {
+    display: flex; align-items: center; gap: 6px; width: 100%; min-height: 36px; padding: 5px 12px;
+    border: none; background: transparent; font-family: var(--font); font-size: 12px;
+    text-align: left; color: var(--dark); cursor: pointer; transition: background .12s;
+}
+.out-row:hover { background: var(--page); }
+.out-row[aria-selected="true"] { background: rgba(255, 144, 34, .10); box-shadow: inset 2.5px 0 0 var(--orange); }
+.out-row.child { padding-left: 28px; color: var(--muted); }
+.out-row:focus-visible { outline: 2px solid var(--orange); outline-offset: -2px; }
+.row-badge { margin-left: auto; font-family: var(--mono); font-size: 9px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--orange-dark); }
+
+/* ── drag readout ── follows the active drag; never steals the pointer */
+#modal-readout {
+    display: none;
+    position: absolute; top: 14px; left: 78px; z-index: 36;
+    padding: 5px 10px; background: var(--surface); border: 1.4px solid var(--orange); border-radius: 7px;
+    font-family: var(--mono); font-size: 11px; color: var(--dark); pointer-events: none;
+}
+#modal-readout.on { display: block; }
+#modal-readout.axis-x { border-color: var(--axis-x); }
+#modal-readout.axis-y { border-color: var(--axis-y); }
+#modal-readout.axis-z { border-color: var(--axis-z); }
+
+#selection { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font: 11px var(--mono); letter-spacing: .12em; color: var(--muted); white-space: nowrap; pointer-events: none; }
+#read-layer:not(.on), .choice-layer:not(.on) { visibility: hidden; }
+
+/* ── final checklist ── */
+#checklist { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+/* A `display` rule beats the bare `hidden` attribute, and both the dock
+   buttons and the checklist carry one - so say it again for anything this
+   lab hides by attribute. Cylinder and Sphere must not exist before step 7. */
+#checklist[hidden],
+#dock .dock-btn[hidden],
+#out-xform[hidden] { display: none; }
+.ck { display: flex; align-items: center; gap: 8px; font-size: var(--fs-fine); color: var(--dark); }
+.ck i { position: relative; width: 14px; height: 14px; flex-shrink: 0; border: 1.5px solid var(--line); border-radius: 3px; }
+.ck.done { color: var(--muted); }
+.ck.done i { background: var(--green); border-color: var(--green); }
+.ck.done i::after { content: ''; position: absolute; left: 4px; top: 1px; width: 4px; height: 8px; border: solid #fff; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+
+/* ── dock layout nudges ── */
+#dock .dock-row { flex-wrap: wrap; gap: 16px 22px; }
+.ctl[data-group="add"] { flex-basis: auto; }
+.add-row { display: flex; gap: 8px; flex-wrap: wrap; }
+#save-status { font-size: 12px; margin-top: 5px; }
+
+@media (prefers-reduced-motion: reduce) {
+    .rail-tip, .rail-btn, .out-row { transition: none; }
+}
+
+/* Keep the instruction and current controls side-by-side on tablets so the
+   bottom surface does not consume most of the 3D viewport. */
+@media (min-width: 701px) and (max-width: 1080px) {
+    #console.has-dock { grid-template-columns: minmax(260px, 38%) 1fr; max-height: 46dvh; overflow-y: auto; }
+}
+
+/* ── responsive: rail becomes a horizontal strip, outliner collapses ── */
+@media (max-width: 700px) {
+    #console.has-dock { grid-template-columns: 1fr; gap: 10px; }
+    #console { max-height: 46dvh; overflow-y: auto; padding: 14px 18px; }
+    #rail { top: auto; bottom: calc(var(--console-h, 220px) + 8px); left: 8px; right: 8px; flex-direction: row; justify-content: center; width: auto; }
+    .rail-group { flex-direction: row; border-bottom: none; border-right: 1px solid var(--line); padding-bottom: 0; padding-right: 6px; }
+    .rail-group:last-child { border-right: none; padding-right: 0; }
+    .rail-tip { display: none; }
+    #transform-bar { top: 68px; left: 8px; right: 8px; justify-content: center; }
+    .transform-btn { min-width: 0; flex: 1; padding-inline: 12px; }
+    #btn-replay { top: 136px; }
+    #outliner { top: 180px; width: clamp(150px, 40vw, 190px); }
+    #out-rows { max-height: 120px; }
+    #selection { bottom: 8px; font-size: 9px; }
+    #util-bar { top: 8px; right: 8px; }
+    #util-bar .util-btn { width: 44px; height: 44px; padding: 0; justify-content: center; font-size: 0; }
+    #util-bar .util-btn svg { width: 18px; height: 18px; }
+}
