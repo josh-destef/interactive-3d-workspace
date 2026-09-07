@@ -3,15 +3,12 @@
    Undo/redo as a stack of full-model snapshots with an index pointing at
    the current one, rather than separate undo/redo lists — that keeps
    undo-then-redo trivially symmetric and avoids an off-by-one on either end.
-   suspend() lets the worked-example demo drive the model without burying
-   the student's own history under demo steps.
 ═══════════════════════════════════════════════ */
 
 let serialize = null;
 let restore = null;
 let stack = [];
 let index = -1;
-let suspended = false;
 
 const MAX_ENTRIES = 40;
 
@@ -27,7 +24,7 @@ export function resetHistory() {
 }
 
 export function push() {
-    if (suspended || !serialize) return;
+    if (!serialize) return;
     stack = stack.slice(0, index + 1);
     stack.push(structuredClone(serialize()));
     index = stack.length - 1;
@@ -49,16 +46,6 @@ export function redo() {
     index += 1;
     restore(structuredClone(stack[index]));
     return true;
-}
-
-export function suspend(fn) {
-    const was = suspended;
-    suspended = true;
-    try {
-        fn();
-    } finally {
-        suspended = was;
-    }
 }
 
 export function canUndo() {

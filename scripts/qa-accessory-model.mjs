@@ -1,0 +1,61 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+// Use the same local Three.js dependency as qa-polished-models.mjs.
+const threeUrl = pathToFileURL(path.join(process.env.QA_NODE_MODULES || path.join(os.tmpdir(), 'fundamentals-3d-qa', 'node_modules'), 'three/build/three.module.js')).href;
+const THREE = await import(threeUrl);
+const source = name => readFile(new URL(`../polished/labs/model-an-accessory/js/${name}.js`, import.meta.url), 'utf8');
+const moduleUrl = text => `data:text/javascript;base64,${Buffer.from(text).toString('base64')}`;
+const configUrl = moduleUrl((await source('config')).replace("import { V3 } from '../../../kit/js/stage.js';", `import * as THREE from '${threeUrl}'; const V3 = (x,y,z) => new THREE.Vector3(x,y,z);`));
+const portUrl = moduleUrl((await source('port')).replace("from 'three'", `from '${threeUrl}'`));
+const model = await import(moduleUrl((await source('model')).replace("from 'three'", `from '${threeUrl}'`).replace("from './config.js'", `from '${configUrl}'`).replace("from './port.js'", `from '${portUrl}'`)));
+const history = await import(new URL('../polished/labs/model-an-accessory/js/history.js', import.meta.url));
+const scene = new THREE.Scene();
+model.initModel(scene);
+const pieces = ['box', 'box', 'cylinder', 'sphere'].map(kind => model.addObject(kind));
+const group = model.groupObjects(pieces.map(e => e.id));
+model.setColor(pieces[0], '#3a91b8');
+model.setColor(pieces[1], '#ff9022');
+assert.equal(pieces[0].mesh.material.color.getHexString(), '3a91b8');
+assert.equal(pieces[1].mesh.material.color.getHexString(), 'ff9022');
+
+group.mesh.position.x += 1;
+group.mesh.rotation.y = .4;
+group.mesh.scale.setScalar(.8);
+const before = pieces[0].mesh.getWorldPosition(new THREE.Vector3());
+const copy = model.duplicateObject(pieces[0].id);
+const after = copy.mesh.getWorldPosition(new THREE.Vector3());
+assert.ok(after.distanceTo(before.clone().add(new THREE.Vector3(.25, 0, 0))) < 1e-8, 'duplicate stays beside transformed child');
+model.groupObjects([group.id, copy.id]);
+assert.equal(model.state.entries.filter(e => e.kind === 'group').length, 1, 'regroup removes stale groups');
+assert.equal(model.rootEntries().length, 1);
+assert.equal(model.state.entries.filter(e => e.parentId).length, 5);
+
+model.addMount(pieces[0].id);
+const port = model.mountWorldPoint().add(new THREE.Vector3(.1, .1, .1));
+assert.equal(model.snapToPort(port.clone().addScalar(10)), false, 'distant drop cannot attach');
+assert.equal(model.snapToPort(port), true);
+assert.ok(model.mountWorldPoint().distanceTo(port) < 1e-8, 'snap aligns connector faces');
+
+const bot = new THREE.Group();
+bot.rotation.y = Math.PI;
+scene.add(bot);
+history.initHistory({ serialize: model.serialize, restore: s => model.restore(s, { gizmobot: bot }) });
+history.resetHistory();
+bot.attach(model.state.root);
+model.state.attached = true;
+history.push();
+history.undo();
+assert.equal(model.state.attached, false);
+assert.equal(model.state.root.parent, scene);
+history.redo();
+assert.equal(model.state.attached, true);
+assert.equal(model.state.root.parent, bot);
+assert.ok(model.mountWorldPoint().distanceTo(port) < 1e-8, 'redo preserves attached world position');
+const shiftedPort = port.clone().add(new THREE.Vector3(.1, 0, 0));
+assert.equal(model.snapToPort(shiftedPort), true);
+assert.ok(model.mountWorldPoint().distanceTo(shiftedPort) < 1e-8, 'snap handles a rotated parent');
+console.log('PASS accessory: independent colours, group transforms, duplication, regrouping, snap distance/alignment, attachment undo/redo');

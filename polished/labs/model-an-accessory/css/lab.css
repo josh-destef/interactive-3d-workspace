@@ -9,14 +9,13 @@
 #cv.grabbing { cursor: grabbing; }
 #cv.modal { cursor: crosshair; }
 #cv:focus-visible { outline: 3px solid var(--orange-dark); outline-offset: -4px; }
-#btn-replay { top: 142px; }
 
 /* ── tool rail ──
    Floats over the canvas's left edge; JS reveals it, and its buttons one at
    a time, as the beats that teach them arrive. */
 #rail {
     display: none;
-    position: absolute; top: 140px; left: 14px; z-index: 35;
+    position: relative; order: 2; width: 100%;
     flex-direction: column; gap: 6px; padding: 6px;
     background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
     box-shadow: 0 10px 28px rgba(0, 0, 0, .10), 0 2px 8px rgba(0, 0, 0, .05);
@@ -30,15 +29,15 @@
 /* Core transforms are deliberately explicit: icon + word, in one glance. */
 #transform-bar {
     display: none;
-    position: absolute; top: 72px; left: 14px; z-index: 36;
-    align-items: center; gap: 6px; padding: 8px;
+    position: relative; order: 1; width: 100%; flex-direction: column;
+    align-items: stretch; gap: 4px; padding: 6px;
     background: rgba(255, 255, 255, .97); border: 1px solid rgba(0, 0, 0, .06);
     border-radius: 16px; box-shadow: 0 12px 36px rgba(0, 0, 0, .14), 0 2px 8px rgba(0, 0, 0, .06);
 }
 #transform-bar.on { display: flex; }
 .transform-btn {
-    display: inline-flex; align-items: center; gap: 8px; min-width: 112px; justify-content: center;
-    padding: 11px 20px; border: none; border-radius: 10px; background: transparent;
+    display: inline-flex; align-items: center; gap: 8px; min-width: 0; width: 100%; justify-content: flex-start;
+    padding: 9px 10px; border: none; border-radius: 10px; background: transparent;
     color: #555; font: 500 var(--fs-btn) var(--font); cursor: pointer; transition: all .2s;
 }
 .transform-btn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -47,7 +46,6 @@
 .transform-btn:focus-visible,
 .home-btn:focus-visible,
 .util-btn:focus-visible,
-#btn-replay:focus-visible,
 #btn-continue:focus-visible,
 #btn-finish:focus-visible { outline: 3px solid var(--orange-dark); outline-offset: 3px; }
 /* The transform bar is the home for these three tools; leave the secondary
@@ -64,11 +62,11 @@
 
 .rail-btn {
     display: none;
-    position: relative; width: 42px; height: 42px;
+    position: relative; width: 100%; height: 34px;
     border: none; border-radius: 8px; background: transparent; color: var(--muted);
     cursor: pointer; transition: background .15s, color .15s;
 }
-.rail-btn.on { display: grid; place-items: center; }
+.rail-btn.on { display: flex; align-items: center; gap: 8px; padding: 6px 10px; }
 .rail-btn svg { width: 21px; height: 21px; fill: currentColor; stroke: none; }
 .rail-btn svg.stroke { fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .rail-btn:hover:not(:disabled) { background: var(--page); color: var(--dark); }
@@ -91,7 +89,7 @@
 #outliner {
     display: none;
     /* clears the util bar, which sits at edge + logo + 14 and is ~34 tall */
-    position: absolute; top: calc(var(--edge) + var(--logo-h) + 62px); right: 14px; z-index: 35;
+    position: absolute; top: 20px; right: 14px; z-index: 35;
     width: clamp(215px, 18vw, 235px);
     background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
     box-shadow: 0 10px 28px rgba(0, 0, 0, .10), 0 2px 8px rgba(0, 0, 0, .05);
@@ -100,7 +98,7 @@
 #outliner.on { display: block; }
 
 .out-head { padding: 9px 12px; border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
-#out-rows { max-height: 210px; overflow-y: auto; }
+#out-rows { max-height: 360px; overflow-y: auto; }
 #out-empty { padding: 18px 14px; text-align: center; font-size: 12px; color: var(--muted); }
 #out-xform { padding: 8px 12px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; }
 .xf-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
@@ -122,7 +120,7 @@
 /* ── drag readout ── follows the active drag; never steals the pointer */
 #modal-readout {
     display: none;
-    position: absolute; top: 14px; left: 78px; z-index: 36;
+    position: absolute; top: 20px; left: 170px; z-index: 36;
     padding: 5px 10px; background: var(--surface); border: 1.4px solid var(--orange); border-radius: 7px;
     font-family: var(--mono); font-size: 11px; color: var(--dark); pointer-events: none;
 }
@@ -131,14 +129,13 @@
 #modal-readout.axis-y { border-color: var(--axis-y); }
 #modal-readout.axis-z { border-color: var(--axis-z); }
 
-#selection { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font: 11px var(--mono); letter-spacing: .12em; color: var(--muted); white-space: nowrap; pointer-events: none; }
 #read-layer:not(.on), .choice-layer:not(.on) { visibility: hidden; }
 
 /* ── final checklist ── */
 #checklist { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 /* A `display` rule beats the bare `hidden` attribute, and both the dock
    buttons and the checklist carry one - so say it again for anything this
-   lab hides by attribute. Cylinder and Sphere must not exist before step 7. */
+   lab hides by attribute. Primitives appear when the detail step introduces them. */
 #checklist[hidden],
 #dock .dock-btn[hidden],
 #out-xform[hidden] { display: none; }
@@ -158,27 +155,83 @@
     .rail-tip, .rail-btn, .out-row { transition: none; }
 }
 
-/* Keep the instruction and current controls side-by-side on tablets so the
-   bottom surface does not consume most of the 3D viewport. */
-@media (min-width: 701px) and (max-width: 1080px) {
-    #console.has-dock { grid-template-columns: minmax(260px, 38%) 1fr; max-height: 46dvh; overflow-y: auto; }
+/* A single aligned column keeps navigation, transforms and history apart
+   without scattering controls across the top of the viewport. */
+#tool-stack {
+    position: absolute; top: 20px; left: 14px; bottom: 12px; z-index: 100;
+    width: 138px; display: flex; flex-direction: column; align-items: stretch;
+    gap: 10px; overflow-y: auto; scrollbar-width: thin; padding: 3px;
+    pointer-events: none;
 }
+#tool-stack > * { flex-shrink: 0; pointer-events: auto; }
+#tool-stack .home-btn {
+    position: static; order: 0; min-height: 40px; padding: 9px 14px;
+    justify-content: flex-start; width: 100%;
+}
+#tool-stack .home-btn:hover { transform: none; }
+#tool-stack #util-bar { position: static; order: 3; }
+#tool-stack .util-btn { width: 100%; padding: 9px 10px; min-height: 38px; font-size: 12px; }
+#tool-stack .rail-tip {
+    position: static; transform: none; padding: 0; opacity: 1;
+    background: transparent; color: inherit; font: 500 12px var(--font);
+    white-space: nowrap;
+}
+#tool-stack .rail-tip kbd { display: none; }
+#tool-stack .rail-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
 
-/* ── responsive: rail becomes a horizontal strip, outliner collapses ── */
+/* Reserve the same instruction, controls and action space on every beat.
+   Only content can scroll; Continue never changes the surface height or moves
+   when controls are revealed or a task becomes complete. */
+:root { --accessory-console-h: 276px; }
+#console, #console.has-dock {
+    height: var(--accessory-console-h); min-height: var(--accessory-console-h);
+    max-height: none; overflow: hidden;
+    grid-template-columns: minmax(0, 55fr) minmax(0, 45fr);
+    grid-template-rows: minmax(0, 1fr); gap: 24px;
+    padding: 18px 28px 82px;
+}
+#console #panel, #console:not(.has-dock) #panel {
+    grid-column: 1; min-height: 0; max-width: none; margin: 0; width: 100%;
+}
+#console .panel-header { flex-shrink: 0; }
+#console #cap-body { min-height: 0; overflow-y: auto; max-width: 65ch; padding-right: 8px; }
+#console #cap-step { min-height: 16px; max-height: 24px; }
+#console .panel-footer {
+    position: absolute; left: 28px; right: 28px; bottom: 16px;
+    height: 58px; margin: 0; padding: 0;
+    flex-direction: row; align-items: flex-start; justify-content: space-between;
+}
+#console .continue-side { align-items: flex-end; margin-left: auto; }
+#console #btn-continue { min-width: 142px; justify-content: center; }
+#console #btn-continue.on, #console #kbd-hint.on { animation: none; }
+#console #dock {
+    grid-column: 2; grid-row: 1; min-height: 0; overflow-y: auto;
+    justify-content: flex-start; padding: 0 0 0 22px;
+    border-top: none; border-left: 1px solid var(--line);
+}
+#console #dock .dock-row { gap: 12px 18px; }
+
 @media (max-width: 700px) {
-    #console.has-dock { grid-template-columns: 1fr; gap: 10px; }
-    #console { max-height: 46dvh; overflow-y: auto; padding: 14px 18px; }
-    #rail { top: auto; bottom: calc(var(--console-h, 220px) + 8px); left: 8px; right: 8px; flex-direction: row; justify-content: center; width: auto; }
-    .rail-group { flex-direction: row; border-bottom: none; border-right: 1px solid var(--line); padding-bottom: 0; padding-right: 6px; }
-    .rail-group:last-child { border-right: none; padding-right: 0; }
-    .rail-tip { display: none; }
-    #transform-bar { top: 68px; left: 8px; right: 8px; justify-content: center; }
-    .transform-btn { min-width: 0; flex: 1; padding-inline: 12px; }
-    #btn-replay { top: 136px; }
-    #outliner { top: 180px; width: clamp(150px, 40vw, 190px); }
-    #out-rows { max-height: 120px; }
-    #selection { bottom: 8px; font-size: 9px; }
-    #util-bar { top: 8px; right: 8px; }
-    #util-bar .util-btn { width: 44px; height: 44px; padding: 0; justify-content: center; font-size: 0; }
-    #util-bar .util-btn svg { width: 18px; height: 18px; }
+    :root { --accessory-console-h: min(340px, 56dvh); }
+    #console, #console.has-dock {
+        grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 80px;
+        gap: 8px; padding: 12px 16px 78px;
+    }
+    #console #dock {
+        grid-column: 1; grid-row: 2; padding: 8px 0 0;
+        border-left: none; border-top: 1px solid var(--line);
+    }
+    #console .panel-footer { left: 16px; right: 16px; bottom: 12px; }
+    #console #cap-title { font-size: 16px; }
+    #console #cap-body { font-size: 12px; line-height: 1.45; }
+    #console .dock-btn { padding: 7px 10px; font-size: 12px; }
+    #tool-stack { top: 12px; left: 8px; width: 112px; gap: 6px; }
+    .transform-btn { font-size: 12px; padding: 7px 6px; }
+    #tool-stack .home-btn { padding: 8px 10px; }
+    #tool-stack .util-btn { font-size: 11px; padding: 7px 6px; }
+    #tool-stack .rail-btn.on { padding-inline: 6px; }
+    #outliner { top: 14px; right: 8px; width: clamp(132px, 36vw, 180px); }
+    #out-rows { max-height: 360px; }
+    #out-xform { display: none; }
+    #modal-readout { left: 132px; top: auto; bottom: 12px; }
 }

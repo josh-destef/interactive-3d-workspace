@@ -7,7 +7,7 @@
    material's opacity rather than a tree walk, and turning him at the end is
    one node's rotation.
 
-   A student cannot judge "is this the right size for a pack" against an empty
+   A student cannot judge "is this the right size for a module" against an empty
    grid, so he never leaves and he only moves once.
 ═══════════════════════════════════════════════ */
 import * as THREE from 'three';
@@ -24,7 +24,7 @@ const materials = [];
 /* The asset is authored facing -Z. This lab works in a frame where his back is
    -Z, so the module spawns behind him and every camera preset sits behind him.
    Turning him once on load is cheaper than carrying a sign flip through the
-   spawn point, five camera presets, the strap curve and the face labels.
+   spawn point and camera presets.
    Everything that touches his rotation goes through this, so nothing can
    quietly reset him to the direction the file happened to ship in. */
 const BASE_Y = Math.PI;
@@ -70,7 +70,7 @@ export function setPortActive(on) {
     port?.setActive?.(on);
 }
 
-/** Drop back while the student works on geometry, so face highlights read. */
+/** Drop back while the student works on the Back Unit. */
 export function setGhost(on) {
     materials.forEach(m => {
         m.transparent = on;

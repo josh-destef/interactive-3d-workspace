@@ -36,8 +36,7 @@ function frame() {
 }
 frame();
 
-/* The console grows a row every time a step reveals a control, so nothing can
-   assume a fixed height for it - not the CSS, and not the camera. */
+/* Keep the canvas in sync with the reserved console height on viewport resize. */
 trackSurfaceHeight(() => stage.resize());
 
 startLesson(stage)

@@ -84,8 +84,9 @@ Kit first, lab second, so anything the lab overrides wins on source order alone.
 | `anim.js` | `animate01` / `runSequence` / `tickAnims` — the whole demo engine. | no |
 | `utils.js` | `clamp`, `lerp`, `easeInOut`, `remap`, hex↔rgb. | no |
 | `stage.js` | Renderer, scene, camera, orbit, two light rigs, camera flights, `V3`. | yes |
+| `transformGizmos.js` | Reusable move arrows, rotate rings, uniform/axis scale handles, hit targets, highlighting and object-relative sizing. | yes |
 
-Only `beats.js` and `stage.js` touch three.js, so a page with no 3D scene can
+Only `beats.js`, `stage.js` and `transformGizmos.js` touch three.js, so a page with no 3D scene can
 use the whole shell — including running a real scripted demo. (`V3` lives in
 `stage.js` rather than `utils.js` for exactly this reason: `utils` sits under
 `anim`, which sits under every demo.)
@@ -175,11 +176,10 @@ The point of a shared folder is that a fix lands once. So:
 
 ### The existing labs
 
-Material Lab and Navigate + Transform still carry their own copies and are
-**not** wired to the kit — they are finished, working lessons, and rewiring them
-buys nothing on its own. The kit was extracted from them faithfully, ids
-included, so either can be migrated later by deleting the duplicated blocks and
-adding the `<link>`. Do that as its own change, one lab at a time, with the
-lesson open in a browser.
+Material Lab still carries its own shell copy. Navigate + Transform now consumes
+the shared transform gizmos while retaining its lesson-specific interaction and
+beat code. The kit was extracted from the finished labs faithfully, ids included,
+so remaining components can be migrated later one lab at a time, with the lesson
+open in a browser.
 
 Until then, if you fix something in a lab that the kit also has, fix it in both.
