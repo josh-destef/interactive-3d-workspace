@@ -1,0 +1,16 @@
+{
+  "source": "navigate-and-transform/assets/gizmobot.glb",
+  "sourceSha256": "949761586a6ed5ed72ca155455643cdc59a34b3093f3c37a8f632a88586e7820",
+  "triangles": {
+    "LeftUpperArm": 262,
+    "LeftForearm": 588,
+    "LeftHand": 416,
+    "Mitt": 672,
+    "Pointer": 512,
+    "Thumb": 512
+  },
+  "fingerCount": 3,
+  "originalAttributesCopiedExactly": true,
+  "originalEmbeddedTexturesPreserved": true,
+  "allArmTrianglesAssignedExactlyOnce": true
+}
