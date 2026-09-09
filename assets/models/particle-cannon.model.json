@@ -1,0 +1,41 @@
+{
+  "source": "scripts/build-particle-cannon.py",
+  "asset": "assets/models/particle-cannon.glb",
+  "root": "ParticleCannon",
+  "pivot": [
+    0,
+    0,
+    0
+  ],
+  "forward": [
+    1,
+    0,
+    0
+  ],
+  "up": [
+    0,
+    1,
+    0
+  ],
+  "muzzleEmission": [
+    0.816,
+    0,
+    0
+  ],
+  "bodyDiameter": 0.454,
+  "muzzleDiameter": 0.45,
+  "tipFromPivot": 0.805,
+  "triangles": 19248,
+  "connector": {
+    "rearX": 0.04,
+    "boreRadius": 0.095,
+    "ballProvidedBy": "existing Gizmobot elbow",
+    "measuredBallRadii": [
+      0.102873,
+      0.078628,
+      0.085106
+    ]
+  },
+  "materials": 13,
+  "notes": "Canonical geometry coordinates; inherit original robot root scale. Thin chamber with supported cylinder normals, transmission 1, IOR 1.42, roughness .025. Curved seated side pads and smooth window sweep."
+}

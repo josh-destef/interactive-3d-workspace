@@ -1,0 +1,186 @@
+{
+  "meshes": 30,
+  "closedOutwardNondegenerate": true,
+  "parts": [
+    {
+      "mesh": "Barrel_cyan_inner_halo",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.0001288941340212218
+    },
+    {
+      "mesh": "Barrel_emitter_lens",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.00019587893408689642
+    },
+    {
+      "mesh": "Barrel_graphite_shroud",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.007883983588009773
+    },
+    {
+      "mesh": "Barrel_recessed_bore",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.0034675233062550262
+    },
+    {
+      "mesh": "Body_continuous_window_shell",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.0042100965016866
+    },
+    {
+      "mesh": "Body_side_grip_-1",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.0003829833649349616
+    },
+    {
+      "mesh": "Body_side_grip_1",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.0003829833512879793
+    },
+    {
+      "mesh": "Body_top_orange_switch",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 2.4784617205140802e-05
+    },
+    {
+      "mesh": "Body_top_switch_base",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 5.827599661777563e-05
+    },
+    {
+      "mesh": "Body_underside_service_cover",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.0002922447225376879
+    },
+    {
+      "mesh": "Chamber_clear_tube",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.0018698101827799738
+    },
+    {
+      "mesh": "Chamber_front_seal",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.0003136342450856078
+    },
+    {
+      "mesh": "Connector_socket_graphite",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.0034595477145450103
+    },
+    {
+      "mesh": "Connector_white_collar",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.0012706975618084276
+    },
+    {
+      "mesh": "Muzzle_orange_rounded_ring",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.005404764607141331
+    },
+    {
+      "mesh": "Muzzle_white_seat",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.0013921362737550522
+    },
+    {
+      "mesh": "Particle_01",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.0002950230513603743
+    },
+    {
+      "mesh": "Particle_02",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.00033920804875542496
+    },
+    {
+      "mesh": "Particle_03",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.00036286548948963196
+    },
+    {
+      "mesh": "Particle_04",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.000362865489489632
+    },
+    {
+      "mesh": "Particle_05",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.00038759812789786896
+    },
+    {
+      "mesh": "Particle_06",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.00029502305136037434
+    },
+    {
+      "mesh": "Particle_07",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.00033920804875542496
+    },
+    {
+      "mesh": "Particle_08",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.00033920804875542496
+    },
+    {
+      "mesh": "Particle_09",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.00025485206340322036
+    },
+    {
+      "mesh": "Particle_10",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.00031660193127692034
+    },
+    {
+      "mesh": "Particle_11",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.0003628654894896319
+    },
+    {
+      "mesh": "Particle_12",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.00029502305136037434
+    },
+    {
+      "mesh": "Particle_13",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.0003392080487554249
+    },
+    {
+      "mesh": "Particle_14",
+      "nonManifoldEdges": 0,
+      "degenerateFaces": 0,
+      "signedVolume": 0.00029502305136037434
+    }
+  ]
+}

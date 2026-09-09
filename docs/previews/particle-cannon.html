@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gizmobot Particle Cannon · Asset review</title>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}</script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#e8edf2;color:#152536;font:15px system-ui,sans-serif}canvas{display:block;width:100vw;height:100vh}aside{position:absolute;top:24px;left:24px;width:280px;background:#ffffffed;border:1px solid #cad4de;border-radius:18px;padding:22px;box-shadow:0 10px 40px #26334512}h1{font-size:23px;margin:0 0 8px}p{line-height:1.5;color:#536374}label{display:block;margin-top:15px}input{width:100%;accent-color:#e89522}button,select{font:inherit;border:1px solid #c4cfda;background:white;border-radius:8px;padding:8px;margin:5px 3px 0 0;cursor:pointer}button.active{background:#132d42;color:white}small{display:block;line-height:1.5;margin-top:14px}#status{font-size:12px}a{color:#23556f}
+</style></head><body><canvas id="scene"></canvas><aside>
+<h1>Particle Cannon</h1><p>A reusable elbow attachment for Gizmobot.</p>
+<button id="solo" class="active">Cannon</button><button id="robot">Attached</button>
+<label>Arm <select id="side"><option>Left</option><option>Right</option></select></label>
+<label>Elbow bend <span id="bend-value">0°</span><input id="bend" type="range" min="-90" max="90" value="0"></label>
+<label>Shoulder <span id="shoulder-value">0°</span><input id="shoulder" type="range" min="-75" max="75" value="0"></label>
+<button id="swap">Show original forearm + hand</button><button id="reset">Reset view</button>
+<small>Drag to orbit · Scroll to zoom<br>Cyan guide marks the muzzle’s emission direction.</small><p id="status" role="status">Loading models…</p>
+</aside><script type="module" src="particle-cannon.js"></script></body></html>

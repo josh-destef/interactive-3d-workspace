@@ -15,10 +15,11 @@
         href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="../../kit/css/workbench.css" />
 </head>
 
 <body>
-    <div id="app">
+    <div id="app" class="lab-workbench material-workbench">
         <a href="../../../" class="home-btn">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                 stroke-linecap="round" stroke-linejoin="round">
@@ -131,11 +132,39 @@
             </div>
         </div>
 
-        <!-- ── the console ──
-             One bar across the whole bottom of the screen: the step's words on
-             the left, the controls that step unlocked on the right. It takes
-             the full width on purpose - a small card floating in one corner of
-             a large display is a card nobody looks at. -->
+        <aside id="material-outliner" class="scene-outliner" aria-labelledby="material-outliner-title">
+            <div class="outliner-title" id="material-outliner-title">Scene outliner</div>
+            <div class="scene-tree" role="tree" aria-label="Gizmobot scene">
+                <div class="scene-row scene-root" role="treeitem" aria-expanded="true">
+                    <span class="tree-chevron" aria-hidden="true">⌄</span>
+                    <span class="tree-object-icon" aria-hidden="true"></span>
+                    <span>Gizmobot</span>
+                </div>
+                <div class="scene-row scene-child is-active" role="treeitem" aria-current="true">
+                    <span class="tree-object-icon" aria-hidden="true"></span>
+                    <span>Shell material</span>
+                    <span class="tree-visible" aria-label="Visible">◉</span>
+                </div>
+                <div class="scene-row scene-child" role="treeitem">
+                    <span class="tree-object-icon" aria-hidden="true"></span>
+                    <span>Face</span>
+                    <span class="tree-visible" aria-label="Visible">◉</span>
+                </div>
+                <div class="scene-row scene-child" role="treeitem">
+                    <span class="tree-object-icon" aria-hidden="true"></span>
+                    <span>Arms and legs</span>
+                    <span class="tree-visible" aria-label="Visible">◉</span>
+                </div>
+                <div class="scene-row" role="treeitem">
+                    <span class="tree-light-icon" aria-hidden="true"></span>
+                    <span>Studio light</span>
+                    <span class="tree-visible" aria-label="Visible">◉</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Workbench shell: compact instructions over the left of the viewport;
+             contextual material controls in the right inspector. -->
         <div id="console">
 
             <!-- left: the step -->
@@ -176,6 +205,7 @@
 
             <!-- right: the controls, revealed one step at a time -->
             <div id="dock">
+                <div class="inspector-title">Material &amp; appearance</div>
                 <!-- match result - appears above the controls that produced it,
                      only once Check match has been pressed -->
                 <div id="match-result">

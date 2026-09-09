@@ -15,10 +15,13 @@
     <!-- the kit first, this lab's own overrides second -->
     <link rel="stylesheet" href="../../kit/css/kit.css" />
     <link rel="stylesheet" href="css/lab.css" />
+    <link rel="stylesheet" href="../../kit/css/workbench.css" />
 </head>
 
 <body>
-    <div id="app">
+    <div id="app" class="lab-workbench accessory-workbench">
+
+        <img src="../../../assets/brand/logo-wordmark.png" alt="CreateAccess Logo" class="logo-top-right">
 
         <!-- ══ canvas window ══ -->
         <div id="canvas-wrap">
@@ -47,29 +50,6 @@
                             <path d="M6 3 L6 19 L10 15 L13 21 L16 20 L13 14 L18 14 Z" />
                         </svg>
                         <span class="rail-tip">Select</span>
-                    </button>
-                    <button class="rail-btn" data-tool="move" type="button" aria-pressed="false"
-                        title="Move (G)" aria-label="Move">
-                        <svg viewBox="0 0 24 24" aria-hidden="true" class="stroke">
-                            <path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" />
-                        </svg>
-                        <span class="rail-tip">Move <kbd>G</kbd></span>
-                    </button>
-                    <button class="rail-btn" data-tool="rotate" type="button" aria-pressed="false"
-                        title="Rotate (R)" aria-label="Rotate">
-                        <svg viewBox="0 0 24 24" aria-hidden="true" class="stroke">
-                            <path d="M5 13a7 7 0 1 1 3 5" />
-                            <path d="M4 6l1 6 6-1" />
-                        </svg>
-                        <span class="rail-tip">Rotate <kbd>R</kbd></span>
-                    </button>
-                    <button class="rail-btn" data-tool="scale" type="button" aria-pressed="false"
-                        title="Scale (S)" aria-label="Scale">
-                        <svg viewBox="0 0 24 24" aria-hidden="true" class="stroke">
-                            <rect x="4" y="10" width="10" height="10" />
-                            <path d="M10 8V4h10v10h-4" />
-                        </svg>
-                        <span class="rail-tip">Scale <kbd>S</kbd></span>
                     </button>
                 </div>
 
@@ -134,26 +114,25 @@
 
             </div>
 
-            <!-- ══ object list ══
-                 Selection is two-way: click a row or click the object. The
-                 transform block reports; it is not how you transform. -->
-            <div id="outliner">
-                <div class="out-head">Pieces</div>
-                <div id="out-rows" role="listbox" aria-label="Pieces in the scene" aria-multiselectable="true"></div>
-                <div id="out-empty">Nothing here yet.<br>Add a cube to begin.</div>
-                <div id="out-xform" hidden>
-                    <div class="xf-row"><span>size</span><b data-xf="size">-</b></div>
-                    <div class="xf-row"><span>pos</span><b data-xf="pos">-</b></div>
-                    <div class="xf-row"><span>rot</span><b data-xf="rot">-</b></div>
-                </div>
-            </div>
-
             <!-- live value for whatever is being dragged; the only numeric
                  feedback in the lab, and it lives with the action -->
             <div id="modal-readout" aria-live="polite"></div>
 
             <div id="loading">Getting the workbench ready...</div>
         </div>
+
+        <!-- Selection is two-way: click a row or click the object. Keeping the
+             outliner beside the canvas lets it stack cleanly on narrow screens. -->
+        <aside id="outliner" aria-label="Scene outliner">
+            <div class="out-head">Scene outliner</div>
+            <div id="out-rows" role="listbox" aria-label="Pieces in the scene" aria-multiselectable="true"></div>
+            <div id="out-empty">Nothing here yet.<br>Add a cube to begin.</div>
+            <div id="out-xform" hidden>
+                <div class="xf-row"><span>size</span><b data-xf="size">-</b></div>
+                <div class="xf-row"><span>pos</span><b data-xf="pos">-</b></div>
+                <div class="xf-row"><span>rot</span><b data-xf="rot">-</b></div>
+            </div>
+        </aside>
 
         <!-- ══ the closing quiz ══ -->
         <div id="quiz-card" role="dialog" aria-modal="true" aria-labelledby="quiz-title">
@@ -175,7 +154,8 @@
             </div>
         </div>
 
-        <!-- ══ the console ══ -->
+        <!-- Workbench shell: lesson card left; scene structure and contextual
+             modelling controls in the right inspector. -->
         <div id="console">
 
             <div id="panel">
@@ -211,6 +191,7 @@
                  Buttons and swatches. There is not a single range input in
                  this lab: every value is dragged in the viewport. -->
             <div id="dock">
+                <div class="inspector-title">Accessory tools</div>
                 <div class="dock-row">
 
                     <div class="ctl" data-group="add">

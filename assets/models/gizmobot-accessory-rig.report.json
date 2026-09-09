@@ -1,0 +1,81 @@
+{
+  "source": "assets/models/gizmobot.glb",
+  "sourceSha256": "949761586a6ed5ed72ca155455643cdc59a34b3093f3c37a8f632a88586e7820",
+  "coordinateSpace": "Gizmobot local; +Y up, +X left arm outward, -Z robot front",
+  "rootTransform": {
+    "mesh": 0,
+    "name": "Gizmo",
+    "scale": [
+      0.9786857962608337,
+      1.1829975843429565,
+      1.1829975843429565
+    ],
+    "translation": [
+      0,
+      0,
+      -0.15587148070335388
+    ]
+  },
+  "connections": {
+    "Left": {
+      "pivot": [
+        0.88,
+        1.574,
+        0.148
+      ],
+      "boundsMin": [
+        0.777726411819458,
+        1.4957330226898193,
+        0.06274355947971344
+      ],
+      "boundsMax": [
+        0.9834717512130737,
+        1.6529881954193115,
+        0.23295533657073975
+      ],
+      "center": [
+        0.8805990815162659,
+        1.5743606090545654,
+        0.1478494480252266
+      ],
+      "halfExtents": [
+        0.10287266969680786,
+        0.0786275863647461,
+        0.08510588854551315
+      ],
+      "triangles": 212
+    },
+    "Right": {
+      "pivot": [
+        -0.88,
+        1.574,
+        0.148
+      ],
+      "boundsMin": [
+        -0.983471691608429,
+        1.4957330226898193,
+        0.06274355947971344
+      ],
+      "boundsMax": [
+        -0.7777262926101685,
+        1.6529881954193115,
+        0.23295533657073975
+      ],
+      "center": [
+        -0.8805989921092987,
+        1.5743606090545654,
+        0.1478494480252266
+      ],
+      "halfExtents": [
+        0.10287269949913025,
+        0.0786275863647461,
+        0.08510588854551315
+      ],
+      "triangles": 212
+    }
+  },
+  "allTrianglesAssignedExactlyOnce": true,
+  "originalAttributesAndTexturesPreserved": true,
+  "sourceUnchanged": true,
+  "triangles": 14840
+}

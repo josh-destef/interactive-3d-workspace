@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Gizmobot Particle Playground · CreateAccess</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&amp;family=DM+Mono:wght@300;400;500&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../kit/css/kit.css">
+  <link rel="stylesheet" href="css/lab.css?v=guided-2">
+  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}</script>
+</head>
+<body>
+  <main id="app">
+    <a class="home-btn" href="../../../" aria-label="Back to CreateAccess home">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+      <span>Home</span>
+    </a>
+    <img src="../../../assets/brand/logo-wordmark.png" alt="CreateAccess" class="logo-top-right">
+    <div id="util-bar" class="on">
+      <button id="view-reset" class="util-btn" type="button">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
+        Reset View
+      </button>
+    </div>
+    <details id="lesson-menu">
+      <summary>Lesson steps</summary>
+      <nav class="steps" aria-label="Lesson steps">
+        <button type="button" class="step" aria-current="step"><span>01</span> Attach</button>
+        <button type="button" class="step"><span>02</span> Emitter</button>
+        <button type="button" class="step"><span>03</span> Aim</button>
+        <button type="button" class="step"><span>04</span> Count</button>
+        <button type="button" class="step"><span>05</span> Motion</button>
+        <button type="button" class="step"><span>06</span> Lifetime</button>
+        <button type="button" class="step"><span>07</span> Appearance</button>
+        <button type="button" class="step"><span>08</span> Explore</button>
+        <button type="button" class="step"><span>09</span> Blast!</button>
+      </nav>
+    </details>
+
+    <section id="canvas-wrap" aria-label="Interactive Gizmobot particle playground">
+      <canvas id="stage" tabindex="0" aria-label="Gizmobot and its particle cannon. On the attachment step, drag the forearm and hand away, then drag the cannon to the elbow. Drag empty space to orbit; scroll or pinch to zoom. Keyboard controls are available in the lesson console."></canvas>
+      <div id="prog" role="progressbar" aria-label="Lesson progress" aria-valuemin="0" aria-valuemax="9" aria-valuenow="0"><div id="prog-fill"></div></div>
+      <div id="status-badge" hidden><span class="badge-dot"></span><span class="badge-text" id="status">Watch</span></div>
+      <button id="watch" type="button" class="demo-replay">Watch example (optional)</button>
+      <button id="your-turn" type="button" class="skip-demo" hidden>Your turn →</button>
+      <p id="demo-caption" aria-live="polite" hidden></p>
+      <div id="loading" role="status">Getting Gizmobot ready…</div>
+    </section>
+
+    <section id="console" class="lesson has-dock" aria-label="Guided particle lesson">
+      <div id="panel">
+        <div class="panel-header">
+          <div id="cap-step" class="on"><span id="progress-text"></span></div>
+          <div id="cap-title" class="on"><h1 id="lesson-title"></h1></div>
+        </div>
+        <div id="cap-body" class="on"><p id="instruction"></p></div>
+        <p id="feedback" role="status" aria-live="polite" aria-atomic="true"></p>
+        <div class="panel-footer">
+          <div class="continue-side">
+            <button id="next" type="button" disabled>Continue →</button>
+            <div id="kbd-hint"><kbd>Space</kbd> to continue</div>
+          </div>
+        </div>
+        <section id="completion" class="card completion" hidden aria-label="Lesson complete">
+          <p class="eyebrow">YOU CREATED A PARTICLE SYSTEM</p>
+          <h2>That blast is yours.</h2>
+          <p>One emitter. Your rules. A whole celebration.</p>
+          <div class="completion-actions">
+            <button id="replay" type="button" class="primary">Replay my blast</button>
+            <button id="keep-experimenting" type="button" class="secondary">Keep experimenting</button>
+          </div>
+        </section>
+      </div>
+
+      <div id="dock" class="on">
+        <div id="playback" class="dock-row" aria-label="Particle playback">
+          <button id="fire-one" class="dock-btn" type="button" disabled>Fire One</button>
+          <button id="fire" class="dock-btn primary" type="button" disabled>Fire Burst</button>
+          <button id="pause" class="dock-btn" type="button" disabled aria-pressed="false">Pause</button>
+          <button id="clear" class="dock-btn" type="button">Clear</button>
+          <button id="reset" class="dock-btn" type="button">Reset settings</button>
+          <span class="particle-counter" aria-label="Live particles"><b id="live">0</b> live</span>
+        </div>
+
+        <section id="attachment-panel" aria-label="Keyboard alternative for attaching the cannon">
+          <p id="attachment-state" class="attachment-state" role="status" aria-live="polite" aria-atomic="true"></p>
+          <details class="keyboard-controls">
+            <summary>Keyboard alternative</summary>
+            <div class="attachment-actions">
+              <button id="remove-arm" type="button" class="dock-btn">Remove forearm + hand</button>
+              <button id="select-cannon" type="button" class="dock-btn" disabled>Select Particle Cannon</button>
+              <button id="attach-cannon" type="button" class="dock-btn primary" disabled>Attach at the elbow</button>
+            </div>
+          </details>
+        </section>
+
+        <div class="controls" aria-label="Particle controls">
+          <div class="control ctl on" data-unlock="2" hidden><label for="aim" class="ctl-label">Aim <output id="aimVal" for="aim">35°</output></label><input id="aim" type="range" min="-20" max="70" value="35"><div class="ctl-ends" aria-hidden="true"><span>down</span><span>up</span></div></div>
+          <div class="control ctl on" data-unlock="3" hidden><label for="count" class="ctl-label">Count <output id="countVal" for="count">80</output></label><input id="count" type="range" min="1" max="300" value="80"><div class="ctl-ends" aria-hidden="true"><span>few</span><span>many</span></div></div>
+          <div class="control ctl on" data-unlock="4" hidden><label for="speed" class="ctl-label">Speed <output id="speedVal" for="speed">4 units/s</output></label><input id="speed" type="range" min="1" max="10" value="4"><div class="ctl-ends" aria-hidden="true"><span>slow</span><span>fast</span></div></div>
+          <div class="control ctl on" data-unlock="4" hidden><label for="spread" class="ctl-label">Spread <output id="spreadVal" for="spread">45°</output></label><input id="spread" type="range" min="0" max="100" value="45"><div class="ctl-ends" aria-hidden="true"><span>narrow</span><span>wide</span></div></div>
+          <div class="control ctl on" data-unlock="5" hidden><label for="gravity" class="ctl-label">Gravity <output id="gravityVal" for="gravity">3 units/s²</output></label><input id="gravity" type="range" min="0" max="12" value="3"><div class="ctl-ends" aria-hidden="true"><span>floaty</span><span>heavy</span></div></div>
+          <div class="control ctl on" data-unlock="5" hidden><label for="life" class="ctl-label">Lifetime <output id="lifeVal" for="life">3.0 s</output></label><input id="life" type="range" min="5" max="60" value="30"><div class="ctl-ends" aria-hidden="true"><span>short</span><span>long</span></div></div>
+          <div class="control ctl on" data-unlock="6" hidden><label for="size" class="ctl-label">Size <output id="sizeVal" for="size">0.16 units</output></label><input id="size" type="range" min="6" max="35" value="16"><div class="ctl-ends" aria-hidden="true"><span>small</span><span>large</span></div></div>
+          <div class="control ctl on" data-unlock="6" hidden><label for="palette" class="ctl-label">Color palette</label><select id="palette"><option value="party">Party · pink, gold &amp; teal</option><option value="sunset">Sunset · coral, orange &amp; violet</option><option value="ocean">Ocean · blue, mint &amp; lilac</option></select></div>
+          <div class="control ctl on" data-unlock="6" hidden><label for="shape" class="ctl-label">Shape</label><select id="shape"><option value="square">Squares</option><option value="circle">Circles</option><option value="star">Stars</option></select></div>
+        </div>
+
+        <section id="explore-panel" class="card explore-panel" hidden aria-label="Predict and compare">
+          <label for="prediction">Choose an experiment</label>
+          <select id="prediction"><option value="speed">Increase Speed; keep Spread the same</option><option value="life">Make Lifetime shorter</option><option value="spread">Make the confetti spread out more</option></select>
+          <label for="prediction-note">What do you think will happen?</label>
+          <textarea id="prediction-note" rows="3" placeholder="I think the particles will…"></textarea>
+          <button type="button" id="compare" class="secondary">Test and compare</button>
+        </section>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="js/main.js?v=guided-2"></script>
+</body>
+</html>

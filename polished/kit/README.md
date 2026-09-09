@@ -58,6 +58,7 @@ served from the repo as-is.
 | `shell.css` | Canvas window, progress bar, Watch/Your-turn badge, Replay, hint, loading, corner chrome, demo cursor, mouse diagram, model labels. |
 | `console.css` | **Default step surface** — the full-width bottom bar, caption, footer, celebration. |
 | `panel.css` | **Alternate step surface** — a floating card bottom-left, plus the free-play widget. Load *after* `console.css`. |
+| `workbench.css` | **Standard lab layout** — compact instruction card left, persistent inspector right, viewport between them. Load last. |
 | `controls.css` | The dock: sliders, swatches, segmented toggles, example chips, buttons, RGB rows. |
 | `cards.css` | The Read card, the choice layer, the modal layer. |
 | `assess.css` | The scoreboard and the closing quiz. |
@@ -93,23 +94,36 @@ use the whole shell — including running a real scripted demo. (`V3` lives in
 
 ---
 
-## Console or panel?
+## Standard workbench layout
+
+Current labs use the workbench: a compact instruction card at the lower-left of
+the viewport and a contextual inspector on the right. The inspector is the home
+for outliners, sliders, swatches, settings, numeric values, and actions that do
+not directly move an object in the viewport. Load `workbench.css` after the lab
+stylesheet and add `lab-workbench` to `#app`.
+
+The existing `#console` markup may remain because lesson state and controls are
+wired to it. In workbench mode it is a non-visual wrapper; `#panel` becomes the
+left card and `#dock` becomes the right inspector. At narrow widths the regions
+stack below the viewport rather than covering it.
+
+## Legacy console and panel surfaces
 
 Both style the same inner markup (`#panel`, `#cap-step`, `#cap-title`,
 `#cap-body`, `.panel-footer`), and every kit module works unchanged either way —
 `ui.js` detects which one is present. Load exactly one.
 
-**Console** (default) — one bar across the whole bottom: words left, controls
-right. Use it whenever the lesson has DOM controls.
+**Console** (legacy) — one bar across the whole bottom: words left, controls
+right. Preserve it only while migrating an older lesson.
 
 The earlier design floated a small caption card bottom-left and a control card
 bottom-center. On a laptop that reads fine; on a 27" display they are two
 islands in an ocean of gray and the student's eye never goes near them. One bar
 with a shared edge fixed that without making anything bigger.
 
-**Panel** — a floating card bottom-left, canvas edge to edge. Use it when the
-lesson happens *in* the viewport and there are no controls to dock, which is the
-case Navigate + Transform was built for.
+**Panel** — the floating card precedent established by Navigate + Transform.
+The workbench combines this instruction home with a right inspector when a lab
+also needs persistent controls.
 
 ---
 

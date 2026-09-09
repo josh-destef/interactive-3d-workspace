@@ -1,0 +1,291 @@
+/* CreateAccess lab workbench
+   Desktop lessons keep one compact instruction card over the left side of the
+   viewport and put persistent, non-viewport controls in an inspector on the
+   right. Add `.lab-workbench` to #app and load this file after lab styles. */
+
+.lab-workbench {
+    --inspector-w: clamp(340px, 28vw, 440px);
+    --workbench-edge: clamp(14px, 1.6vw, 24px);
+    display: block !important;
+    height: 100dvh;
+    overflow: hidden;
+}
+
+.lab-workbench #canvas-wrap {
+    position: absolute !important;
+    inset: 0 var(--inspector-w) 0 0 !important;
+    width: auto !important;
+    height: auto !important;
+    min-width: 0;
+}
+
+/* The old console remains as a state and accessibility wrapper. It no longer
+   paints or reserves a full-width strip. */
+.lab-workbench #console,
+.lab-workbench #console.has-dock {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: block;
+    width: auto;
+    height: 0;
+    min-height: 0;
+    max-height: none;
+    padding: 0;
+    overflow: visible;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    pointer-events: none;
+}
+
+.lab-workbench #console::before { display: none; }
+
+/* One instruction home, matching Navigate + Transform. */
+.lab-workbench #panel,
+.lab-workbench #console #panel,
+.lab-workbench #console:not(.has-dock) #panel {
+    position: fixed;
+    left: var(--workbench-edge);
+    bottom: var(--workbench-edge);
+    z-index: 70;
+    display: flex;
+    flex-direction: column;
+    width: min(430px, calc(100vw - var(--inspector-w) - 2 * var(--workbench-edge)));
+    min-height: 0;
+    max-height: min(58vh, 520px);
+    margin: 0;
+    padding: clamp(20px, 2.1vw, 30px);
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, .08);
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .08), 0 4px 12px rgba(0, 0, 0, .04);
+    pointer-events: auto;
+}
+
+.lab-workbench #console.panel-watching #panel {
+    border-color: rgba(26, 26, 46, .55);
+    box-shadow: inset 0 0 0 1px rgba(26, 26, 46, .55), 0 12px 32px rgba(0, 0, 0, .08);
+}
+
+.lab-workbench #console.panel-interacting #panel,
+.lab-workbench #panel.panel-interacting {
+    border-color: var(--orange, #ff9022);
+    box-shadow: inset 0 0 0 1px var(--orange, #ff9022), 0 12px 32px rgba(0, 0, 0, .08);
+}
+
+/* Learner-paced concept cards use the same left-side landmark, so instructions
+   never jump from a centred modal to the lesson card. */
+.lab-workbench #read-layer {
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding: var(--workbench-edge) calc(var(--inspector-w) + var(--workbench-edge)) var(--workbench-edge) var(--workbench-edge);
+}
+
+.lab-workbench #read-card {
+    width: min(430px, calc(100vw - var(--inspector-w) - 2 * var(--workbench-edge)));
+    margin: 0;
+}
+
+.lab-workbench #panel .panel-footer {
+    position: static;
+    height: auto;
+    margin-top: 12px;
+    padding-top: 8px;
+}
+
+/* Persistent controls, values and object structure live in one right-hand
+   inspector region. Individual control groups may still appear by lesson step. */
+.lab-workbench #dock,
+.lab-workbench #console #dock {
+    position: fixed;
+    top: clamp(112px, 13vh, 150px);
+    right: var(--workbench-edge);
+    bottom: var(--workbench-edge);
+    left: auto;
+    z-index: 65;
+    width: calc(var(--inspector-w) - 2 * var(--workbench-edge));
+    min-height: 0;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 18px;
+    overflow-y: auto;
+    justify-content: flex-start;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, .08);
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .07);
+    pointer-events: auto;
+}
+
+.lab-workbench #dock.on { display: flex; }
+.lab-workbench #dock .dock-row {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+}
+
+.lab-workbench #dock .ctl { width: 100%; }
+.lab-workbench #dock input[type="range"],
+.lab-workbench #dock .ctl-ends { max-width: 100%; }
+
+.lab-workbench .inspector-title {
+    width: 100%;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, .08);
+    color: var(--dark, #1a1a2e);
+    font-size: 15px;
+    font-weight: 600;
+}
+
+/* Material Lab keeps scene context visible while its contextual controls
+   change from color to surface, lighting and effects. */
+.lab-workbench.material-workbench .scene-outliner {
+    position: fixed;
+    top: clamp(96px, 11vh, 124px);
+    right: var(--workbench-edge);
+    z-index: 66;
+    width: calc(var(--inspector-w) - 2 * var(--workbench-edge));
+    max-height: 220px;
+    overflow: hidden auto;
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, .08);
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .07);
+}
+
+.lab-workbench.material-workbench #dock,
+.lab-workbench.material-workbench #console #dock {
+    top: clamp(330px, 40vh, 360px);
+}
+
+.scene-outliner .outliner-title {
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, .08);
+    color: var(--dark, #1a1a2e);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.scene-tree { padding: 5px 0 7px; }
+.scene-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 29px;
+    padding: 4px 12px;
+    color: #535768;
+    font-size: 12px;
+}
+.scene-row.scene-child { padding-left: 34px; }
+.scene-row.is-active { background: rgba(255, 144, 34, .12); color: var(--dark, #1a1a2e); }
+.scene-root { font-weight: 500; }
+.tree-chevron { width: 10px; color: #747887; }
+.tree-object-icon {
+    width: 13px;
+    height: 13px;
+    flex: 0 0 13px;
+    border: 1.5px solid #697080;
+    border-radius: 2px;
+    box-shadow: inset -3px -3px 0 rgba(105, 112, 128, .12);
+}
+.tree-light-icon {
+    width: 12px;
+    height: 12px;
+    flex: 0 0 12px;
+    border: 1.5px solid #697080;
+    border-radius: 50%;
+    box-shadow: 0 5px 0 -3px #697080;
+}
+.tree-visible { margin-left: auto; color: #777e8e; font-size: 11px; }
+
+/* Model an Accessory already has a scene outliner. Keep it in the upper half
+   of the inspector and place step-specific actions below it. */
+.lab-workbench.accessory-workbench #outliner {
+    position: fixed;
+    top: clamp(112px, 13vh, 150px);
+    right: var(--workbench-edge);
+    width: calc(var(--inspector-w) - 2 * var(--workbench-edge));
+    max-height: calc(46vh - var(--workbench-edge));
+}
+
+.lab-workbench.accessory-workbench #dock,
+.lab-workbench.accessory-workbench #console #dock {
+    top: 50vh;
+}
+
+.lab-workbench.accessory-workbench #panel,
+.lab-workbench.accessory-workbench #console #panel {
+    left: calc(138px + 2 * var(--workbench-edge));
+}
+
+.lab-workbench.accessory-workbench #canvas-wrap {
+    bottom: 0 !important;
+}
+
+@media (max-width: 900px) {
+    body { overflow: auto; }
+
+    .lab-workbench {
+        display: flex !important;
+        flex-direction: column;
+        height: auto;
+        min-height: 100dvh;
+        overflow: visible;
+    }
+
+    .lab-workbench #canvas-wrap {
+        position: relative !important;
+        inset: auto !important;
+        flex: none;
+        width: 100% !important;
+        height: 52dvh !important;
+        min-height: 320px;
+    }
+
+    .lab-workbench #console,
+    .lab-workbench #console.has-dock {
+        position: static;
+        display: contents;
+    }
+
+    .lab-workbench #panel,
+    .lab-workbench #console #panel,
+    .lab-workbench #console:not(.has-dock) #panel,
+    .lab-workbench #dock,
+    .lab-workbench #console #dock,
+    .lab-workbench.material-workbench .scene-outliner,
+    .lab-workbench.accessory-workbench #outliner,
+    .lab-workbench.accessory-workbench #dock {
+        position: static;
+        width: auto;
+        max-width: none;
+        max-height: none;
+        margin: 12px;
+        overflow: visible;
+    }
+
+    .lab-workbench #panel { order: 2; }
+    .lab-workbench #dock { order: 3; }
+    .lab-workbench.accessory-workbench #outliner { order: 3; }
+    .lab-workbench.material-workbench .scene-outliner { order: 3; }
+
+    .lab-workbench.accessory-workbench #panel { left: auto; }
+
+    .lab-workbench #read-layer {
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+    }
+
+    .lab-workbench #read-card { width: min(94vw, 560px); }
+
+    .lab-workbench.material-workbench .scene-outliner {
+        margin: 12px;
+        max-height: none;
+        overflow: visible;
+    }
+}

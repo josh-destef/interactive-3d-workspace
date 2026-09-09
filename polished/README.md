@@ -19,6 +19,7 @@ labs/
   hierarchy/                    Hierarchy lab (parent, child, local, world)
   keyframes/                    Keyframe lab (poses, time, interpolation)
   particles/                    Particle lab (rate, lifetime, forces)
+  particle-cannon/              Gizmobot Particle Playground (9 guided steps, emitters and confetti)
   robot-assembly/               WIP Gizmobot assembly (objects, position,
                                 rotation and parent/child transforms)
 ```
@@ -34,11 +35,11 @@ exit check gives explanatory feedback, and free play opens after the check.
 Repeated callouts and persistent curriculum labels are deliberately avoided so
 the 3D result and the next action remain the focus.
 
-`material-lab/` keeps its full-width console so its denser set of related
-surface controls remain easy to compare. Hierarchy, Keyframes and
-Particles retain the compact caption-and-dock arrangement used by Navigate +
-Transform. Both layouts use the same CreateAccess colour, typography, state and
-feedback language.
+The standard workbench keeps instructions in a compact card on the left and
+reserves a contextual inspector on the right for outliners, sliders, values and
+other non-viewport controls. Material Lab, Model an Accessory and Gizmobot
+Hierarchy use this layout; Navigate + Transform establishes the instruction-card
+treatment. On narrow screens the viewport, instruction card and inspector stack.
 
 Each lab folder is self-contained — its own `index.html`, `css/`, `js/` and
 `assets/`. The small engine modules (`utils.js`, `anim.js`, `ui.js`,
@@ -50,7 +51,7 @@ depends on.
 
 That duplication is fine for five labs and a problem at ten, so the shell those
 labs converged on now lives once, in [`kit/`](kit/): the tokens, the chrome, the
-Read card, the console, the controls, the quiz, and the beat runner that gives
+Read card, the workbench, the controls, the quiz, and the beat runner that gives
 every step its Read → Watch → Do rhythm.
 
 - [`kit/index.html`](kit/) renders every element on one page, so drift shows up

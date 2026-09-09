@@ -29,7 +29,9 @@ function changed(kind) { if (kind === 'snapped') { attach(); push(); } if (beats
 function sync() {
     const entry = getEntry(activeId()); const target = beats?.state.idx === BEAT.ATTACH ? state.root : entry?.mesh;
     setSnapArmed(beats?.state.idx === BEAT.ATTACH && !state.attached);
-    document.getElementById('outliner')?.classList.toggle('on', state.entries.length > 0 && beats?.state.idx !== BEAT.QUIZ);
+    /* Keep scene structure anchored in the inspector even before the learner
+       adds a piece; the empty state explains what will appear here. */
+    document.getElementById('outliner')?.classList.toggle('on', beats?.state.idx !== BEAT.QUIZ);
     const colourLabel = document.querySelector('[data-group="colour"] .ctl-label');
     if (colourLabel) colourLabel.textContent = entry && entry.kind !== 'group' ? `Colour · ${entry.name}` : 'Select a piece to colour';
     document.querySelectorAll('#swatches .swatch').forEach(b => { b.disabled = !entry || entry.kind === 'group'; });

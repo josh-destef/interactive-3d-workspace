@@ -1,0 +1,13 @@
+{
+  "triangles": 19248,
+  "sourceTrianglesPreserved": 14840,
+  "rotationCases": 20,
+  "bothArms": true,
+  "reversibleSwap": true,
+  "sourceSha256": "949761586a6ed5ed72ca155455643cdc59a34b3093f3c37a8f632a88586e7820",
+  "minimumSampledSocketClearance": 0.019226786854854253,
+  "emissionOutsideMuzzle": true,
+  "emissionAxis": "+X",
+  "originalElbowPreserved": true,
+  "gripProudOfHousing": 0.0173
+}
