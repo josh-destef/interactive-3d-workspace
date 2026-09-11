@@ -1,20 +1,15 @@
-# Gizmobot’s Back Unit
+# Model an Accessory
 
-An eight-step beginner modelling lesson. Serve the repository root and open
-`/polished/labs/model-an-accessory/`; no build step is required.
+This lesson now opens the shared Creation Studio at
+`../../creator/?lesson=model-an-accessory`. The original URL redirects, keeping
+existing curriculum links working. The previous standalone source remains here
+for reference; runtime lesson changes belong in `polished/creator/js/lessons/`.
 
-The opening example separates into four independently coloured primitives, then
-reassembles to demonstrate how simple shapes create a new invention. Reduced
-motion uses a still exploded view. Learners reshape a cube, invent details with
-cubes, cylinders and spheres, group their rig, colour each piece and snap it to
-Gizmobot’s back plate. Up to 24 pieces support buttons, sensors and other ideas.
+The lesson progressively introduces shapes and transforms, then revisits
+materials from Material Lab so learners can style every accessory piece. It
+teaches parenting one relationship at a time—Tip to Mast, Mast to Body, then
+Detail to Body—with focused callouts and practice gates. Learners finish by
+moving the completed hierarchy, without a quiz, and keep their work when all
+playground features unlock.
 
-Select a child in the visible Pieces list to edit its colour or transform. Select
-Back Unit to move the whole group. Move supports direct dragging and axis handles;
-Select picks individual pieces in the viewport. Near the back connector, releasing
-a Move drag snaps and attaches the module. Undo/redo preserves attachment state.
-New pieces can be regrouped, and duplicate preserves a grouped piece’s transform.
-
-The vertical tool column and fixed-height instruction console are local to this
-lesson. Continue stays in the same bottom-right position across all steps. All
-lesson guidance lives in the bottom instructions, with no floating hint pill.
+See `../../creator/README.md` for the lesson API and validation commands.

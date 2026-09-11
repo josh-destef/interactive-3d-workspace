@@ -65,12 +65,43 @@ const orbitURL = data('export const OrbitControls=globalThis.__viewportTest.Orbi
 const gizmoPath = path.join(root, 'polished/kit/js/transformGizmos.js');
 const gizmoURL = data(fs.readFileSync(gizmoPath, 'utf8').replace("from 'three'", `from '${threeURL}'`));
 const viewportPath = path.join(root, 'polished/creator/js/viewport.js');
+const materialModelPath = path.join(root, 'polished/creator/js/materialModel.js');
+const materialModelURL = data(fs.readFileSync(materialModelPath, 'utf8')
+  .replace("from 'three'", `from '${threeURL}'`)
+  .replaceAll('import.meta.url', JSON.stringify(pathToFileURL(materialModelPath).href)));
+const meshURL = data(fs.readFileSync(path.join(root, 'polished/creator/js/mesh.js'), 'utf8'));
+const snappingURL = data(fs.readFileSync(path.join(root, 'polished/creator/js/snapping.js'), 'utf8'));
+const { cloneMaterialModel, applyModelMaterial, MATERIAL_MODEL_URL } = await import(materialModelURL);
+assert.equal(fs.existsSync(new URL(MATERIAL_MODEL_URL)), true, 'semantic teaching model resolves inside the repo');
+const semanticSource = new THREE.Group();
+const shellSource = new THREE.MeshStandardMaterial({ name: 'Shell_Paint' });
+const faceSource = new THREE.MeshStandardMaterial({ name: 'Face_Glow', map: new THREE.Texture() });
+const decalSource = new THREE.MeshStandardMaterial({ name: 'Logo_Decal', map: new THREE.Texture() });
+semanticSource.add(new THREE.Mesh(new THREE.BoxGeometry(), shellSource), new THREE.Mesh(new THREE.PlaneGeometry(), faceSource), new THREE.Mesh(new THREE.PlaneGeometry(), decalSource));
+const semanticClone = cloneMaterialModel(semanticSource, { color: '#44aa66', roughness: .1, metalness: .9, emissiveIntensity: .8 });
+const comparisonClone = cloneMaterialModel(semanticSource, { color: '#ffffff' });
+assert.equal(semanticClone.scale.x, .72, 'material model preserves teaching scale');
+assert.equal(semanticClone.children[0].material.roughness, .1);
+assert.equal(semanticClone.children[0].material.emissiveIntensity, .8);
+assert.equal(semanticClone.children[1].material.emissiveIntensity, 1.6, 'face remains independently lit');
+assert.equal(semanticClone.children[1].material.map, faceSource.map, 'face texture is preserved');
+assert.equal(semanticClone.children[2].material.map, decalSource.map, 'decal texture is preserved');
+assert.equal(semanticClone.children[2].castShadow, false, 'overlays do not cast shadows');
+applyModelMaterial(semanticClone, { color: '#dd4411', roughness: .7, metalness: 0, emissiveIntensity: 0 });
+assert.equal(semanticClone.children[0].material.color.getHexString(), 'dd4411');
+assert.equal(comparisonClone.children[0].material.color.getHexString(), 'ffffff', 'editing a learner clone does not change its reference');
+assert.equal(semanticClone.children[1].material.emissiveIntensity, 1.6, 'shell edits preserve face glow');
+assert.notEqual(semanticClone.children[0].geometry, semanticSource.children[0].geometry, 'clone owns geometry for independent disposal');
 const viewportURL = data(fs.readFileSync(viewportPath, 'utf8')
   .replace("from 'three'", `from '${threeURL}'`)
   .replace("from 'three/addons/loaders/GLTFLoader.js'", `from '${loaderURL}'`)
   .replace("from 'three/addons/controls/OrbitControls.js'", `from '${orbitURL}'`)
   .replace("from '../../kit/js/stage.js'", `from '${data(stageSource)}'`)
   .replace("from '../../kit/js/transformGizmos.js'", `from '${gizmoURL}'`)
+  .replace("from './materialModel.js'", `from '${materialModelURL}'`)
+  .replace("from './mesh.js'", `from '${meshURL}'`)
+  .replace("from './snapping.js'", `from '${snappingURL}'`)
+  .replace("from './assemblyData.js'", `from '${pathToFileURL(path.join(root, 'polished/creator/js/assemblyData.js')).href}'`)
   .replaceAll('import.meta.url', JSON.stringify(pathToFileURL(viewportPath).href)));
 
 const projectURL = pathToFileURL(path.join(root, 'polished/creator/js/project.js')).href;
@@ -80,6 +111,7 @@ const toolListeners = new Set();
 let activeTool = 'select';
 const tools = {
   getActive: () => activeTool, isAllowed: () => true,
+  getEditingMode: () => 'object', getSnapping: () => false,
   setActive(value) { activeTool = value; toolListeners.forEach(fn => fn(value)); },
   subscribe(fn) { toolListeners.add(fn); return () => toolListeners.delete(fn); },
 };
@@ -89,6 +121,51 @@ await viewport.ready;
 assert.deepEqual(viewport.getObject('gizmobot').position.toArray(), [-2, 0, 0], 'initial project transform is reflected');
 assert.equal(viewport.getObject('gizmobot').children[0].name, 'LoadedGizmobot', 'Gizmobot loads under one high-level entity');
 const cube = project.addPrimitive('cube');
+const meshShape = project.addPrimitive('plane');
+project.setMesh(meshShape.id, {
+  vertices: [[-.5, 0, -.5], [.5, 0, -.5], [.5, 0, .5], [-.5, 0, .5]],
+  faces: [[0, 1, 2, 3]],
+});
+assert.deepEqual(viewport.getObject(meshShape.id).geometry.index.array.length, 6, 'polygon mesh renders as triangles');
+assert.deepEqual(viewport.getObject(meshShape.id).geometry.userData.faceIndices, [0, 0], 'render triangles retain their source face');
+project.updateMaterial(cube.id, { color: '#4488cc', emissiveIntensity: .75 });
+assert.equal(viewport.getObject(cube.id).material.emissive.getHexString(), '4488cc', 'primitive glow follows Base color');
+assert.equal(viewport.getObject(cube.id).material.emissiveIntensity, .75, 'shared Appearance emission renders on primitives');
+viewport.setSelectionOutline(false);
+project.updateMaterial(cube.id, { roughness: .4 });
+assert.equal(viewport.stage.scene.getObjectByName('CreatorSelectionOutline').visible, false, 'selection outline remains disabled across material edits');
+assert.equal(viewport.getSelectionOutline(), false);
+viewport.setSelectionOutline(true);
+const solidGeometry = viewport.getObject(cube.id).geometry;
+viewport.setDisplayMode('wireframe');
+assert.equal(viewport.getObject(cube.id).material.wireframe, true, 'wireframe mode reaches project meshes');
+viewport.setDisplayMode('solid');
+assert.equal(viewport.getObject(cube.id).material.wireframe, false);
+assert.equal(viewport.getObject(cube.id).geometry, solidGeometry, 'display mode does not rebuild geometry');
+const baseCubePosition = [...project.get(cube.id).components.transform.position];
+viewport.setPreviewTransforms(new Map([[cube.id, { position: [4, 3, 2], rotation: [.1, .2, .3], scale: [2, 2, 2] }]]));
+assert.deepEqual(viewport.getObject(cube.id).position.toArray(), [4, 3, 2], 'preview pose is displayed');
+assert.deepEqual(project.get(cube.id).components.transform.position, baseCubePosition, 'preview does not edit project state');
+assert.deepEqual(viewport.getDisplayedTransform(cube.id).position, [4, 3, 2]);
+viewport.setPreviewTransforms(null);
+assert.deepEqual(viewport.getObject(cube.id).position.toArray(), baseCubePosition, 'clearing preview restores project pose');
+assert.equal(viewport.getObject(cube.id).geometry, solidGeometry, 'preview updates do not rebuild geometry');
+const grid = new THREE.GridHelper(); viewport.stage.scene.add(grid);
+viewport.setGridVisible(false);
+assert.equal(grid.visible, false, 'grid visibility is controlled independently');
+assert.equal(viewport.setView('front'), 'front');
+assert.equal(viewport.stage.camera.isOrthographicCamera, true, 'axis presets use orthographic projection');
+assert.equal(viewport.getView(), 'front');
+assert.equal(viewport.stage.orbitCtrl.enableRotate, false, 'orthographic axis presets keep their named orientation');
+viewport.stage.resize();
+assert.equal(viewport.stage.camera.right / viewport.stage.camera.top, 4 / 3, 'public resize updates the active orthographic camera');
+project.selection.set(cube.id);
+const unfocusedTop = viewport.stage.camera.top;
+viewport.focusSelected();
+assert.ok(viewport.stage.camera.top < unfocusedTop, 'orthographic focus fits the selected bounds in its frustum');
+viewport.setView('perspective');
+assert.equal(viewport.stage.camera.isPerspectiveCamera, true, 'Perspective restores perspective projection');
+assert.equal(viewport.stage.orbitCtrl.enableRotate, true, 'Perspective view can orbit');
 const sphere = project.addPrimitive('sphere');
 const group = project.group([cube.id, sphere.id]);
 assert.equal(viewport.getObject(cube.id).parent, viewport.getObject(group.id), 'derived hierarchy follows project parents');

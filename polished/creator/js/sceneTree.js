@@ -1,21 +1,33 @@
-const iconFor = type => ({
-  group: '◇', gizmobot: '●', cube: '□', sphere: '○', cylinder: '▱', cone: '△', plane: '▭'
-}[type] || '◆');
+function sceneIcon(type) {
+  const paths = {
+    sphere: '<circle cx="12" cy="12" r="9"/>',
+    group: '<path d="M9 15l6-6M10 6l2-2a5 5 0 017 7l-2 2M7 11l-2 2a5 5 0 007 7l2-2"/>',
+    cone: '<path d="M12 3L3 19q9 4 18 0Z"/>',
+    cylinder: '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 4 16 4 16 0V5"/>',
+    plane: '<path d="M3 15l8-9 10 3-8 9Z"/>',
+    eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>'
+  };
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('aria-hidden', 'true');
+  svg.innerHTML = paths[type] || '<path d="M12 2l9 5v10l-9 5-9-5V7Z M3 7l9 5 9-5M12 12v10"/>';
+  return svg;
+}
 
 export function createSceneTree({ project, root }) {
   const expanded = new Set(['creation']);
   let disposed = false;
+  let capabilities = {};
 
   root.classList.add('scene-tree');
   root.setAttribute('role', 'tree');
-  root.setAttribute('aria-label', 'Scene objects');
+  root.setAttribute('aria-label', 'Outliner objects');
   root.setAttribute('aria-multiselectable', 'true');
   root.tabIndex = -1;
 
   function childEntities(id) {
-    return typeof project.children === 'function'
+    return (typeof project.children === 'function'
       ? project.children(id)
-      : project.entities.filter(entity => entity.parentId === id);
+      : project.entities.filter(entity => entity.parentId === id)).filter(entity => !capabilities.scene?.excludeIds?.includes(entity.id));
   }
 
   function visibleEntries() {
@@ -24,7 +36,7 @@ export function createSceneTree({ project, root }) {
       entries.push({ entity, depth });
       if (expanded.has(entity.id)) childEntities(entity.id).forEach(child => visit(child, depth + 1));
     };
-    project.entities.filter(entity => entity.parentId == null).forEach(entity => visit(entity, 0));
+    project.entities.filter(entity => entity.parentId == null && !capabilities.scene?.excludeIds?.includes(entity.id)).forEach(entity => visit(entity, 0));
     return entries;
   }
 
@@ -34,6 +46,7 @@ export function createSceneTree({ project, root }) {
   }
 
   function beginRename(row, entity) {
+    if (capabilities.actions?.rename === false) return;
     if (row.querySelector('.scene-name-input')) return;
     const label = row.querySelector('.scene-name');
     const input = document.createElement('input');
@@ -73,7 +86,7 @@ export function createSceneTree({ project, root }) {
     if (!entries.length) {
       const empty = document.createElement('p');
       empty.className = 'scene-empty';
-      empty.textContent = 'Your scene is empty.';
+      empty.textContent = 'Your outliner is empty.';
       root.append(empty);
       return;
     }
@@ -107,7 +120,7 @@ export function createSceneTree({ project, root }) {
 
       const icon = document.createElement('span');
       icon.className = 'scene-type-icon';
-      icon.textContent = iconFor(entity.type);
+      icon.append(sceneIcon(entity.type));
       icon.setAttribute('aria-hidden', 'true');
       const name = document.createElement('span');
       name.className = 'scene-name';
@@ -116,7 +129,9 @@ export function createSceneTree({ project, root }) {
       const visibility = document.createElement('button');
       visibility.type = 'button';
       visibility.className = 'scene-visibility';
-      visibility.textContent = entity.visible ? 'Hide' : 'Show';
+      visibility.hidden = capabilities.actions?.visibility === false;
+      visibility.append(sceneIcon('eye'));
+      visibility.title = `${entity.visible ? 'Hide' : 'Show'} ${entity.name}`;
       visibility.setAttribute('aria-label', `${entity.visible ? 'Hide' : 'Show'} ${entity.name}`);
       visibility.setAttribute('aria-pressed', String(entity.visible));
       visibility.addEventListener('click', event => {
@@ -161,5 +176,5 @@ export function createSceneTree({ project, root }) {
     if (event.kind === 'change' || event.kind === 'selection' || event.kind === 'history') render();
   });
   render();
-  return { render, expanded, dispose() { disposed = true; unsubscribe?.(); root.replaceChildren(); } };
+  return { render, expanded, setCapabilities(next) { capabilities = next; render(); }, dispose() { disposed = true; unsubscribe?.(); root.replaceChildren(); } };
 }

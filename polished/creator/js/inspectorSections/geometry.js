@@ -10,7 +10,7 @@ const fieldsByType = {
 
 export const geometrySection = {
   id: 'geometry', title: 'Geometry', defaultExpanded: true,
-  supports: entity => Boolean(entity.components?.geometry && fieldsByType[entity.type]),
+  supports: entity => Boolean(entity.components?.geometry && !entity.components?.mesh && fieldsByType[entity.type]),
   render({ project, entity }) {
     const root = el('div', 'geometry-fields');
     const transaction = transactionFor(project, 'Edit geometry');

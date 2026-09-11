@@ -6,19 +6,20 @@ const DEG_TO_RAD = Math.PI / 180;
 export const transformSection = {
   id: 'transform', title: 'Transform', defaultExpanded: true,
   supports: entity => Boolean(entity.components?.transform),
-  render({ project, entity }) {
+  render({ project, entity, capabilities = {} }) {
     const root = el('div', 'transform-fields');
     const transaction = transactionFor(project, 'Edit transform');
     const controls = [];
     const groups = [
       ['Position', 'position', 1, null],
-      ['Rotation', 'rotation', RAD_TO_DEG, '°'],
+      ['Rotation (°)', 'rotation', RAD_TO_DEG, '°'],
       ['Scale', 'scale', 1, null]
     ];
     groups.forEach(([title, key, displayFactor, suffix]) => {
-      const group = el('fieldset', 'transform-group');
+      if (capabilities.transformFields?.[key] === false) return;
+      const group = el('fieldset', 'transform-group transform-row');
       group.append(el('legend', 'field-group-label', title));
-      const axes = el('div', 'axis-fields');
+      const axes = el('div', 'axis-fields transform-axis-fields');
       ['X', 'Y', 'Z'].forEach((axis, index) => {
         const control = numericField({
           label: suffix ? `${axis} (${suffix})` : axis,
@@ -33,6 +34,8 @@ export const transformSection = {
           }
         });
         control.field.classList.add(`axis-${axis.toLowerCase()}`);
+        control.field.querySelector('.field-label').textContent = axis;
+        control.input.setAttribute('aria-label', `${title.replace(' (°)', '')} ${axis}${suffix ? ` (${suffix})` : ''}`);
         controls.push({ key, index, factor: displayFactor, control });
         axes.append(control.field);
       });

@@ -17,13 +17,22 @@ export function createDock({ project, root, onFocus }) {
   const header = node('header', 'dock-header');
   const title = node('h2', 'dock-title', 'Editor');
   const headerActions = node('div', 'dock-header-actions');
-  const pin = node('button', 'dock-pin', 'Pin'); pin.type = 'button'; pin.setAttribute('aria-label', 'Pin editor dock');
   const close = node('button', 'dock-close', 'Close'); close.type = 'button'; close.setAttribute('aria-label', 'Close editor dock');
-  headerActions.append(pin, close); header.append(title, headerActions);
+  headerActions.append(close); header.append(title, headerActions);
 
   const scenePanel = node('section', 'scene-panel');
-  const sceneHeading = node('h2', 'panel-heading', 'Scene');
+  const sceneHeading = node('h2', 'panel-heading', 'Outliner');
+  const sceneToggle = node('button', 'scene-toggle', 'Hide'); sceneToggle.type = 'button';
+  sceneToggle.setAttribute('aria-expanded', 'true'); sceneToggle.setAttribute('aria-label', 'Collapse Outliner');
+  sceneHeading.append(sceneToggle);
   const sceneRoot = node('div', 'scene-tree-host'); scenePanel.append(sceneHeading, sceneRoot);
+  sceneToggle.addEventListener('click', () => {
+    sceneRoot.hidden = !sceneRoot.hidden;
+    scenePanel.classList.toggle('is-collapsed', sceneRoot.hidden);
+    sceneToggle.textContent = sceneRoot.hidden ? 'Show' : 'Hide';
+    sceneToggle.setAttribute('aria-expanded', String(!sceneRoot.hidden));
+    sceneToggle.setAttribute('aria-label', `${sceneRoot.hidden ? 'Expand' : 'Collapse'} Outliner`);
+  });
   const inspectorPanel = node('section', 'inspector-panel');
   const inspectorHeading = node('h2', 'panel-heading', 'Inspector');
   const inspectorRoot = node('div', 'inspector-host'); inspectorPanel.append(inspectorHeading, inspectorRoot);
@@ -38,11 +47,8 @@ export function createDock({ project, root, onFocus }) {
   function applyState(next, notify = true) {
     if (!['closed', 'open', 'pinned'].includes(next)) throw new Error(`Unknown dock state: ${next}`);
     state = next; root.dataset.state = state; root.hidden = state === 'closed';
-    pin.setAttribute('aria-pressed', String(state === 'pinned'));
-    pin.textContent = state === 'pinned' ? 'Unpin' : 'Pin';
     if (notify) emit();
   }
-  pin.addEventListener('click', () => applyState(state === 'pinned' ? 'open' : 'pinned'));
   close.addEventListener('click', () => applyState('closed'));
   root.addEventListener('keydown', event => { if (event.key === 'Escape' && state === 'open') applyState('closed'); });
 
@@ -53,11 +59,13 @@ export function createDock({ project, root, onFocus }) {
     };
     scenePanel.hidden = capabilities.panels.scene === false;
     inspectorPanel.hidden = capabilities.panels.inspector === false;
-    inspector.setCapabilities(capabilities.inspectorSections);
+    inspector.setCapabilities(capabilities.inspectorSections, config);
+    sceneTree.setCapabilities(config);
   }
 
   applyState(state, false);
   return {
+    inspector,
     setState: applyState,
     getState: () => state,
     setCapabilities,

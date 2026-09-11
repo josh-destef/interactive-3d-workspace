@@ -22,6 +22,8 @@ labs/
   particle-cannon/              Gizmobot Particle Playground (9 guided steps, emitters and confetti)
   robot-assembly/               WIP Gizmobot assembly (objects, position,
                                 rotation and parent/child transforms)
+  build-gizmobot-creator/       Parallel Creation Studio assembly lesson; the
+                                original robot-assembly lab is preserved
 ```
 
 The four guided labs share one learning architecture. Every step is paced

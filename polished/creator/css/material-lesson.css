@@ -1,0 +1,75 @@
+/* Material-specific density; surfaces and controls belong to Creation Studio. */
+.material-lesson .scene-panel { flex: 0 0 auto; min-height: 90px; max-height: 130px; }
+.material-lesson .inspector-panel { flex: 1; }
+.material-lesson .tool-divider { display: none; }
+.material-lesson .lesson-guidance.has-fixed-home .lesson-guidance-card {
+  width: min(420px, calc(100vw - 48px)); height: 310px; padding: 22px 24px;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.material-lesson .lesson-guidance-copy { min-height: 0; overflow: auto; }
+.material-lesson .lesson-guidance.has-fixed-home .lesson-guidance-actions { margin-top: auto; padding-top: 12px; min-height: 52px; flex-shrink: 0; }
+.material-lesson .lesson-guidance-copy h2 { font-size: 23px; }
+.material-lesson .lesson-guidance-copy > p { line-height: 1.5; }
+.material-lesson .lesson-guidance-actions button { font-size: 12px; padding: 8px 10px; }
+.material-lesson .lesson-guidance-secondary { margin-right: auto; }
+/* Keep the instruction card focused on the current prompt. Material Lab uses
+   the card's action and Continue states; transient green status callouts are
+   too easy to read as a second instruction. */
+.material-lesson .lesson-feedback { display: none; }
+.material-lesson .material-lesson-controls { padding: 14px 16px; border-top: 1px solid var(--line); flex-shrink: 0; background: #fafaf8; }
+.material-lesson .material-lesson-controls h2 { margin: 0 0 10px; font-size: 13px; }
+.material-lesson .material-lesson-controls button { font-size: 11px; min-height: 32px; padding: 6px 8px; margin: 2px; }
+.material-match-feedback { margin-top: 12px; padding: 12px; border: 1px solid #d8d9df; border-radius: 10px; background: #fff; }
+.material-match-feedback.is-pass { border-color: #8bc98e; background: #f4fbf2; }
+.material-match-feedback.is-stale { opacity: .62; }
+.material-match-score { display: block; color: var(--ink); font-size: 18px; font-weight: 600; }
+.material-match-note { margin: 5px 0 10px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+.material-match-metrics { display: grid; gap: 7px; }
+.material-match-metric { display: grid; grid-template-columns: 74px minmax(70px, 1fr) 34px; align-items: center; gap: 8px; font-size: 11px; }
+.material-match-metric progress { width: 100%; height: 7px; accent-color: var(--orange); }
+.material-match-feedback.is-pass progress { accent-color: var(--green); }
+.material-match-metric output { color: var(--muted); font-family: var(--mono); text-align: right; }
+.material-model-label { z-index: 2; padding: 6px 10px; background: rgb(255 255 255 / .94); color: var(--ink); border: 1px solid var(--line); border-radius: 7px; font-size: 12px; white-space: nowrap; }
+.material-model-label[data-model="learner"] { border-color: var(--orange); }
+.material-demo-cursor { position: fixed; z-index: 80; pointer-events: none; filter: drop-shadow(0 2px 2px rgb(0 0 0 / .2)); }
+/* The glow is the mouse-button cue: left-drag is orange, right-drag is green. */
+.material-demo-cursor.down { filter: drop-shadow(0 0 5px rgb(255 144 34 / .95)) drop-shadow(0 0 14px rgb(255 144 34 / .55)); }
+.material-demo-cursor.down.right { filter: drop-shadow(0 0 5px rgb(0 170 0 / .95)) drop-shadow(0 0 14px rgb(0 170 0 / .55)); }
+.material-lesson .lesson-guidance.is-anchored .lesson-guidance-card { overflow: visible; height: auto; min-height: 220px; width: min(355px, calc(100vw - 48px)); }
+.material-lesson .lesson-guidance-actions { flex-wrap: wrap; }
+@media (max-width: 900px) {
+  .material-lesson #creator-app.lesson-mode { --lesson-guidance-reserve: 255px; }
+  .material-lesson .lesson-guidance.has-fixed-home .lesson-guidance-card { height: 231px; max-height: 231px; padding: 15px 18px; }
+  .material-lesson .lesson-guidance-copy h2 { font-size: 20px; }
+  .material-lesson .lesson-guidance-copy > p { margin-top: 8px; font-size: 12px; }
+  .material-lesson .lesson-guidance-step { margin-bottom: 6px; }
+  .material-lesson #creator-app.lesson-mode .scene-panel { flex-basis: auto; min-height: 80px; }
+  /* One scroll surface keeps Appearance and the emission preview reachable. */
+  .material-lesson #editor-dock { display: block; overflow-y: auto; }
+  .material-lesson #editor-dock .scene-panel,
+  .material-lesson #editor-dock .inspector-panel,
+  .material-lesson #editor-dock .inspector-host { overflow: visible; max-height: none; }
+}
+@media (max-height: 560px) {
+  .material-lesson .lesson-guidance.has-fixed-home .lesson-guidance-card { height: 200px; max-height: 200px; padding: 12px 16px; }
+  .material-lesson #creator-app.lesson-mode { --lesson-guidance-reserve: 224px; }
+  .material-lesson .lesson-guidance-copy h2 { font-size: 18px; }
+  .material-lesson .lesson-guidance-copy > p { font-size: 12px; line-height: 1.4; }
+}
+@media (max-width: 650px) {
+  /* Editing keeps a live preview above the dock instead of covering the model. */
+  .material-dock-open #creator-app.lesson-mode {
+    --material-preview-height: clamp(120px, calc((100dvh - 380px) / 2), 240px);
+    --lesson-guidance-reserve: clamp(224px, 34dvh, 285px);
+  }
+  .material-dock-open .workspace { flex-direction: column; }
+  .material-dock-open #creator-app.lesson-mode .viewport { flex: 0 0 var(--material-preview-height); min-height: var(--material-preview-height); }
+  .material-dock-open #creator-app.lesson-mode #editor-dock {
+    left: 8px; right: 8px; width: auto;
+    top: calc(18px + var(--material-preview-height));
+    bottom: calc(14px + var(--lesson-guidance-reserve));
+  }
+  .material-dock-open .lesson-guidance.has-fixed-home .lesson-guidance-card { height: clamp(200px, calc(34dvh - 24px), 261px); max-height: none; }
+  .material-lesson #editor-dock .scene-panel { padding-top: 10px; padding-bottom: 10px; }
+  .material-lesson #editor-dock .dock-header { padding: 8px 12px; }
+}

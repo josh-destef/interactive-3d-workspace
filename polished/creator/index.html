@@ -3,27 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Creator · CreateAccess</title>
-  <meta name="description" content="A friendly space to make something in 3D. The standalone CreateAccess Creator playground.">
+  <title>Creation Studio · CreateAccess</title>
+  <meta name="description" content="CreateAccess’s friendly 3D learning environment: Creation Studio.">
   <link rel="icon" href="../../assets/brand/logo-mark.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../kit/css/tokens.css">
   <link rel="stylesheet" href="css/creator.css">
+  <link rel="stylesheet" href="css/appearance.css">
+  <link rel="stylesheet" href="css/lesson.css">
+  <link rel="stylesheet" href="css/timeline.css">
+  <link rel="stylesheet" href="css/mesh-editor.css">
+  <link rel="stylesheet" href="css/studio.css">
   <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"}}</script>
 </head>
 <body>
   <div id="creator-app" data-dock="pinned">
     <header class="topbar">
       <a href="../" class="brand" aria-label="CreateAccess home"><img src="../../assets/brand/logo-wordmark.png" alt="CreateAccess"></a>
-      <span class="product-name">Creator <span class="prototype-tag">Playground</span></span>
+      <span class="product-name">Creation Studio</span>
       <nav class="global-actions" aria-label="Project controls">
         <button id="undo" disabled title="Undo (Ctrl or Command Z)">↶ <span>Undo</span></button>
         <button id="redo" disabled title="Redo (Ctrl or Command Shift Z)">↷ <span>Redo</span></button>
         <button id="reset-view">⌂ <span>Reset View</span></button>
         <button id="help-toggle" aria-expanded="true" aria-controls="guide">Help</button>
-        <button id="dock-toggle" aria-expanded="true" aria-controls="editor-dock">Scene & Inspector</button>
+        <button id="dock-toggle" aria-expanded="true" aria-controls="editor-dock">Outliner & Inspector</button>
       </nav>
     </header>
     <main class="workspace">
@@ -31,31 +36,50 @@
         <div class="guide-heading"><span class="eyebrow">A SPACE TO CREATE</span><button id="guide-close" aria-label="Close guidance">×</button></div>
         <h1>Start with a shape.<br>Make it yours.</h1>
         <p>Add a shape, move it into place, and see what you can make.</p>
-        <ol class="guide-steps"><li><span>1</span><div><strong>Add something</strong><p>Open + Add to choose a shape.</p></div></li><li><span>2</span><div><strong>Try the tools</strong><p>Move, rotate, or scale your selection.</p></div></li><li><span>3</span><div><strong>Make it yours</strong><p>Change its colour and size in the Inspector.</p></div></li></ol>
+        <ol class="guide-steps"><li><span>1</span><div><strong>Add something</strong><p>Open Add to choose a shape.</p></div></li><li><span>2</span><div><strong>Try the tools</strong><p>Move, rotate, or scale your selection.</p></div></li><li><span>3</span><div><strong>Make it yours</strong><p>Change its colour and size in the Inspector.</p></div></li></ol>
         <div class="guide-note"><span class="ready-dot"></span> Your space to experiment<p>Undo is always there when you need it.</p></div>
         <details class="shortcuts"><summary>Navigation & shortcuts</summary><p>Drag empty space to orbit. Right-drag or Shift-drag to pan. Scroll to zoom.</p><p>V Select · W Move · E Rotate · R Scale · F Focus</p><p>Shift-click to select several objects. Ctrl/⌘ D duplicates. Delete removes the selection.</p></details>
-        <p class="session-note">Standalone playground · Changes stay in this session.</p>
+        <p class="session-note"><a href="?lesson=model-an-accessory">Try a lesson: Model an Accessory →</a></p>
+        <p class="session-note"><a href="?lesson=material-lab">Try a lesson: Material Lab →</a></p>
+        <p class="session-note"><a href="?lesson=build-gizmobot">Try a lesson: Build Gizmobot →</a></p>
+        <p class="session-note">Changes stay in this session.</p>
       </aside>
       <section id="canvas-wrap" class="viewport" aria-label="3D workspace">
-        <canvas id="cv" tabindex="0" aria-label="3D viewport. Drag empty space to orbit, right drag to pan, scroll to zoom. Select an object or use Scene and Inspector for keyboard editing."></canvas>
-        <div class="viewport-heading"><span class="workspace-label"><span class="ready-dot"></span> 3D workspace</span><span class="mode-label">Object mode</span></div>
+        <canvas id="cv" tabindex="0" aria-label="3D viewport. Drag empty space to orbit, right drag to pan, scroll to zoom. Select an object or use the Outliner and Inspector for keyboard editing."></canvas>
+        <div class="viewport-heading">
+          <div class="viewport-primary">
+            <span class="mode-label">Object mode</span>
+            <div class="add-control">
+              <button id="add-toggle" data-tool="add" aria-haspopup="menu" aria-expanded="false" aria-controls="add-menu">
+                <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M10 4v12M4 10h12" /></svg>
+                <span>Add</span><span class="menu-chevron" aria-hidden="true"></span>
+              </button>
+              <div id="add-menu" class="add-menu" role="menu" aria-labelledby="add-toggle" hidden>
+                <div class="add-menu-category"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg><span>Shapes</span></div>
+                <div class="shape-options" role="group" aria-label="Shapes">
+                  <button data-shape="cube" role="menuitem"><svg class="shape-icon" viewBox="0 0 40 40" aria-hidden="true"><path d="m20 5 12 7v16l-12 7-12-7V12l12-7Z"/><path d="m8 12 12 7 12-7M20 19v16"/></svg><span class="shape-copy"><strong>Cube</strong></span></button>
+                  <button data-shape="sphere" role="menuitem"><svg class="shape-icon" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="14"/><path d="M6 20h28M20 6c5 4 7 9 7 14s-2 10-7 14c-5-4-7-9-7-14s2-10 7-14Z"/></svg><span class="shape-copy"><strong>Sphere</strong></span></button>
+                  <button data-shape="cylinder" role="menuitem"><svg class="shape-icon" viewBox="0 0 40 40" aria-hidden="true"><ellipse cx="20" cy="10" rx="11" ry="5"/><path d="M9 10v20c0 3 5 5 11 5s11-2 11-5V10M9 30c0 3 5 5 11 5s11-2 11-5"/></svg><span class="shape-copy"><strong>Cylinder</strong></span></button>
+                  <button data-shape="cone" role="menuitem"><svg class="shape-icon" viewBox="0 0 40 40" aria-hidden="true"><path d="m20 5-11 25M20 5l11 25"/><ellipse cx="20" cy="30" rx="11" ry="5"/></svg><span class="shape-copy"><strong>Cone</strong></span></button>
+                  <button data-shape="plane" role="menuitem"><svg class="shape-icon" viewBox="0 0 40 40" aria-hidden="true"><path d="m7 25 18-12 9 5-18 12-9-5Z"/><path d="m12 21 9 5M20 16l9 5"/></svg><span class="shape-copy"><strong>Plane</strong></span></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div id="tool-rail" class="tool-rail" role="toolbar" aria-label="3D tools" aria-orientation="vertical">
           <button data-tool="select" aria-pressed="true" title="Select (V)" aria-label="Select (V)"><svg class="icon-fill" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 3 L6 19 L10 15 L13 21 L16 20 L13 14 L18 14 Z" /></svg></button>
           <button data-tool="move" aria-pressed="false" title="Move (W)" aria-label="Move (W)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" /></svg></button>
           <button data-tool="rotate" aria-pressed="false" title="Rotate (E)" aria-label="Rotate (E)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 13a7 7 0 1 1 3 5" /><path d="M4 6l1 6 6-1" /></svg></button>
           <button data-tool="scale" aria-pressed="false" title="Scale (R)" aria-label="Scale (R)"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4" y="10" width="10" height="10" /><path d="M10 8V4h10v10h-4" /></svg></button>
-          <div class="tool-divider"></div>
-          <button id="add-toggle" data-tool="add" aria-haspopup="dialog" aria-expanded="false" aria-controls="add-menu"><span aria-hidden="true">＋</span>Add</button>
         </div>
-        <div id="add-menu" class="add-menu" role="dialog" aria-label="Add a shape" hidden><div class="popover-heading"><strong>Add a shape</strong><button id="add-close" aria-label="Close Add menu">×</button></div><p>A little starting point for your next idea.</p><div class="shape-options"><button data-shape="cube"><span aria-hidden="true">◇</span>Cube</button><button data-shape="sphere"><span aria-hidden="true">○</span>Sphere</button><button data-shape="cylinder"><span aria-hidden="true">▱</span>Cylinder</button><button data-shape="cone"><span aria-hidden="true">△</span>Cone</button><button data-shape="plane"><span aria-hidden="true">▱</span>Plane</button></div></div>
-        <div class="viewport-footer"><span id="selection-hint">Choose a shape to begin</span><button id="focus-selected" disabled title="Focus selected (F)">Focus selected</button></div>
         <div id="loading" class="loading" role="status">Preparing your workspace…</div>
       </section>
       <div id="dock-backdrop" hidden></div>
-      <aside id="editor-dock" aria-label="Scene and Inspector" data-state="pinned"></aside>
+      <aside id="editor-dock" aria-label="Outliner and Inspector" data-state="pinned"></aside>
     </main>
-    <section id="bottom-editor" class="bottom-editor" aria-label="Bottom editor" hidden></section>
-    <footer class="statusbar"><span id="status" role="status" aria-live="polite">Welcome to Creator</span><button id="bottom-toggle" aria-expanded="false" aria-controls="bottom-editor">Open editor area</button><span class="axis-key"><b class="axis-x">X</b><b class="axis-y">Y</b><b class="axis-z">Z</b></span></footer>
+    <section id="bottom-editor" class="bottom-editor" aria-label="Animation timeline" hidden></section>
+    <footer class="statusbar"><span id="status" role="status" aria-live="polite">Welcome to Creation Studio</span><button id="bottom-toggle" aria-expanded="false" aria-controls="bottom-editor">Open editor area</button></footer>
   </div>
   <script type="module" src="js/bootstrap.js"></script>
 </body>

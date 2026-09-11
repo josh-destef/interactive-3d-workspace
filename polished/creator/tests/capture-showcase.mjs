@@ -120,7 +120,7 @@ try {
   await browser.wait('creator.dock.getState() === "closed" && document.getElementById("editor-dock").hidden');
   await capture('phone');
 
-  console.log('Saved Creator showcase screenshots in polished/creator/qa/.');
+  console.log('Saved Creation Studio showcase screenshots in polished/creator/qa/.');
 } finally {
   browser.close();
 }

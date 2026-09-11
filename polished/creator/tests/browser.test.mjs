@@ -31,6 +31,9 @@ try {
   await capture('default');
   await b.click('#add-toggle');
   check('Add menu opens', await ev('!document.getElementById("add-menu").hidden'));
+  check('Add menu is anchored to the viewport Add control', await ev('document.getElementById("add-menu").parentElement.classList.contains("add-control") && document.getElementById("add-toggle").closest(".viewport-heading")'));
+  check('Shape choices have distinct previews and concise labels', await ev(`(() => { const items=[...document.querySelectorAll('[data-shape]')]; return items.length===5 && new Set(items.map(item=>item.querySelector('.shape-icon').innerHTML)).size===5 && items.every(item=>item.querySelector('.shape-copy strong')?.textContent.trim()) && !document.querySelector('.shape-copy small'); })()`));
+  check('Old Add card copy is removed', await ev('!document.body.textContent.includes("A little starting point for your next idea")'));
   await capture('add-menu');
   await key('Escape', 'Escape');
   check('Escape dismisses Add and restores focus', await ev('document.getElementById("add-menu").hidden && document.activeElement.id === "add-toggle"'));
@@ -40,7 +43,7 @@ try {
   }
   const cube = await ev('creator.project.entities.find(e=>e.type==="cube").id');
   await b.click(`.scene-row[data-entity-id="${cube}"] .scene-name`);
-  check('Scene selection reaches Inspector', (await active()).id === cube && await ev('document.querySelector(".inspector-name-input").value === "Cube"'));
+  check('Outliner selection reaches Inspector', (await active()).id === cube && await ev('document.querySelector(".inspector-name-input").value === "Cube"'));
   await fill('.transform-group:nth-child(1) input', '1.5');
   check('Numeric position reaches model and mesh', await ev(`creator.project.get('${cube}').components.transform.position[0] === 1.5 && creator.viewport.getObject('${cube}').position.x === 1.5`));
   // Tab may focus the next numeric field; click Undo commits that no-op draft first.
@@ -59,7 +62,7 @@ try {
   check('Color undo restores prior material', await ev(`creator.viewport.getObject('${cube}').material.color.getHexString() !== '3a8c9d'`));
   await b.click('#redo');
   await fill('.inspector-name-input', 'My first shape');
-  check('Rename syncs Scene and object', await ev(`creator.viewport.getObject('${cube}').name === 'My first shape' && document.querySelector('[data-entity-id="${cube}"] .scene-name').textContent === 'My first shape'`));
+  check('Rename syncs Outliner and object', await ev(`creator.viewport.getObject('${cube}').name === 'My first shape' && document.querySelector('[data-entity-id="${cube}"] .scene-name').textContent === 'My first shape'`));
   await b.click('[data-tool="move"]'); await frame();
   await capture('selected-primitive');
   // Select via an actual raycast in the viewport, using the rendered mesh centre.
@@ -68,7 +71,7 @@ try {
   const point = await ev(`(()=>{const o=creator.viewport.getObject('${cube}');const p=o.getWorldPosition(o.position.clone()).project(creator.viewport.stage.camera);const r=document.getElementById('cv').getBoundingClientRect();return {x:r.x+(p.x+1)*r.width/2,y:r.y+(1-p.y)*r.height/2}})()`);
   await ev('creator.project.selection.clear()');
   await b.mouse('mousePressed',point.x,point.y,{button:'left',clickCount:1}); await b.mouse('mouseReleased',point.x,point.y,{button:'left',clickCount:1});
-  check('Viewport picking syncs Scene and Inspector', (await active()).id === cube);
+  check('Viewport picking syncs Outliner and Inspector', (await active()).id === cube);
   await b.click('.object-actions button:first-child');
   check('Hide changes mesh visibility', await ev(`!creator.viewport.getObject('${cube}').visible`));
   await b.click('.object-actions button:first-child');

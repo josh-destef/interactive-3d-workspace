@@ -1,0 +1,72 @@
+body.assembly-lesson .product-name::after {
+  content: 'Build Gizmobot';
+  margin-left: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: #edf5ea;
+  color: #3f6846;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+body.assembly-lesson .scene-panel { max-height: 48%; flex-basis: 48%; }
+body.assembly-lesson #editor-dock:has(.inspector-panel[hidden]) .scene-panel { max-height: none; flex: 1 1 auto; }
+body.assembly-lesson .scene-row[data-current-target="true"] {
+  border-color: #f3aa5e;
+  background: #fff8ef;
+}
+
+.assembly-target-label {
+  position: absolute;
+  z-index: 5;
+  transform: translate(-50%, 18px);
+  padding: 5px 8px;
+  border: 1px solid #efa65e;
+  border-radius: 6px;
+  background: #fff8ed;
+  color: #90440b;
+  font: 500 9px/1.2 var(--mono);
+  letter-spacing: .09em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+body.assembly-lesson .lesson-guidance-card { width: min(430px, calc(100vw - 48px)); }
+body.assembly-lesson .lesson-guidance-step { color: #6b6c78; }
+body.assembly-lesson .viewport-utilities { margin-left: auto; }
+body.assembly-lesson .tool-divider { display: none; }
+
+@media (max-width: 900px) {
+  body.assembly-lesson .scene-panel { max-height: 46%; flex-basis: 46%; }
+}
+
+@media (max-width: 650px) {
+  body.assembly-lesson .product-name::after { display: none; }
+  body.assembly-lesson .lesson-guidance-card { width: min(430px, calc(100vw - 36px)); }
+}
+
+body.assembly-lesson .lesson-guidance-actions { flex-wrap: wrap; }
+body.assembly-lesson .lesson-feedback { display: none; }
+
+@media (max-width: 650px) {
+  /* Keep the model in view while working in the open Scene/Inspector dock. */
+  body.assembly-lesson #creator-app.lesson-mode:has(#editor-dock:not([hidden])) .viewport {
+    flex: 0 0 clamp(150px, 24dvh, 205px);
+    min-height: 150px;
+  }
+  body.assembly-lesson #creator-app.lesson-mode:has(#editor-dock:not([hidden])) #editor-dock {
+    top: calc(24dvh + 20px); left: 8px; right: 8px; width: auto;
+    overflow-y: auto; display: block;
+  }
+  body.assembly-lesson #editor-dock .dock-header { padding: 7px 12px; }
+  body.assembly-lesson #editor-dock .scene-panel { max-height: 140px; }
+  body.assembly-lesson #editor-dock .inspector-panel,
+  body.assembly-lesson #editor-dock .inspector-host { overflow: visible; }
+  body.assembly-lesson #dock-backdrop { display: none; }
+}
+
+@media (max-width: 650px) {
+  body.assembly-lesson #creator-app.lesson-mode:has(#editor-dock:not([hidden])) .workspace { flex-direction: column; }
+  body.assembly-lesson #creator-app.lesson-mode:has(#editor-dock:not([hidden])) #tool-rail { top: 48px; }
+  body.assembly-lesson #creator-app.lesson-mode:has(#editor-dock:not([hidden])) #tool-rail button { min-height: 34px; padding: 3px 7px; }
+}

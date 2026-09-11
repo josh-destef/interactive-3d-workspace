@@ -1,10 +1,20 @@
 export function createHistory({ restore, emit = () => {}, isBlocked = () => false, limit = 100 }) {
   const undoStack = [];
   const redoStack = [];
+  function clearStacks() {
+    undoStack.length = 0;
+    redoStack.length = 0;
+    emit({ kind: 'history' });
+  }
 
   return {
     get canUndo() { return undoStack.length > 0; },
     get canRedo() { return redoStack.length > 0; },
+    clear() {
+      if (isBlocked()) return false;
+      clearStacks();
+      return true;
+    },
     undo() {
       if (isBlocked()) return false;
       const entry = undoStack.pop();
@@ -30,9 +40,7 @@ export function createHistory({ restore, emit = () => {}, isBlocked = () => fals
       emit({ kind: 'history', label: entry.label });
     },
     _clear() {
-      undoStack.length = 0;
-      redoStack.length = 0;
-      emit({ kind: 'history' });
+      clearStacks();
     }
   };
 }

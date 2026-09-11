@@ -111,6 +111,16 @@ test('Gizmobot is a valid hierarchy container', () => {
   assert.deepEqual(rounded(world(project,cube.id)),before);
 });
 
+test('a primitive can parent another primitive while preserving world placement', () => {
+  const project=createProject(), body=project.addPrimitive('cube'), mast=project.addPrimitive('cylinder');
+  project.updateTransform(body.id,{position:[-2,1.75,-1],scale:[1.5,.8,.7]});
+  project.updateTransform(mast.id,{position:[-2,3,-1],scale:[.3,2,.3]});
+  const before=rounded(world(project,mast.id));
+  project.reparent(mast.id,body.id);
+  assert.equal(project.get(mast.id).parentId,body.id);
+  assert.deepEqual(rounded(world(project,mast.id)),before);
+});
+
 test('reparent rejects a world-preserving local transform that would shear', () => {
   const project=createProject(), cube=project.addPrimitive('cube'), target=project.group([cube.id]);
   project.reparent(cube.id,'creation');
@@ -146,7 +156,8 @@ test('restore validates structure, clears selection and history', () => {
   const primitiveParent=structuredClone(data);
   const plane=primitiveParent.entities.find(e=>e.type==='plane');
   primitiveParent.entities.push({...structuredClone(plane),id:'child-plane',parentId:plane.id});
-  assert.throws(()=>project.restore(primitiveParent),/Parent must be a group or Gizmobot/);
+  assert.doesNotThrow(()=>project.restore(primitiveParent));
+  assert.equal(project.get('child-plane').parentId,plane.id);
 });
 
 test('history bounds full snapshots to the latest 100 actions', () => {

@@ -3,14 +3,30 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createStage, V3 } from '../../kit/js/stage.js';
 import { createTransformGizmos } from '../../kit/js/transformGizmos.js';
+import { nearestSurfaceOffset } from './snapping.js';
+import { MATERIAL_MODEL_URL, cloneMaterialModel, applyModelMaterial } from './materialModel.js';
+import { triangulateMesh } from './mesh.js';
+import { ASSEMBLY_MODEL_SCALE } from './assemblyData.js';
 
 const AXIS_COLORS = { x: 0xc0453a, y: 0x2e8b2e, z: 0x3a6fa8 };
 const AXES = { x: V3(1, 0, 0), y: V3(0, 1, 0), z: V3(0, 0, 1) };
 const HOME = { pos: V3(5.8, 4.1, 8.2), look: V3(0, 0.9, 0) };
 const GIZMOBOT_URL = new URL('../../../assets/models/gizmobot.glb', import.meta.url);
+const ASSEMBLY_URL = new URL('../../labs/robot-assembly/assets/gizmobot-assembly.glb', import.meta.url);
 const MIN_SCALE = 0.02;
 
 function geometryFor(entity) {
+    const mesh = entity.components.mesh;
+    if (mesh) {
+        const { indices, faceIndices } = triangulateMesh(mesh);
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(mesh.vertices.flat(), 3));
+        geometry.setIndex(indices);
+        geometry.computeVertexNormals();
+        geometry.userData.faceIndices = [...faceIndices];
+        geometry.userData.creatorMesh = true;
+        return geometry;
+    }
     const g = entity.components.geometry || {};
     switch (entity.type) {
     case 'cube': return new THREE.BoxGeometry(g.width ?? 1, g.height ?? 1, g.depth ?? 1);
@@ -26,7 +42,9 @@ function materialFor(entity) {
     const m = entity.components.material || {};
     return new THREE.MeshStandardMaterial({
         color: m.color ?? '#ff9022', roughness: m.roughness ?? .55,
+        emissive: m.color ?? '#ff9022', emissiveIntensity: m.emissiveIntensity ?? 0,
         metalness: m.metalness ?? .05, side: entity.type === 'plane' ? THREE.DoubleSide : THREE.FrontSide,
+        flatShading: Boolean(entity.components.mesh),
     });
 }
 
@@ -38,20 +56,33 @@ function disposeTree(root) {
     });
 }
 
+function disposeOutline(root) {
+    root.traverse(node => {
+        if (Array.isArray(node.material)) node.material.forEach(material => material.dispose?.());
+        else node.material?.dispose?.();
+    });
+    root.clear();
+}
+
 function entityList(project) {
     return Array.isArray(project.entities) ? project.entities : [...(project.entities || [])];
 }
 
-/** Build the Three.js view of a Creator project. Project records remain authoritative. */
-export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canvas-wrap', onStatus = () => {} } = {}) {
+/** Build the Three.js view of a Creation Studio project. Project records remain authoritative. */
+export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canvas-wrap', onStatus = () => {}, modelProfile = 'default' } = {}) {
     if (!project || !tools) throw new Error('createViewport requires project and tools');
     const canvas = document.getElementById(canvasId);
     const wrap = document.getElementById(wrapId);
     if (!canvas || !wrap) throw new Error(`Viewport elements #${canvasId} and #${wrapId} are required`);
 
-    const stage = createStage({ canvasId, wrapId, rig: 'viewport', ground: true, position: HOME.pos.toArray(), target: HOME.look.toArray() });
+    const materialProfile = modelProfile === 'materials';
+    const assemblyProfile = modelProfile === 'assembly';
+    const home = materialProfile ? { pos: V3(0, 2.6, 6.8), look: V3(0, 1.1, 0) }
+        : assemblyProfile ? { pos: V3(4.6, 3.3, -7.8), look: V3(.6, .65, .35) } : HOME;
+    const stage = createStage({ canvasId, wrapId, rig: materialProfile ? 'studio' : 'viewport', ground: !materialProfile, capture: materialProfile, position: home.pos.toArray(), target: home.look.toArray() });
+    const inheritedResize = stage.resize;
     // The lesson stage deliberately keeps its subject within a small teaching
-    // area. Creator projects are unbounded, so retain the shared scene, renderer
+    // area. Creation Studio projects are unbounded, so retain the shared scene, renderer
     // and lighting while replacing only those lesson-constrained controls.
     stage.orbitCtrl.dispose();
     stage.orbitCtrl = new OrbitControls(stage.camera, canvas);
@@ -62,7 +93,7 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
     stage.orbitCtrl.maxDistance = 1000;
     stage.camera.far = 10000;
     stage.camera.updateProjectionMatrix();
-    stage.orbitCtrl.target.copy(HOME.look);
+    stage.orbitCtrl.target.copy(home.look);
     stage.orbitCtrl.update();
     stage.tickCam = () => stage.orbitCtrl.update();
     stage.flyTo = preset => {
@@ -79,12 +110,8 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
     const signatures = new Map();
     const raycaster = new THREE.Raycaster();
     const ndc = new THREE.Vector2();
-    const outline = new THREE.BoxHelper(new THREE.Object3D(), 0xff9022);
+    const outline = new THREE.Group();
     outline.name = 'CreatorSelectionOutline';
-    outline.material.depthTest = false;
-    outline.material.transparent = true;
-    outline.material.opacity = .9;
-    outline.renderOrder = 990;
     outline.visible = false;
     stage.scene.add(outline);
 
@@ -96,6 +123,70 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
     let activeObject = null;
     let activeEntity = null;
     let gizmobotSource = null;
+    let assemblySource = null;
+    const assemblyParts = new Map();
+    let selectionOutlineEnabled = true;
+    let previewTransforms = null;
+    let interactionEnabled = true;
+    let transformEditor = (id, patch) => project.updateTransform(id, patch);
+    let view = 'perspective';
+    let displayMode = 'solid';
+
+    const isObjectMode = () => (tools.getEditingMode?.() ?? 'object') === 'object';
+    const canInteract = () => interactionEnabled && isObjectMode();
+    const snapSettings = () => tools.getSnapSettings?.() || {
+        enabled: Boolean(tools.getSnapping?.()), mode: 'increment', moveStep: .25, rotateStep: 15, scaleStep: .1, surfaceDistance: .5,
+    };
+    const incrementSnap = (value, step) => {
+        const settings = snapSettings();
+        return settings.enabled && settings.mode === 'increment' ? Math.round(value / step) * step : value;
+    };
+    const incrementSnapFrom = (value, origin, step) => {
+        const settings = snapSettings();
+        return settings.enabled && settings.mode === 'increment' ? origin + Math.round((value - origin) / step) * step : value;
+    };
+
+    function surfaceSnap(destination, axisIndex) {
+        const settings = snapSettings();
+        if (!settings.enabled || settings.mode !== 'surface' || !activeObject || !activeEntity) return destination;
+        activeObject.updateWorldMatrix(true, true);
+        const movingBox = new THREE.Box3().setFromObject(activeObject);
+        if (movingBox.isEmpty()) return destination;
+        const delta = destination.getComponent(axisIndex) - activeObject.getWorldPosition(V3()).getComponent(axisIndex);
+        movingBox.min.setComponent(axisIndex, movingBox.min.getComponent(axisIndex) + delta);
+        movingBox.max.setComponent(axisIndex, movingBox.max.getComponent(axisIndex) + delta);
+        const descendants = new Set();
+        const collect = id => project.children(id).forEach(child => { descendants.add(child.id); collect(child.id); });
+        collect(activeEntity.id);
+        const ancestors = new Set();
+        for (let parent = activeEntity.parentId; parent; parent = project.get(parent)?.parentId) ancestors.add(parent);
+        const targets = [];
+        for (const entity of project.entities) {
+            if (entity.id === activeEntity.id || entity.id === 'creation' || descendants.has(entity.id) || ancestors.has(entity.id) || !effectivelyVisible(entity)) continue;
+            const object = objects.get(entity.id);
+            if (!object) continue;
+            object.updateWorldMatrix(true, true);
+            const target = new THREE.Box3().setFromObject(object);
+            if (target.isEmpty()) continue;
+            targets.push({ min: target.min.toArray(), max: target.max.toArray() });
+        }
+        const offset = nearestSurfaceOffset({ min: movingBox.min.toArray(), max: movingBox.max.toArray() }, targets, axisIndex, settings.surfaceDistance);
+        if (offset !== null) destination.setComponent(axisIndex, destination.getComponent(axisIndex) + offset);
+        return destination;
+    }
+
+    function applyDisplayMode(root) {
+        root.traverse(node => {
+            if (!node.isMesh) return;
+            const materials = Array.isArray(node.material) ? node.material : [node.material];
+            for (const material of materials) {
+                if (!material || !('wireframe' in material)) continue;
+                if (material.userData.creatorSolidWireframe == null) material.userData.creatorSolidWireframe = material.wireframe;
+                material.wireframe = displayMode === 'wireframe' || material.userData.creatorSolidWireframe;
+                material.needsUpdate = true;
+            }
+        });
+    }
 
     function effectivelyVisible(entity) {
         for (let current = entity; current; current = current.parentId ? project.get(current.parentId) : null) {
@@ -104,8 +195,9 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
         return true;
     }
 
-    function cloneGizmobot() {
+    function cloneGizmobot(material) {
         if (!gizmobotSource) return null;
+        if (materialProfile) return cloneMaterialModel(gizmobotSource, material);
         const clone = gizmobotSource.clone(true);
         // Each derived entity owns its render resources, which keeps deletion,
         // undo and duplication independent and makes disposal unambiguous.
@@ -119,6 +211,76 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
         return clone;
     }
 
+    function cloneAssemblyPart(nodeName) {
+        const source = assemblyParts.get(nodeName);
+        if (!source) return null;
+        const clone = source.clone(true);
+        clone.position.set(0, 0, 0); clone.rotation.set(0, 0, 0);
+        // Cloning a joint detaches it from the GLB root. Restore the root's
+        // normalized authored proportions inside the editable part transform.
+        clone.scale.fromArray(ASSEMBLY_MODEL_SCALE);
+        clone.traverse(node => {
+            if (!node.isMesh) return;
+            node.geometry = node.geometry.clone();
+            node.material = Array.isArray(node.material)
+                ? node.material.map(material => material.clone()) : node.material.clone();
+            node.castShadow = true; node.receiveShadow = true;
+        });
+        return clone;
+    }
+
+    const headExpressionMaps = new Map();
+    const headOriginalMaps = new WeakMap();
+
+    function frownMap(source) {
+        if (!source) return source;
+        if (headExpressionMaps.has(source)) return headExpressionMaps.get(source);
+        const canvas = document.createElement('canvas');
+        canvas.width = source.image.width;
+        canvas.height = source.image.height;
+        const context = canvas.getContext('2d');
+        context.drawImage(source.image, 0, 0);
+        // The authored face is sideways in the atlas. Reflect just the mouth
+        // horizontally there to turn the on-model smile into a frown.
+        const x = Math.round(canvas.width * .2075);
+        const y = Math.round(canvas.height * .3475);
+        const width = Math.round(canvas.width * .0225);
+        const height = Math.round(canvas.height * .0535);
+        context.save();
+        context.translate(2 * x + width, 0);
+        context.scale(-1, 1);
+        context.drawImage(source.image, x, y, width, height, x, y, width, height);
+        context.restore();
+        // Preserve the GLB's UV transform, orientation, filtering and color space.
+        const texture = source.clone();
+        texture.source = new THREE.Source(canvas);
+        texture.needsUpdate = true;
+        headExpressionMaps.set(source, texture);
+        return texture;
+    }
+
+    function setAssemblyHeadExpression(expression = 'smile') {
+        if (!assemblyProfile) return false;
+        const head = objects.get('part-head');
+        if (!head) return false;
+        head.traverse(node => {
+            if (!node.isMesh) return;
+            const materials = Array.isArray(node.material) ? node.material : [node.material];
+            for (const material of materials) {
+                if (!headOriginalMaps.has(material)) {
+                    headOriginalMaps.set(material, { map: material.map, emissiveMap: material.emissiveMap });
+                }
+                const original = headOriginalMaps.get(material);
+                for (const key of ['map', 'emissiveMap']) {
+                    material[key] = expression === 'frown' ? frownMap(original[key]) : original[key];
+                }
+                material.needsUpdate = true;
+            }
+        });
+        head.userData.assemblyHeadExpression = expression === 'frown' ? 'frown' : 'smile';
+        return true;
+    }
+
     function setNdc(e) {
         const r = canvas.getBoundingClientRect();
         ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
@@ -126,12 +288,12 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
     }
 
     function signature(entity) {
-        return JSON.stringify([entity.type, entity.components.geometry || null, entity.components.material || null]);
+        return JSON.stringify([entity.type, entity.components.geometry || null, entity.components.mesh || null, entity.components.material || null, entity.components.assemblyPart || null]);
     }
 
     function makeObject(entity) {
         let object;
-        if (entity.type === 'group' || entity.type === 'gizmobot') object = new THREE.Group();
+        if (!entity.components.mesh && (entity.type === 'group' || entity.type === 'gizmobot' || entity.type === 'assemblyPart')) object = new THREE.Group();
         else {
             object = new THREE.Mesh(geometryFor(entity), materialFor(entity));
             object.castShadow = object.receiveShadow = true;
@@ -139,9 +301,14 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
         object.name = entity.name;
         object.userData.creatorEntityId = entity.id;
         if (entity.type === 'gizmobot') {
-            const model = cloneGizmobot();
+            const model = cloneGizmobot(entity.components.material);
             if (model) object.add(model);
         }
+        if (entity.type === 'assemblyPart') {
+            const model = cloneAssemblyPart(entity.components.assemblyPart?.node);
+            if (model) object.add(model);
+        }
+        applyDisplayMode(object);
         objects.set(entity.id, object);
         signatures.set(entity.id, signature(entity));
         stage.scene.add(object);
@@ -149,12 +316,13 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
     }
 
     function applyRecord(object, entity) {
-        const t = entity.components.transform;
+        const t = previewTransforms?.get(entity.id) || entity.components.transform;
         object.name = entity.name;
         object.visible = entity.visible !== false;
         object.position.fromArray(t.position);
         object.rotation.set(...t.rotation, 'XYZ');
         object.scale.fromArray(t.scale);
+        if (materialProfile && entity.type === 'gizmobot') applyModelMaterial(object, entity.components.material);
     }
 
     function replaceRenderable(entity, old) {
@@ -208,28 +376,80 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
         const id = project.selection.activeId;
         activeEntity = id ? project.get(id) : null;
         activeObject = id ? objects.get(id) : null;
-        const usable = activeObject && effectivelyVisible(activeEntity);
-        outline.visible = Boolean(usable);
-        if (usable) outline.setFromObject(activeObject);
+        const usable = activeObject && effectivelyVisible(activeEntity) && canInteract();
+        outline.visible = Boolean(usable && selectionOutlineEnabled);
+        disposeOutline(outline);
+        if (usable && selectionOutlineEnabled) {
+            activeObject.updateWorldMatrix(true, false);
+            const shell = activeObject.clone(true);
+            shell.matrix.copy(activeObject.matrixWorld);
+            shell.matrix.decompose(shell.position, shell.quaternion, shell.scale);
+            shell.scale.multiplyScalar(1.025);
+            shell.traverse(node => {
+                if (!node.isMesh) return;
+                node.material = new THREE.MeshBasicMaterial({ color: 0xff9022, side: THREE.BackSide, wireframe: displayMode === 'wireframe',
+                    depthTest: true, depthWrite: false, transparent: true, opacity: .9 });
+                node.castShadow = false;
+                node.receiveShadow = false;
+                node.renderOrder = -1;
+                node.frustumCulled = false;
+            });
+            outline.add(shell);
+        }
         const tool = tools.getActive();
         gizmos.showFor(tool, Boolean(usable && !activeEntity.locked));
         if (usable && !activeEntity.locked) gizmos.updateForObject(activeObject, stage.camera);
     }
 
-    async function loadGizmobot() {
+    function updateOutlineMatrix() {
+        const shell = outline.children[0];
+        if (!shell || !activeObject) return;
+        activeObject.updateWorldMatrix(true, false);
+        activeObject.matrixWorld.decompose(shell.position, shell.quaternion, shell.scale);
+        shell.scale.multiplyScalar(1.025);
+        shell.updateMatrixWorld(true);
+    }
+
+    function applyDisplayedTransforms() {
+        for (const entity of entityList(project)) {
+            const object = objects.get(entity.id);
+            if (object) applyRecord(object, entity);
+        }
+        stage.scene.updateMatrixWorld(true);
+        updateOutlineMatrix();
+        if (activeObject && canInteract()) gizmos.updateForObject(activeObject, stage.camera);
+    }
+
+    async function loadSceneAssets() {
         try {
-            const gltf = await new GLTFLoader().loadAsync(GIZMOBOT_URL.href);
+            if (assemblyProfile) {
+                const gltf = await new GLTFLoader().loadAsync(ASSEMBLY_URL.href);
+                if (disposed) { disposeTree(gltf.scene); return; }
+                assemblySource = gltf.scene;
+                for (const entity of entityList(project).filter(item => item.type === 'assemblyPart')) {
+                    const source = assemblySource.getObjectByName(entity.components.assemblyPart.node);
+                    if (!source) throw new Error(`Missing assembly part: ${entity.name}`);
+                    assemblyParts.set(entity.components.assemblyPart.node, source);
+                    const host = objects.get(entity.id);
+                    if (host && !host.children.length) host.add(cloneAssemblyPart(entity.components.assemblyPart.node));
+                }
+                for (const object of objects.values()) applyDisplayMode(object);
+                stage.scene.updateMatrixWorld(true); syncSelection();
+                return;
+            }
+            const gltf = await new GLTFLoader().loadAsync((materialProfile ? MATERIAL_MODEL_URL : GIZMOBOT_URL).href);
             if (disposed) { disposeTree(gltf.scene); return; }
             gizmobotSource = gltf.scene;
             for (const entity of entityList(project).filter(item => item.type === 'gizmobot')) {
                 const host = objects.get(entity.id);
-                if (host && !host.children.length) host.add(cloneGizmobot());
+                if (host && !host.children.length) host.add(cloneGizmobot(entity.components.material));
             }
+            for (const object of objects.values()) applyDisplayMode(object);
             stage.scene.updateMatrixWorld(true);
             syncSelection();
         } catch (error) {
-            onStatus('Gizmobot could not be loaded. Please reload to try again.');
-            console.error('Creator Gizmobot load failed', error);
+            onStatus(assemblyProfile ? 'Gizmobot pieces could not be loaded. Please reload to try again.' : 'Gizmobot could not be loaded. Please reload to try again.');
+            console.error('Creation Studio model load failed', error);
             throw error;
         }
     }
@@ -272,7 +492,7 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
     }
 
     function beginDrag(e, handle) {
-        if (!activeObject || activeEntity?.locked) return;
+        if (!activeObject || activeEntity?.locked || !canInteract()) return;
         e.preventDefault(); e.stopPropagation();
         project.beginTransaction(`${handle._kind === 'rotate' ? 'Rotate' : handle._kind.startsWith('scale') ? 'Scale' : 'Move'} ${activeEntity.name}`);
         activeObject.updateWorldMatrix(true, false);
@@ -310,16 +530,27 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
         const amount = (dx * drag.dirX + dy * drag.dirY) / drag.ppu;
         if (drag.kind === 'move') {
             const destination = drag.worldPos.clone().addScaledVector(AXES[drag.axis], amount);
+            const axisIndex = 'xyz'.indexOf(drag.axis);
+            // Assembly moves start from the part's current position, preserving
+            // authored offsets while using the configured increment size.
+            const settings = snapSettings();
+            const snapped = assemblyProfile
+                ? incrementSnapFrom(destination.getComponent(axisIndex), drag.worldPos.getComponent(axisIndex), settings.moveStep)
+                : incrementSnap(destination.getComponent(axisIndex), settings.moveStep);
+            destination.setComponent(axisIndex, snapped);
+            surfaceSnap(destination, axisIndex);
             const local = activeObject.parent ? activeObject.parent.worldToLocal(destination) : destination;
-            project.updateTransform(activeEntity.id, { position: local.toArray() });
+            transformEditor(activeEntity.id, { position: local.toArray() });
         } else if (drag.kind === 'scaleAxis') {
             const scale = drag.startScale.toArray();
             const index = 'xyz'.indexOf(drag.axis);
-            scale[index] = Math.max(MIN_SCALE, scale[index] + amount);
-            project.updateTransform(activeEntity.id, { scale });
+            scale[index] = Math.max(MIN_SCALE, incrementSnap(scale[index] + amount, snapSettings().scaleStep));
+            transformEditor(activeEntity.id, { scale });
         } else if (drag.kind === 'scaleUniform') {
             const factor = Math.max(MIN_SCALE / Math.min(...drag.startScale.toArray()), Math.hypot(e.clientX - drag.center.x, e.clientY - drag.center.y) / drag.distance);
-            project.updateTransform(activeEntity.id, { scale: drag.startScale.clone().multiplyScalar(factor).toArray() });
+            const scale = drag.startScale.clone().multiplyScalar(factor).toArray()
+                .map(value => Math.max(MIN_SCALE, incrementSnap(value, snapSettings().scaleStep)));
+            transformEditor(activeEntity.id, { scale });
         } else if (drag.kind === 'rotate') {
             raycaster.setFromCamera(setNdc(e), stage.camera);
             const point = drag.rotatePlane && raycaster.ray.intersectPlane(drag.rotatePlane, V3());
@@ -331,12 +562,13 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
                 const now = Math.atan2(e.clientY - drag.center.y, e.clientX - drag.center.x);
                 angle = now - drag.angle;
             }
+            angle = incrementSnap(angle, THREE.MathUtils.degToRad(snapSettings().rotateStep));
             const worldDelta = new THREE.Quaternion().setFromAxisAngle(drag.rotateAxis, angle);
             const desiredWorld = worldDelta.multiply(drag.worldQuat);
             const parentWorld = activeObject.parent?.getWorldQuaternion(new THREE.Quaternion()) || new THREE.Quaternion();
             const local = parentWorld.invert().multiply(desiredWorld);
             const rotation = new THREE.Euler().setFromQuaternion(local, 'XYZ');
-            project.updateTransform(activeEntity.id, { rotation: rotation.toArray().slice(0, 3) });
+            transformEditor(activeEntity.id, { rotation: rotation.toArray().slice(0, 3) });
         }
         onStatus(`${drag.kind === 'rotate' ? 'Rotating' : drag.kind.startsWith('scale') ? 'Scaling' : 'Moving'} ${activeEntity.name}`);
         return true;
@@ -355,7 +587,7 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
     }
 
     function onPointerDown(e) {
-        if (e.button !== 0) return;
+        if (e.button !== 0 || !canInteract()) return;
         const handle = activeObject && hitHandle(e);
         if (handle) { beginDrag(e, handle); return; }
         candidate = { id: e.pointerId, x: e.clientX, y: e.clientY };
@@ -372,6 +604,7 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
     function onPointerUp(e) {
         if (drag) { if (e.pointerId === drag.pointerId) finishDrag(false); return; }
         if (!candidate || e.pointerId !== candidate.id) return;
+        if (!canInteract()) { candidate = null; return; }
         if (!tools.isAllowed?.('select') && tools.isAllowed) { candidate = null; return; }
         const id = pickedEntity(e);
         if (e.shiftKey && id) {
@@ -395,9 +628,64 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
     }
 
     function resetView() {
-        stage.flyTo({ pos: HOME.pos, look: HOME.look, duration: .65 }, matchMedia('(prefers-reduced-motion: reduce)').matches);
+        setView('perspective');
         onStatus('View reset');
     }
+
+    function installCamera(camera) {
+        const oldControls = stage.orbitCtrl;
+        oldControls.dispose();
+        stage.camera = camera;
+        stage.orbitCtrl = new OrbitControls(camera, canvas);
+        stage.orbitCtrl.enableDamping = true;
+        stage.orbitCtrl.dampingFactor = .08;
+        stage.orbitCtrl.enablePan = true;
+        stage.orbitCtrl.enableRotate = Boolean(camera.isPerspectiveCamera);
+        stage.orbitCtrl.minDistance = .2;
+        stage.orbitCtrl.maxDistance = 1000;
+        stage.orbitCtrl.target.copy(oldControls.target);
+        stage.orbitCtrl.update();
+    }
+
+    function setView(name) {
+        const next = String(name || '').toLowerCase();
+        if (!['perspective', 'front', 'right', 'top'].includes(next)) throw new Error(`Unknown viewport view: ${name}`);
+        const target = stage.orbitCtrl.target.clone();
+        const distance = Math.max(stage.camera.position.distanceTo(target), 1);
+        const aspect = Math.max(wrap.clientWidth / Math.max(wrap.clientHeight, 1), .01);
+        if (next === 'perspective') {
+            const camera = new THREE.PerspectiveCamera(44, aspect, .01, 10000);
+            camera.position.copy(home.pos);
+            target.copy(home.look);
+            installCamera(camera);
+            stage.orbitCtrl.target.copy(target);
+            stage.orbitCtrl.update();
+        } else {
+            const halfHeight = distance * Math.tan(THREE.MathUtils.degToRad(44 / 2));
+            const camera = new THREE.OrthographicCamera(-halfHeight * aspect, halfHeight * aspect, halfHeight, -halfHeight, .01, 10000);
+            const direction = next === 'front' ? V3(0, 0, 1) : next === 'right' ? V3(1, 0, 0) : V3(0, 1, 0);
+            camera.position.copy(target).addScaledVector(direction, distance);
+            camera.up.set(next === 'top' ? 0 : 0, next === 'top' ? 0 : 1, next === 'top' ? -1 : 0);
+            installCamera(camera);
+        }
+        view = next;
+        syncSelection();
+        return view;
+    }
+
+    function resizeViewport() {
+        const width = wrap.clientWidth, height = Math.max(wrap.clientHeight, 1), aspect = width / height;
+        if (stage.camera.isPerspectiveCamera) stage.camera.aspect = aspect;
+        else if (stage.camera.isOrthographicCamera) {
+            const halfHeight = (stage.camera.top - stage.camera.bottom) / 2;
+            stage.camera.left = -halfHeight * aspect;
+            stage.camera.right = halfHeight * aspect;
+        }
+        stage.camera.updateProjectionMatrix();
+        stage.renderer.setSize(width, height);
+    }
+    stage.resize = resizeViewport;
+    window.addEventListener('resize', resizeViewport);
 
     function focusSelected() {
         if (!activeObject) { onStatus('Select an object to focus it'); return; }
@@ -405,6 +693,16 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
         if (box.isEmpty()) return;
         const center = box.getCenter(V3()), size = Math.max(box.getSize(V3()).length(), .8);
         const direction = stage.camera.position.clone().sub(stage.orbitCtrl.target).normalize();
+        if (stage.camera.isOrthographicCamera) {
+            const radius = Math.max(box.getBoundingSphere(new THREE.Sphere()).radius, .25) * 1.25;
+            const aspect = Math.max(wrap.clientWidth / Math.max(wrap.clientHeight, 1), .01);
+            const halfHeight = Math.max(radius, radius / aspect);
+            stage.camera.left = -halfHeight * aspect;
+            stage.camera.right = halfHeight * aspect;
+            stage.camera.top = halfHeight;
+            stage.camera.bottom = -halfHeight;
+            stage.camera.updateProjectionMatrix();
+        }
         stage.flyTo({ pos: center.clone().addScaledVector(direction, Math.max(3, size * 1.6)), look: center, duration: .55 }, matchMedia('(prefers-reduced-motion: reduce)').matches);
         onStatus(`Focused ${activeEntity.name}`);
     }
@@ -416,20 +714,20 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
     canvas.addEventListener('lostpointercapture', onLostPointerCapture);
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('blur', onWindowBlur);
-    const resizeObserver = new ResizeObserver(stage.resize);
+    const resizeObserver = new ResizeObserver(resizeViewport);
     resizeObserver.observe(wrap);
     const unsubscribeProject = project.subscribe(reconcile);
     const unsubscribeTools = tools.subscribe(syncSelection);
 
     reconcile();
-    const ready = loadGizmobot();
+    const ready = loadSceneAssets();
     function frame() {
         if (disposed) return;
         raf = requestAnimationFrame(frame);
         stage.tickCam(Math.min(stage.clock.getDelta(), .05));
         if (activeObject) {
             gizmos.updateForObject(activeObject, stage.camera);
-            outline.setFromObject(activeObject);
+            updateOutlineMatrix();
         }
         stage.renderer.render(stage.scene, stage.camera);
     }
@@ -442,7 +740,8 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
         cancelAnimationFrame(raf);
         unsubscribeProject?.(); unsubscribeTools?.();
         resizeObserver.disconnect();
-        window.removeEventListener('resize', stage.resize);
+        window.removeEventListener('resize', inheritedResize);
+        window.removeEventListener('resize', resizeViewport);
         window.removeEventListener('keydown', onKeyDown);
         window.removeEventListener('blur', onWindowBlur);
         canvas.removeEventListener('pointerdown', onPointerDown, true);
@@ -456,11 +755,45 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
             if (!entity?.parentId) disposeTree(object);
         }
         if (gizmobotSource) disposeTree(gizmobotSource);
-        gizmos.layer.removeFromParent(); outline.removeFromParent();
-        outline.geometry.dispose(); outline.material.dispose();
+        if (assemblySource) disposeTree(assemblySource);
+        gizmos.layer.removeFromParent(); disposeOutline(outline); outline.removeFromParent();
+        for (const texture of headExpressionMaps.values()) texture.dispose();
+        headExpressionMaps.clear();
         stage.renderer.dispose();
         objects.clear(); signatures.clear();
     }
 
-    return { resetView, focusSelected, dispose, ready, getObject: id => objects.get(id) || null, stage };
+    return { resetView, focusSelected, dispose, ready, getObject: id => objects.get(id) || null, cloneModel: cloneGizmobot, cloneAssemblyPart, refreshSelection: syncSelection,
+        setAssemblyHeadExpression,
+        setSelectionOutline(enabled) { selectionOutlineEnabled = Boolean(enabled); syncSelection(); },
+        getSelectionOutline: () => selectionOutlineEnabled,
+        setView,
+        getView: () => view,
+        setGridVisible(visible) {
+            stage.scene.traverse(node => { if (node.isGridHelper || node.type === 'GridHelper') node.visible = Boolean(visible); });
+        },
+        setDisplayMode(mode) {
+            if (!['solid', 'wireframe'].includes(mode)) throw new Error(`Unknown display mode: ${mode}`);
+            displayMode = mode;
+            for (const object of objects.values()) applyDisplayMode(object);
+            syncSelection();
+        },
+        getDisplayMode: () => displayMode,
+        setPreviewTransforms(transforms) {
+            previewTransforms = transforms == null ? null : new Map(transforms);
+            applyDisplayedTransforms();
+        },
+        getDisplayedTransform(id) {
+            const entity = project.get(id);
+            if (!entity) return null;
+            const transform = previewTransforms?.get(id) || entity?.components.transform;
+            return transform ? structuredClone(transform) : null;
+        },
+        setInteractionEnabled(enabled) {
+            interactionEnabled = Boolean(enabled);
+            if (!interactionEnabled) { candidate = null; finishDrag(true); }
+            syncSelection();
+        },
+        setTransformEditor(editor) { transformEditor = editor || ((id, patch) => project.updateTransform(id, patch)); },
+        modelProfile, stage };
 }

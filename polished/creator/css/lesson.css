@@ -1,0 +1,71 @@
+/* A small reusable coaching layer for Creation Studio lessons. */
+.lesson-guidance { position: fixed; z-index: 70; inset: 0; pointer-events: none; }
+.lesson-guidance[hidden] { display: none; }
+.lesson-guidance-shade { position: fixed; inset: 0; width: 100vw; height: 100vh; opacity: 0; transition: opacity 180ms ease; }
+.lesson-guidance-shade-path { fill: rgb(24 29 38 / .48); }
+.lesson-guidance.is-spotlighting .lesson-guidance-shade { opacity: 1; }
+.lesson-guidance.is-undimmed .lesson-guidance-shade { opacity: 0; }
+.lesson-guidance.is-undimmed .lesson-guidance-target { box-shadow: none; }
+.lesson-welcome { box-sizing: border-box; width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; margin: auto; padding: 30px; border: 1px solid #9899a6; border-radius: 15px; background: #fff; color: #171a2a; box-shadow: 0 12px 34px rgb(26 26 46 / .18); }
+.lesson-welcome::backdrop { background: rgb(24 29 38 / .38); }
+.lesson-welcome h2 { margin: 0; font-size: 27px; line-height: 1.2; font-weight: 500; letter-spacing: -.6px; }
+.lesson-welcome > p:not(.lesson-guidance-step) { margin: 16px 0 22px; color: #626273; font-size: 15px; line-height: 1.65; white-space: pre-line; }
+.lesson-welcome button { min-height: 42px; padding: 9px 16px; border-radius: 9px; font: inherit; }
+.lesson-guidance-target { position: fixed; display: none; box-sizing: border-box; border: 2px solid #ff9022; border-radius: 10px; box-shadow: 0 0 0 4px rgb(255 172 79 / .32), 0 0 24px rgb(255 144 34 / .52); }
+.lesson-guidance.is-spotlighting .lesson-guidance-target { display: block; }
+.lesson-guidance-card { position: fixed; width: min(355px, calc(100vw - 24px)); box-sizing: border-box; padding: 21px 22px 18px; border: 2px solid #ff9022; border-radius: 15px; background: #fff; box-shadow: 0 12px 34px rgb(26 26 46 / .18); color: #171a2a; pointer-events: auto; }
+.lesson-guidance-card::before, .lesson-guidance-card::after { display: none; content: ''; position: absolute; z-index: 1; }
+.lesson-guidance-card::before { background: #ff9022; }
+.lesson-guidance-card::after { background: #fff; }
+.lesson-guidance.is-anchored .lesson-guidance-card::before, .lesson-guidance.is-anchored .lesson-guidance-card::after { display: block; }
+.lesson-guidance-card[data-pointer="left"]::before { left: -14px; top: calc(50% - 10px); width: 14px; height: 20px; clip-path: polygon(100% 0, 0 50%, 100% 100%); }
+.lesson-guidance-card[data-pointer="left"]::after { left: -11px; top: calc(50% - 8px); width: 11px; height: 16px; clip-path: polygon(100% 0, 0 50%, 100% 100%); }
+.lesson-guidance-card[data-pointer="right"]::before { right: -14px; top: calc(50% - 10px); width: 14px; height: 20px; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.lesson-guidance-card[data-pointer="right"]::after { right: -11px; top: calc(50% - 8px); width: 11px; height: 16px; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+.lesson-guidance-card[data-pointer="top"]::before { top: -14px; left: calc(50% - 10px); width: 20px; height: 14px; clip-path: polygon(0 100%, 50% 0, 100% 100%); }
+.lesson-guidance-card[data-pointer="top"]::after { top: -11px; left: calc(50% - 8px); width: 16px; height: 11px; clip-path: polygon(0 100%, 50% 0, 100% 100%); }
+.lesson-guidance-card[data-pointer="bottom"]::before { bottom: -14px; left: calc(50% - 10px); width: 20px; height: 14px; clip-path: polygon(0 0, 50% 100%, 100% 0); }
+.lesson-guidance-card[data-pointer="bottom"]::after { bottom: -11px; left: calc(50% - 8px); width: 16px; height: 11px; clip-path: polygon(0 0, 50% 100%, 100% 0); }
+.lesson-guidance-step { margin: 0 0 9px; color: #36953b; font: 500 10px/1.3 var(--mono, monospace); letter-spacing: .14em; }
+.lesson-term { color: #36953b; font-weight: 600; }
+.lesson-reference { color: #1a1a2e; font-weight: 600; }
+.lesson-guidance-copy h2 { margin: 0; font-size: 24px; line-height: 1.2; letter-spacing: -.6px; font-weight: 500; }
+.lesson-guidance-copy > p { margin: 12px 0 0; color: #626273; font-size: 14px; line-height: 1.65; }
+.lesson-guidance-controls[hidden] { display: none; }
+.lesson-guidance-actions { display: flex; align-items: center; justify-content: flex-end; gap: 9px; margin-top: 17px; }
+.lesson-guidance-actions button { min-height: 40px; padding: 8px 14px; font: inherit; border-radius: 9px; }
+.lesson-guidance-got-it { border-color: #eb7d11; background: #ff9022; color: #fff; }
+.lesson-guidance-got-it:hover:not(:disabled) { border-color: #c9680a; background: #e97d13; }
+.lesson-guidance:not(.is-spotlighting) .lesson-guidance-card { border-color: #9899a6; box-shadow: 0 5px 20px rgb(26 26 46 / .08); }
+.lesson-guidance:not(.is-spotlighting) .lesson-guidance-card { width: min(420px, calc(100vw - 48px)); padding: 24px 26px 21px; }
+.lesson-guidance-continue { border-color: #eb7d11; background: #ff9022; color: #fff; box-shadow: 0 3px 8px rgb(204 104 13 / .25); }
+.lesson-guidance-continue:hover:not(:disabled) { border-color: #c9680a; background: #e97d13; }
+.lesson-guidance-continue:disabled { opacity: .5; cursor: not-allowed; }
+.lesson-guidance-actions button:focus-visible { outline: 3px solid #c5680b; outline-offset: 3px; }
+.lesson-question { display: grid; gap: 7px; margin-top: 14px; }
+.lesson-question button { width: 100%; min-height: 36px; padding: 8px 10px; border: 1px solid #deded8; border-radius: 8px; background: #fff; color: #343645; font-size: 12px; line-height: 1.35; text-align: left; }
+.lesson-question button:hover:not(:disabled), .lesson-question button[aria-pressed="true"] { border-color: #f4b56c; background: #fff0df; }
+.lesson-question button:focus-visible { outline: 3px solid #c5680b; outline-offset: 2px; }
+.lesson-feedback { margin: 11px 0 0; padding: 9px 10px; border-left: 3px solid #54a957; border-radius: 0 7px 7px 0; background: #eff8ed; color: #3f6342; font-size: 12px; line-height: 1.5; }
+@media (max-width: 650px) { .lesson-guidance-card, .lesson-guidance:not(.is-spotlighting) .lesson-guidance-card { padding: 17px 18px 15px; } .lesson-guidance-copy h2 { font-size: 21px; } .lesson-guidance-copy > p { font-size: 13px; } }
+@media (max-width: 900px) {
+  /* The inspector becomes a modal here. Keep its scrolling lower edge above
+     the lesson card, including when a step highlights an inspector control. */
+  #creator-app.lesson-mode { --lesson-guidance-reserve: min(274px, max(160px, calc(100dvh - 220px))); }
+  #creator-app.lesson-mode #editor-dock { bottom: calc(14px + var(--lesson-guidance-reserve)); }
+  #creator-app.lesson-mode .workspace { padding-bottom: var(--lesson-guidance-reserve); }
+}
+@media (max-width: 650px) {
+  /* Lessons reserve this lower band, so the floating instruction never hides the full workspace. */
+  #creator-app.lesson-mode .viewport { min-height: 185px; }
+  .lesson-guidance-card { max-height: min(250px, calc(100vh - 18px)); overflow: auto; }
+}
+@media (max-height: 560px) { .lesson-guidance-card { max-height: calc(100vh - 18px); overflow: auto; padding: 14px 16px; } .lesson-guidance-copy > p { margin-top: 7px; line-height: 1.45; } .lesson-guidance-actions { margin-top: 10px; } }
+@media (prefers-reduced-motion: reduce) { .lesson-guidance-shade { transition: none; } }
+@media (max-width: 900px) {
+  .lesson-guidance-card { max-height: min(250px, max(130px, calc(100dvh - 244px))); overflow: auto; }
+  #creator-app.lesson-mode .scene-panel { flex-basis: 140px; }
+}
+
+.lesson-guidance-action { background: #ff9022; color: white; border-color: #eb7d11; }
+.lesson-guidance-action:hover:not(:disabled) { background: #e97d13; }

@@ -166,7 +166,7 @@ try {
   await enterNumber('.transform-group:nth-of-type(1) .axis-y input', 12);
   await enterNumber('.transform-group:nth-of-type(1) .axis-z input', 0);
   check((await transform()).position.every((v, i) => near(v, [20, 12, 0][i], .01)), 'Inspector places an object beyond lesson bounds');
-  await session.click('#focus-selected');
+  await evaluate("[...document.querySelectorAll('.object-actions button')].find(button => button.textContent.trim() === 'Focus')?.click()");
   await pause(80);
   const far = await cameraState();
   check(Math.hypot(far.target[0] - 20, far.target[1] - 12, far.target[2]) < .05, 'Focus reaches a selected object outside lesson camera limits');

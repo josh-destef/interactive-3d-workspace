@@ -1,5 +1,6 @@
 import { createHistory } from "./history.js";
 import { createSelection } from "./selection.js";
+import { validateMesh } from "./mesh.js";
 
 const TYPES = new Set([
   "group",
@@ -9,13 +10,17 @@ const TYPES = new Set([
   "cylinder",
   "cone",
   "plane",
+  "assemblyPart",
 ]);
 const PRIMITIVES = new Set(["cube", "sphere", "cylinder", "cone", "plane"]);
 const EPSILON = 1e-7;
 const clone = (value) => structuredClone(value);
 const finite = (value) => typeof value === "number" && Number.isFinite(value);
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-const isContainerType = (type) => type === "group" || type === "gizmobot";
+// Every scene object has a Three.js Object3D transform, so any object can be a
+// parent. This lets learners build useful subassemblies such as an antenna tip
+// following its mast without inserting an otherwise meaningless empty group.
+const isContainerType = (type) => TYPES.has(type);
 
 function identityTransform() {
   return { position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] };
@@ -199,6 +204,26 @@ function validateTransform(value) {
     throw new RangeError("Scale must be positive");
 }
 
+function validateAnimation(animation) {
+  if (!animation || !Array.isArray(animation.keys) || animation.keys.length > 1000)
+    throw new TypeError('Animation must contain at most 1,000 keys');
+  const frames = new Set();
+  for (const key of animation.keys) {
+    if (!Number.isInteger(key.frame) || key.frame < 0 || key.frame > 36000 || frames.has(key.frame))
+      throw new TypeError('Keyframes need unique whole frames from 0 to 36,000');
+    frames.add(key.frame);
+    validateTransform(key.transform);
+    if (!['linear', 'smooth', 'step'].includes(key.interpolation)) throw new TypeError('Unknown interpolation');
+  }
+}
+
+const DEFAULT_ANIMATION = { fps: 24, duration: 120, loop: true };
+function validateAnimationSettings(value) {
+  if (!value || !Number.isInteger(value.fps) || value.fps < 1 || value.fps > 60 ||
+      !Number.isInteger(value.duration) || value.duration < 1 || value.duration > 36000 || typeof value.loop !== 'boolean')
+    throw new TypeError('Use 1–60 FPS and an end frame from 1 to 36,000');
+}
+
 function validateEntity(entity, ids) {
   if (
     !entity ||
@@ -223,6 +248,14 @@ function validateEntity(entity, ids) {
   )
     throw new TypeError("Invalid entity flags or components");
   validateTransform(entity.components.transform);
+  if (entity.type === "assemblyPart" &&
+      (typeof entity.components.assemblyPart?.node !== "string" || !entity.components.assemblyPart.node.trim()))
+    throw new TypeError("Assembly parts need a source node");
+  if (entity.components.mesh) {
+    if (!PRIMITIVES.has(entity.type)) throw new TypeError('Only primitives can have editable meshes');
+    validateMesh(entity.components.mesh);
+  }
+  if (entity.components.animation) validateAnimation(entity.components.animation);
   const geometry = entity.components.geometry;
   if (PRIMITIVES.has(entity.type)) {
     const required = Object.keys(geometryFor(entity.type));
@@ -233,7 +266,7 @@ function validateEntity(entity, ids) {
       throw new TypeError("Invalid geometry");
   }
   if (entity.components.material) {
-    const { color, roughness, metalness } = entity.components.material;
+    const { color, roughness, metalness, emissiveIntensity } = entity.components.material;
     if (
       typeof color !== "string" ||
       !/^#[0-9a-f]{6}$/i.test(color) ||
@@ -242,7 +275,8 @@ function validateEntity(entity, ids) {
       roughness > 1 ||
       !finite(metalness) ||
       metalness < 0 ||
-      metalness > 1
+      metalness > 1 ||
+      (emissiveIntensity !== undefined && (!finite(emissiveIntensity) || emissiveIntensity < 0 || emissiveIntensity > 1.25))
     )
       throw new TypeError("Invalid material");
   }
@@ -250,6 +284,7 @@ function validateEntity(entity, ids) {
 
 export function createProject() {
   const listeners = new Set();
+  let animationSettings = { ...DEFAULT_ANIMATION };
   let counter = 1,
     transaction = null,
     restoring = false;
@@ -287,10 +322,12 @@ export function createProject() {
   });
   const state = () => ({
     entities: clone(entities),
+    animationSettings: clone(animationSettings),
     selection: { ids: selection.ids, activeId: selection.activeId },
   });
   const restoreState = (s) => {
     entities = clone(s.entities);
+    animationSettings = clone(s.animationSettings || DEFAULT_ANIMATION);
     selection._restore(s.selection, false);
     emit({ kind: "change" });
     emit({ kind: "selection" });
@@ -351,7 +388,7 @@ export function createProject() {
       parentId !== null &&
       (!get(parentId) || !isContainerType(get(parentId).type))
     )
-      throw new Error("Parent must be a group, Gizmobot, or null");
+      throw new Error("Parent must be another scene object or No parent");
     if (parentId === id || descendants(id).some((e) => e.id === parentId))
       throw new Error("Hierarchy cycle");
   };
@@ -369,6 +406,32 @@ export function createProject() {
       return entities;
     },
     get,
+    get animationSettings() { return clone(animationSettings); },
+    setAnimationSettings(partial) {
+      const next = { ...animationSettings, ...partial };
+      validateAnimationSettings(next);
+      if (entities.some(entity => entity.components.animation?.keys.some(key => key.frame > next.duration)))
+        throw new RangeError('Move or remove keys beyond the new end frame first');
+      return mutate('Animation settings', () => { animationSettings = next; });
+    },
+    updateAnimation(id, value) {
+      const entity = get(id);
+      if (!entity || entity.locked) throw new Error('Select an unlocked object to animate');
+      if (value !== null) {
+        validateAnimation(value);
+        if (value.keys.some(key => key.frame > animationSettings.duration)) throw new RangeError('Key is beyond the end frame');
+      }
+      return mutate('Keyframe', () => {
+        if (value === null || !value.keys.length) delete entity.components.animation;
+        else entity.components.animation = { keys: clone(value.keys).sort((a, b) => a.frame - b.frame) };
+      });
+    },
+    setMesh(id, value) {
+      const entity = get(id);
+      if (!entity || !PRIMITIVES.has(entity.type) || entity.locked) throw new Error('Select an unlocked shape to edit its mesh');
+      validateMesh(value);
+      return mutate('Edit mesh', () => { entity.components.mesh = clone(value); });
+    },
     children(parentId) {
       return entities.filter((e) => e.parentId === parentId);
     },
@@ -380,12 +443,13 @@ export function createProject() {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
-    addPrimitive(type) {
+    addPrimitive(type, { name: requestedName } = {}) {
       if (!PRIMITIVES.has(type))
         throw new TypeError(`Unsupported primitive: ${type}`);
+      if (requestedName != null && (typeof requestedName !== 'string' || !requestedName.trim())) throw new TypeError('Name must not be empty');
       return mutate(`Add ${type}`, () => {
         const id = nextId(type);
-        const name = type[0].toUpperCase() + type.slice(1);
+        const name = requestedName?.trim() || type[0].toUpperCase() + type.slice(1);
         const primitiveIndex = entities.filter((entity) =>
           PRIMITIVES.has(entity.type),
         ).length;
@@ -534,6 +598,7 @@ export function createProject() {
       const entity = get(id);
       if (!entity || !PRIMITIVES.has(entity.type))
         throw new Error("Entity has no editable geometry");
+      if (entity.components.mesh) throw new Error('Use Edit mesh to change this shape');
       const allowed = Object.keys(geometryFor(entity.type));
       if (
         !partial ||
@@ -552,7 +617,7 @@ export function createProject() {
       const next = { ...entity.components.material, ...partial };
       if (
         Object.keys(partial ?? {}).some(
-          (k) => !["color", "roughness", "metalness"].includes(k),
+          (k) => !["color", "roughness", "metalness", "emissiveIntensity"].includes(k),
         )
       )
         throw new TypeError("Invalid material update");
@@ -590,7 +655,7 @@ export function createProject() {
       return true;
     },
     serialize() {
-      return { version: 1, entities: clone(entities) };
+      return { version: 1, entities: clone(entities), animationSettings: clone(animationSettings) };
     },
     restore(data) {
       if (transaction) throw new Error("Cannot restore during a transaction");
@@ -598,7 +663,12 @@ export function createProject() {
         throw new TypeError("Unsupported project data");
       const proposed = clone(data.entities),
         ids = new Set();
+      if (proposed.length > 2000) throw new RangeError('Projects support up to 2,000 objects');
+      const nextSettings = { ...DEFAULT_ANIMATION, ...data.animationSettings };
+      validateAnimationSettings(nextSettings);
       proposed.forEach((entity) => validateEntity(entity, ids));
+      if (proposed.some(entity => entity.components.animation?.keys.some(key => key.frame > nextSettings.duration)))
+        throw new RangeError('Animation keys exceed the end frame');
       const creation = proposed.find((e) => e.id === "creation");
       if (!creation || creation.type !== "group" || creation.parentId !== null)
         throw new TypeError("Project must contain an unparented creation root");
@@ -611,7 +681,7 @@ export function createProject() {
             proposed.find((candidate) => candidate.id === entity.parentId).type,
           )
         )
-          throw new TypeError("Parent must be a group or Gizmobot");
+          throw new TypeError("Parent must be another scene object");
         const seen = new Set([entity.id]);
         let parent = entity.parentId;
         while (parent !== null) {
@@ -622,6 +692,7 @@ export function createProject() {
       }
       restoring = true;
       entities = proposed;
+      animationSettings = nextSettings;
       selection.clear();
       restoring = false;
       counter = 1;
