@@ -31,10 +31,6 @@ export function assessMaterial(actual, target) {
         : 'Compare the color on the shaded side, away from the bright highlight.';
   return { passed, worst, hint, percentage, scores };
 }
-export function materialHint(target, count) {
-  if (count === 1) return 'Compare in this order: plastic or metal, sharp or broad reflection, then the color in the shade.';
-  return `Look for ${target.hue || 'the reference color'}, ${target.metalness > .5 ? 'a metallic surface' : 'a plastic-like surface'}, and ${target.roughness < .35 ? 'a tight, shiny reflection' : target.roughness > .65 ? 'a broad, dull reflection' : 'a moderately soft reflection'}.`;
-}
 export function assessRgb(color, target = '#8b5cf6') {
   const delta = rgb(target).map((v, i) => v - rgb(color)[i]);
   if (Math.hypot(...delta) < 74) return { passed: true, hint: 'You built a close color match with RGB.' };

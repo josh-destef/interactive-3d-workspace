@@ -64,6 +64,36 @@ const orbitURL = data('export const OrbitControls=globalThis.__viewportTest.Orbi
 
 const gizmoPath = path.join(root, 'polished/kit/js/transformGizmos.js');
 const gizmoURL = data(fs.readFileSync(gizmoPath, 'utf8').replace("from 'three'", `from '${threeURL}'`));
+// Studio handles are UI: scaling a part or zooming must not change their pixel size.
+const { createTransformGizmos } = await import(gizmoURL);
+const handleScene = new THREE.Scene();
+const handleObject = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial());
+handleScene.add(handleObject);
+const handleCamera = new THREE.PerspectiveCamera(44, 4 / 3, .01, 200);
+handleCamera.position.set(0, 0, 8); handleCamera.updateMatrixWorld(true);
+let handleHeight = 600;
+const handles = createTransformGizmos({ scene: handleScene, axisColors: { x: 0xff0000, y: 0x00ff00, z: 0x0000ff }, screenSize: 76, viewportHeight: () => handleHeight });
+handles.updateForObject(handleObject, handleCamera);
+const initialHandleScale = handles.allScaleAxis.map(handle => handle.scale.x);
+handleObject.scale.set(4, .2, 2);
+handles.updateForObject(handleObject, handleCamera);
+assert.deepEqual(handles.allScaleAxis.map(handle => handle.scale.x), initialHandleScale, 'nonuniform object scaling does not grow or shrink handles');
+const projectedLength = camera => {
+  const start = handles.centre.clone().project(camera);
+  const end = handles.centre.clone().add(new THREE.Vector3(handles.allScaleAxis[0].scale.x, 0, 0)).project(camera);
+  return (end.x - start.x) * 800 / 2;
+};
+const pixelLength = projectedLength(handleCamera);
+handleCamera.position.z = 16; handleCamera.updateMatrixWorld(true);
+handles.updateForObject(handleObject, handleCamera);
+assert.ok(Math.abs(projectedLength(handleCamera) - pixelLength) < 1e-6, 'zooming keeps handles the same pixel size');
+const orthoHandleCamera = new THREE.OrthographicCamera(-4, 4, 3, -3, .01, 200);
+orthoHandleCamera.position.z = 8; orthoHandleCamera.updateMatrixWorld(true);
+handles.updateForObject(handleObject, orthoHandleCamera);
+assert.ok(Math.abs(projectedLength(orthoHandleCamera) - pixelLength) < 1e-6, 'orthographic handles use the same screen size');
+handleHeight = 240;
+handles.updateForObject(handleObject, orthoHandleCamera);
+assert.ok(Math.abs(handles.allScaleAxis[0].scale.x / 6 * handleHeight - 48) < 1e-6, 'short viewports reserve space around smaller handles');
 const viewportPath = path.join(root, 'polished/creator/js/viewport.js');
 const materialModelPath = path.join(root, 'polished/creator/js/materialModel.js');
 const materialModelURL = data(fs.readFileSync(materialModelPath, 'utf8')

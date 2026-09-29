@@ -215,7 +215,7 @@ setCapabilities(lessonId === 'material-lab' ? {
 } : {});
 if (narrow.matches) setDock('closed'); else { dock.setState('pinned'); updateDockChrome(); }
 Promise.resolve(viewport.ready).then(() => {
-  $('loading').hidden = true;
+  if (lessonId !== 'material-lab') $('loading').hidden = true;
   onStatus(lessonId === 'material-lab' ? 'Select Gizmobot Shell to explore its Appearance.'
     : lessonId === 'build-gizmobot' ? 'Creation Studio - Build Gizmobot'
     : 'Ready to create · Add a shape to get started');
@@ -231,6 +231,7 @@ if (lessonId === 'model-an-accessory') {
 if (lessonId === 'material-lab') {
   const { createMaterialLesson } = await import('./lessons/material.js');
   window.creator.lesson = await createMaterialLesson(window.creator);
+  $('loading').hidden = true;
 }
 if (lessonId === 'build-gizmobot') {
   const { createAssemblyLesson } = await import('./lessons/assembly.js');

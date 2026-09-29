@@ -2,40 +2,51 @@
 .material-lesson .scene-panel { flex: 0 0 auto; min-height: 90px; max-height: 130px; }
 .material-lesson .inspector-panel { flex: 1; }
 .material-lesson .tool-divider { display: none; }
+/* Only the shell is editable and it is chosen from the Outliner, so the tool
+   rail and the editor's status line are noise in this lesson. */
+.material-lesson .tool-rail, .material-lesson .statusbar { display: none; }
+/* One card width whether it points at a control or rests in its home. Height
+   follows the copy; the minimum keeps most steps the same size. */
 .material-lesson .lesson-guidance.has-fixed-home .lesson-guidance-card {
-  width: min(420px, calc(100vw - 48px)); height: 310px; padding: 22px 24px;
-  display: flex; flex-direction: column; overflow: hidden;
+  width: min(420px, calc(100vw - 48px)); height: auto; min-height: 230px; max-height: calc(100dvh - 120px); padding: 22px 24px;
+  display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto;
 }
-.material-lesson .lesson-guidance-copy { min-height: 0; overflow: auto; }
+/* Keep the main instruction readable; short screens scroll the whole card. */
+.material-lesson .lesson-guidance-copy { flex-shrink: 0; }
 .material-lesson .lesson-guidance.has-fixed-home .lesson-guidance-actions { margin-top: auto; padding-top: 12px; min-height: 52px; flex-shrink: 0; }
 .material-lesson .lesson-guidance-copy h2 { font-size: 23px; }
 .material-lesson .lesson-guidance-copy > p { line-height: 1.5; }
-.material-lesson .lesson-guidance-actions button { font-size: 12px; padding: 8px 10px; }
-.material-lesson .lesson-guidance-secondary { margin-right: auto; }
-/* Keep the instruction card focused on the current prompt. Material Lab uses
-   the card's action and Continue states; transient green status callouts are
-   too easy to read as a second instruction. */
-.material-lesson .lesson-feedback { display: none; }
+.material-lesson .lesson-guidance-actions button { font-size: 13px; padding: 8px 12px; }
+.material-lesson .lesson-guidance-secondary { margin-right: auto; padding-inline: 6px; border-color: transparent; background: transparent; color: #45485a; text-decoration: underline; text-underline-offset: 3px; }
+.material-lesson .lesson-guidance-secondary:hover:not(:disabled) { background: #f4f4f1; border-color: transparent; }
 .material-lesson .material-lesson-controls { padding: 14px 16px; border-top: 1px solid var(--line); flex-shrink: 0; background: #fafaf8; }
 .material-lesson .material-lesson-controls h2 { margin: 0 0 10px; font-size: 13px; }
-.material-lesson .material-lesson-controls button { font-size: 11px; min-height: 32px; padding: 6px 8px; margin: 2px; }
+.material-lesson .material-lesson-controls button { font-size: 13px; min-height: 34px; padding: 6px 10px; margin: 2px; }
+/* Beginner-readable Appearance labels (the shared panel is denser for free play). */
+.material-lesson .range-field-label { font-size: 12px; }
+.material-lesson .appearance-range-ends { font-size: 12px; }
+/* Orange is the action color; green is reserved for vocabulary and success. */
+.material-match-summary { margin: 10px 0 0; color: #45485a; font-size: 13px; line-height: 1.45; }
+.material-match-summary[hidden] { display: none; }
+.material-match-summary.is-pass { color: #2d7d31; font-weight: 600; }
 .material-match-feedback { margin-top: 12px; padding: 12px; border: 1px solid #d8d9df; border-radius: 10px; background: #fff; }
 .material-match-feedback.is-pass { border-color: #8bc98e; background: #f4fbf2; }
-.material-match-feedback.is-stale { opacity: .62; }
-.material-match-score { display: block; color: var(--ink); font-size: 18px; font-weight: 600; }
-.material-match-note { margin: 5px 0 10px; color: var(--muted); font-size: 11px; line-height: 1.45; }
-.material-match-metrics { display: grid; gap: 7px; }
-.material-match-metric { display: grid; grid-template-columns: 74px minmax(70px, 1fr) 34px; align-items: center; gap: 8px; font-size: 11px; }
-.material-match-metric progress { width: 100%; height: 7px; accent-color: var(--orange); }
-.material-match-feedback.is-pass progress { accent-color: var(--green); }
+.material-match-score { display: block; margin-bottom: 10px; color: var(--ink); font-size: 26px; font-weight: 600; }
+.material-match-metrics { display: grid; gap: 8px; }
+.material-match-metric { display: grid; grid-template-columns: 78px minmax(70px, 1fr) 38px; align-items: center; gap: 8px; font-size: 12px; }
+/* Same track as the Appearance sliders, so an empty score reads as empty, not broken. */
+.material-match-bar { height: 6px; border-radius: 99px; background: #d8dce3; overflow: hidden; }
+.material-match-bar > span { display: block; width: var(--score, 0%); height: 100%; border-radius: inherit; background: #f58a2e; transition: width 200ms ease; }
+.material-match-feedback.is-pass .material-match-bar > span { background: #36953b; }
 .material-match-metric output { color: var(--muted); font-family: var(--mono); text-align: right; }
+@media (prefers-reduced-motion: reduce) { .material-match-bar > span { transition: none; } }
 .material-model-label { z-index: 2; padding: 6px 10px; background: rgb(255 255 255 / .94); color: var(--ink); border: 1px solid var(--line); border-radius: 7px; font-size: 12px; white-space: nowrap; }
 .material-model-label[data-model="learner"] { border-color: var(--orange); }
 .material-demo-cursor { position: fixed; z-index: 80; pointer-events: none; filter: drop-shadow(0 2px 2px rgb(0 0 0 / .2)); }
 /* The glow is the mouse-button cue: left-drag is orange, right-drag is green. */
 .material-demo-cursor.down { filter: drop-shadow(0 0 5px rgb(255 144 34 / .95)) drop-shadow(0 0 14px rgb(255 144 34 / .55)); }
 .material-demo-cursor.down.right { filter: drop-shadow(0 0 5px rgb(0 170 0 / .95)) drop-shadow(0 0 14px rgb(0 170 0 / .55)); }
-.material-lesson .lesson-guidance.is-anchored .lesson-guidance-card { overflow: visible; height: auto; min-height: 220px; width: min(355px, calc(100vw - 48px)); }
+.material-lesson .lesson-guidance.is-anchored .lesson-guidance-card { overflow: visible; height: auto; min-height: 220px; width: min(420px, calc(100vw - 48px)); }
 .material-lesson .lesson-guidance-actions { flex-wrap: wrap; }
 @media (max-width: 900px) {
   .material-lesson #creator-app.lesson-mode { --lesson-guidance-reserve: 255px; }
@@ -73,3 +84,27 @@
   .material-lesson #editor-dock .scene-panel { padding-top: 10px; padding-bottom: 10px; }
   .material-lesson #editor-dock .dock-header { padding: 8px 12px; }
 }
+
+.material-lesson .material-lesson-controls:has(.material-match-feedback) { position: sticky; top: 0; z-index: 3; border-bottom: 1px solid var(--line); }
+
+.material-lesson-controls:has(.material-match-feedback[hidden]) { display: none; }
+.material-lesson-controls > .material-match-feedback { margin-top: 0; }
+.material-lesson .lesson-guidance-controls .material-match-panel { margin-top: 10px; }
+.material-lesson .lesson-guidance-controls .material-match-summary { margin: 0; padding: 9px 12px; border-radius: 9px; background: #f6f6f3; }
+.material-lesson .lesson-guidance-controls .material-match-summary.is-pass { background: #f0f8ef; }
+
+@media (max-width: 900px), (max-height: 560px) {
+  /* The card already shows the score; keep the dock free for editing. */
+  .material-lesson .material-lesson-controls:has(.material-match-feedback) { display: none; }
+}
+
+/* Explore RGB: a small side note anchored under its button, not a lesson step. */
+.material-rgb-tip { position: fixed; z-index: 80; box-sizing: border-box; width: min(300px, calc(100vw - 24px)); padding: 16px 18px 14px; border: 2px solid #ff9022; border-radius: 12px; background: #fff; color: #171a2a; box-shadow: 0 12px 30px rgb(26 26 46 / .18); }
+.material-rgb-tip::before { content: ''; position: absolute; top: -9px; left: 22px; width: 14px; height: 9px; background: #ff9022; clip-path: polygon(0 100%, 50% 0, 100% 100%); }
+.material-rgb-tip h3 { margin: 0; font-size: 16px; font-weight: 600; }
+.material-rgb-tip p { margin: 8px 0 0; color: #626273; font-size: 13px; line-height: 1.5; }
+.material-rgb-tip-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.material-rgb-tip-actions button { min-height: 34px; padding: 6px 12px; border-radius: 8px; font: inherit; font-size: 13px; }
+.material-rgb-tip-actions .is-primary { border-color: #eb7d11; background: #ff9022; color: #fff; font-weight: 600; }
+.material-rgb-tip-actions .is-primary:hover:not(:disabled) { background: #e97d13; }
+.material-rgb-tip-actions button:focus-visible { outline: 3px solid #c5680b; outline-offset: 2px; }

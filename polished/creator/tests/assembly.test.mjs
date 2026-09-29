@@ -3,8 +3,8 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import { createProject } from '../js/project.js';
 import { createTools } from '../js/tools.js';
-import { ASSEMBLY_MODEL_SCALE, ASSEMBLY_PARTS, ASSEMBLY_PART_IDS, createAssemblyProjectData } from '../js/assemblyData.js';
-import { createAssemblyLesson, STEPS } from '../js/lessons/assembly.js';
+import { ASSEMBLY_MODEL_SCALE, ASSEMBLY_PARTS, ASSEMBLY_PART_IDS, ASSEMBLY_ROOT_POSITION, HAND_TARGET, createAssemblyProjectData } from '../js/assemblyData.js';
+import { createAssemblyLesson, handAxisView, HAND_AXIS_ORDER, STEPS } from '../js/lessons/assembly.js';
 
 function harness() {
   const listeners = new Map();
@@ -41,12 +41,13 @@ function harness() {
     showTarget() { this.targetShows++; },
     destroy() {},
   };
-  const guide = { shown: [], show(part) { this.shown.push(part.id); }, hide() {}, dispose() {} };
+  const guide = { shown: [], options: [], visible: false, show(part, options) { this.shown.push(part.id); this.options.push(options); this.visible = true; }, hide() { this.visible = false; }, dispose() {} };
   const project = createProject(); project.restore(createAssemblyProjectData());
   const tools = createTools();
   const previews = [];
   const expressions = [];
   const capabilities = [];
+  const camera = { locked: false, moves: [] };
   const creator = {
     project, tools,
     viewport: {
@@ -54,11 +55,15 @@ function harness() {
       setPreviewTransforms(value) { previews.push(value); },
       setInteractionEnabled() {},
       setAssemblyHeadExpression(value) { expressions.push(value); },
+      setCameraLocked(value) { camera.locked = value; },
+      getCameraLocked() { return camera.locked; },
+      moveCamera(value, options = {}) { camera.moves.push({ ...value, ...options }); },
+      getObject() { return null; },
     },
     dock: { inspector: { revealSection() {} } },
     setCapabilities(value) { capabilities.push(value); }, setDock() {}, showGuide() {},
   };
-  return { creator, project, tools, guidance, guide, listeners, inputs, previews, expressions, dock, capabilities };
+  return { creator, project, tools, guidance, guide, listeners, inputs, previews, expressions, dock, capabilities, camera };
 }
 
 test('Gizmobot starts with its Head and oversized Hand disconnected', () => {
@@ -69,13 +74,18 @@ test('Gizmobot starts with its Head and oversized Hand disconnected', () => {
   assert.equal(ASSEMBLY_PARTS.filter(part => part.startTransform !== part.targetTransform).length, 2);
   assert.equal(head.startTransform, head.challengeTransform);
   assert.equal(hand.startTransform, hand.challengeTransform);
-  assert.equal(head.challengeTransform.position[1], .1, 'the Head starts at a snap-safe height beside Gizmobot');
+  assert.ok(Math.abs(head.challengeTransform.position[1] + ASSEMBLY_ROOT_POSITION[1] - .1) < 1e-9, 'the Head starts at a snap-safe height beside Gizmobot');
   assert.equal(head.challengeTransform.rotation[2], Math.PI / 6, 'the disconnected face stays visible with a snap-safe tilt');
   for (let axis = 0; axis < 3; axis++) {
     const moves = (head.targetTransform.position[axis] - head.challengeTransform.position[axis]) / .25;
     assert.ok(Math.abs(moves - Math.round(moves)) < 1e-9, 'Head target is reachable with the lesson’s snapped moves');
   }
   assert.deepEqual(hand.challengeTransform.scale, [1.6, 1.6, 1.6]);
+  assert.deepEqual(hand.targetTransform.position, HAND_TARGET);
+  assert.deepEqual(HAND_TARGET, [-1, 1.6, .2], 'the Hand’s Position values are round numbers');
+  for (const value of hand.challengeTransform.position) assert.equal(value, Number(value.toFixed(1)), 'the Hand starts on round tenths');
+  const project = createAssemblyProjectData();
+  assert.deepEqual(project.entities[0].components.transform.position, ASSEMBLY_ROOT_POSITION, 'the parts group keeps the robot where the model puts it');
   assert.notDeepEqual(hand.challengeTransform.position, hand.targetTransform.position);
   assert.notDeepEqual(hand.challengeTransform.rotation, hand.targetTransform.rotation);
 });
@@ -114,15 +124,11 @@ test('Creation Studio repairs the Head with tools and the oversized Hand with th
 
   const headPart = ASSEMBLY_PARTS.find(part => part.id === 'part-head');
   const handPart = ASSEMBLY_PARTS.find(part => part.id === 'part-right-hand');
-  assert.equal(STEPS.length, 8);
+  assert.equal(STEPS.length, 13);
   assert.equal(STEPS.some(step => /explode|reassemble/.test(step.kind)), false);
   assert.equal(lesson.state.assembled, 12);
   assert.equal(h.guidance.welcomeCard.title, 'Welcome to Creation Studio');
-  assert.match(h.guidance.welcomeCard.body, /Move, Rotate, and Scale from Navigate & Transform/i);
-  assert.match(h.guidance.welcomeCard.body, /missing Head and oversized Hand/i);
-  assert.match(h.guidance.welcomeCard.body, /Snap/i);
-  assert.match(h.guidance.welcomeCard.body, /default Regular increments/i);
-  assert.match(h.guidance.welcomeCard.body, /Transform Inspector/i);
+  assert.match(h.guidance.welcomeCard.body, /one step at a time/i);
   assert.equal(h.guidance.welcomeCard.startLabel, 'Meet Creation Studio');
   assert.deepEqual(h.project.get('part-head').components.transform, headPart.challengeTransform);
   assert.deepEqual(h.project.get('part-right-hand').components.transform, handPart.challengeTransform);
@@ -162,8 +168,8 @@ test('Creation Studio repairs the Head with tools and the oversized Hand with th
   h.tools.setSnapping(true);
   assert.equal(h.guidance.complete, true);
   advance();
-  assert.equal(STEPS[lesson.state.step].kind, 'head');
-  assert.equal(STEPS[lesson.state.step].title, 'Restore Gizmobot’s Head');
+  assert.equal(STEPS[lesson.state.step].kind, 'headMove');
+  assert.equal(STEPS[lesson.state.step].title, 'Place the Head');
   assert.equal(lesson.state.assembled, 12);
   assert.equal(h.tools.getSnapping(), true);
   assert.match(h.guidance.current.body, /Snap/i);
@@ -176,7 +182,7 @@ test('Creation Studio repairs the Head with tools and the oversized Hand with th
   }
   h.project.selection.set('part-head');
   assert.equal(h.capabilities.at(-1).tools.move, true);
-  assert.equal(h.capabilities.at(-1).tools.rotate, true);
+  assert.equal(h.capabilities.at(-1).tools.rotate, false);
   assert.equal(h.capabilities.at(-1).tools.scale, false);
   assert.equal(h.capabilities.at(-1).panels.inspector, false, 'Head repair must use viewport tools, not numeric fields');
   for (const part of ASSEMBLY_PARTS.filter(part => !['part-head', 'part-right-hand'].includes(part.id))) {
@@ -188,36 +194,97 @@ test('Creation Studio repairs the Head with tools and the oversized Hand with th
   assert.equal(h.guidance.targetShows, 1, 'the optional action only reopens the visual location highlight');
   assert.equal(h.guidance.messages.length, 0, 'the assembly lesson does not add green hint messages');
   assert.equal(h.guidance.complete, false, 'showing the target must not place the Head');
+  assert.deepEqual(h.guide.options.at(-1).match, ['rotation', 'scale'], 'the Head outline keeps the tilted Head’s rotation while it is moved');
   h.project.updateTransform(head.id, { position: [...headPart.targetTransform.position] });
-  assert.equal(h.guidance.complete, false, 'position alone must not connect');
-  h.project.updateTransform(head.id, structuredClone(headPart.targetTransform));
+  assert.equal(h.guidance.complete, true);
+  assert.equal(h.expressions.at(-1), 'frown', 'placing the Head alone does not restore its expression');
+  advance();
+  assert.equal(STEPS[lesson.state.step].kind, 'headRotate');
+  assert.equal(h.capabilities.at(-1).tools.move, false);
+  assert.equal(h.capabilities.at(-1).tools.rotate, true);
+  assert.equal(h.capabilities.at(-1).tools.scale, false);
+  assert.equal(h.guidance.complete, false, 'rotation remains a separate learner action');
+  assert.equal(h.guide.options.at(-1), undefined, 'the rotation step shows the upright destination');
+  h.project.updateTransform(head.id, { rotation: [...headPart.targetTransform.rotation] });
   assert.equal(h.guidance.complete, true);
   assert.equal(h.expressions.at(-1), 'smile', 'reconnecting the Head restores its smile');
   advance();
-  assert.equal(STEPS[lesson.state.step].kind, 'hand');
-  assert.equal(STEPS[lesson.state.step].title, 'Resize and reconnect the Hand');
-  assert.equal(h.project.selection.activeId, handPart.id);
-  assert.equal(h.capabilities.at(-1).tools.move, false);
-  assert.equal(h.capabilities.at(-1).tools.rotate, false);
-  assert.equal(h.capabilities.at(-1).tools.scale, false);
-  assert.equal(h.capabilities.at(-1).panels.inspector, true);
-  assert.equal(h.capabilities.at(-1).inspectorSections.transform, true);
-  assert.deepEqual(h.capabilities.at(-1).transformFields, { position: true, rotation: true, scale: true });
-  assert.match(h.guidance.current.body, /Use only Transform in the Inspector/);
-  assert.match(h.guidance.current.body, /Scale X 1, Y 1, Z 1/);
-
   const hand = h.project.get(handPart.id);
-  h.project.updateTransform(hand.id, {
-    position: [...handPart.targetTransform.position],
-    rotation: [...handPart.targetTransform.rotation],
-    scale: [...handPart.challengeTransform.scale],
-  });
-  assert.equal(h.guidance.complete, false, 'the oversized Hand cannot connect until its scale is corrected');
-  h.project.updateTransform(hand.id, structuredClone(handPart.targetTransform));
+  assert.equal(STEPS[lesson.state.step].kind, 'handScale');
+  assert.equal(STEPS[lesson.state.step].title, 'Resize the Hand');
+  assert.equal(h.project.selection.activeId, handPart.id);
+  assert.equal(h.camera.locked, false);
+  assert.equal(h.capabilities.at(-1).tools.scale, true);
+  assert.equal(h.capabilities.at(-1).tools.move, false);
+  assert.deepEqual(h.capabilities.at(-1).transformFields, { position: false, rotation: false, scale: true, axes: null, currentAxis: null, scrub: null });
+  assert.deepEqual(h.guide.options.at(-1), { match: ['rotation'] }, 'the outline keeps the Hand’s tilt so only size is compared');
+  assert.match(h.guidance.current.body, /Scale handles are useful.*Scale numbers are useful/i);
+  h.project.updateTransform(hand.id, { scale: [1.2, 1.2, 1.2] });
+  assert.equal(h.guidance.complete, false, 'an off-target scale cannot pass the Scale gate');
+  h.project.updateTransform(hand.id, { scale: [1, 1, 1.004] });
   assert.equal(h.guidance.complete, true);
-  assert.equal(lesson.state.assembled, 14);
+  assert.deepEqual(hand.components.transform.scale, [1, 1, 1], 'a close scale settles exactly');
   advance();
+  assert.equal(STEPS[lesson.state.step].kind, 'handRotation');
+  assert.equal(h.capabilities.at(-1).tools.rotate, true);
+  assert.deepEqual(h.capabilities.at(-1).transformFields, { position: false, rotation: true, scale: false, axes: null, currentAxis: null, scrub: null });
+  assert.equal(h.guide.options.at(-1), undefined, 'the outline shows the upright, full-size destination');
+  assert.match(h.guidance.current.body, /Rotate handles help.*Rotation numbers help/i);
+  h.project.updateTransform(hand.id, { rotation: [0, 0, 0.2] });
+  assert.equal(h.guidance.complete, false, 'an off-target rotation cannot pass the Rotation gate');
+  h.project.updateTransform(hand.id, { rotation: [0, 0, 0] });
+  assert.equal(h.guidance.complete, true);
+  advance();
+
+  // In a flat view, an offset along the view direction is invisible.
+  const sub = (a, b) => a.map((value, index) => value - b[index]);
+  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const hiddenFrom = view => Math.hypot(...cross(sub(hand.components.transform.position, HAND_TARGET), sub(view.target, view.position))) < 1e-9;
+  assert.deepEqual(HAND_AXIS_ORDER, ['z', 'y', 'x']);
+  for (const [order, axis] of HAND_AXIS_ORDER.entries()) {
+    const index = 'xyz'.indexOf(axis);
+    assert.equal(STEPS[lesson.state.step].kind, 'handAxis');
+    assert.equal(STEPS[lesson.state.step].axis, axis);
+    assert.equal(STEPS[lesson.state.step].title, `Place the Hand: Position ${axis.toUpperCase()}`);
+    assert.equal(h.project.selection.activeId, handPart.id);
+    assert.equal(h.camera.locked, true, 'the camera stays on one view while an axis is placed');
+    assert.deepEqual(h.camera.moves.at(-1), handAxisView(axis));
+    assert.equal(h.camera.moves.at(-1).orthographic, true, 'locked views are flat, so depth cannot show as size');
+    assert.equal(h.capabilities.at(-1).tools.move, false, 'Move handles could change the hidden axes');
+    assert.equal(h.capabilities.at(-1).tools.rotate, false);
+    assert.equal(h.capabilities.at(-1).tools.scale, false);
+    assert.equal(h.capabilities.at(-1).features.view, false, 'view presets cannot unlock the camera');
+    assert.equal(h.capabilities.at(-1).panels.inspector, true);
+    const fields = h.capabilities.at(-1).transformFields;
+    assert.equal(fields.position, true); assert.equal(fields.rotation, false); assert.equal(fields.scale, false);
+    assert.deepEqual(fields.axes.position, HAND_AXIS_ORDER.slice(0, order + 1), 'placed axes stay editable while later axes wait');
+    assert.equal(fields.currentAxis.position, axis);
+    assert.deepEqual(fields.scrub, { position: true }, 'Position values can be dragged like a Blender field');
+    assert.match(h.guidance.current.body, new RegExp(`Position ${axis.toUpperCase()} to ${HAND_TARGET[index]}\\b`));
+    assert.equal(h.guide.visible, false, 'the outline would give the hidden gap away while placing');
+    assert.equal(h.guidance.complete, false);
+    assert.ok(!hiddenFrom(handAxisView(axis)), 'the current axis is visibly wrong in its own view');
+
+    const position = [...hand.components.transform.position];
+    position[index] = HAND_TARGET[index] + .1;
+    h.project.updateTransform(hand.id, { position });
+    assert.equal(h.guidance.complete, false, 'an off-target value cannot pass the axis gate');
+    position[index] = HAND_TARGET[index] + .004;
+    h.project.updateTransform(hand.id, { position });
+    assert.equal(h.guidance.complete, true, 'a close value is accepted');
+    assert.equal(hand.components.transform.position[index], HAND_TARGET[index], 'the accepted axis settles on the exact joint');
+    assert.ok(hiddenFrom(handAxisView(axis)), 'from the locked view, the remaining gap points straight at the camera');
+    if (order < 2) assert.ok(!hiddenFrom(handAxisView(HAND_AXIS_ORDER[order + 1])), 'the next view reveals the gap');
+    advance();
+  }
+  assert.deepEqual(hand.components.transform, handPart.targetTransform, 'size, direction, and position reconnect the Hand exactly');
+  assert.equal(lesson.state.assembled, 14);
   assert.equal(STEPS[lesson.state.step].kind, 'done');
+  assert.equal(h.camera.locked, false, 'the camera is free again to check every angle');
+  assert.equal(h.camera.moves.at(-1).orthographic, undefined, 'the check returns to a normal perspective view');
+  assert.equal(h.guide.visible, true, 'the outline returns to confirm the fit from every angle');
+  assert.deepEqual(h.guide.options.at(-1), { floor: false, marker: false });
+  assert.match(h.guidance.current.body, /every side/i);
   assert.equal(h.capabilities.at(-1).features.snap, false);
   for (const part of ASSEMBLY_PARTS) assert.deepEqual(h.project.get(part.id).components.transform, part.targetTransform);
   advance();
@@ -225,7 +292,9 @@ test('Creation Studio repairs the Head with tools and the oversized Hand with th
   assert.equal(lesson.state.finished, true);
   assert.equal(h.capabilities.at(-1).features.snap, true);
   assert.equal(h.capabilities.at(-1).features.snapSettings, false);
-  assert.deepEqual(h.guide.shown, ['part-head', 'part-right-hand']);
+  assert.deepEqual(h.guide.shown, ['part-head', 'part-head', 'part-right-hand', 'part-right-hand', 'part-right-hand']);
+  assert.ok(!STEPS.some(step => /fourteen/i.test(`${step.title} ${step.body}`)));
+  assert.equal(h.camera.locked, false);
 });
 
 
@@ -247,7 +316,7 @@ test('assembled joints and geometry preserve the original GLB proportions', () =
     const bounds = split.accessors[primitive.attributes.POSITION];
     for (const point of [bounds.min, bounds.max]) {
       point.forEach((value, axis) => {
-        const assembled = part.target[axis] + (value + surface.translation[axis]) * ASSEMBLY_MODEL_SCALE[axis];
+        const assembled = ASSEMBLY_ROOT_POSITION[axis] + part.target[axis] + (value + surface.translation[axis]) * ASSEMBLY_MODEL_SCALE[axis];
         assert.ok(Math.abs(assembled - value * normalized[axis]) < 1e-9, `${part.name} axis ${axis} keeps the source silhouette and joint alignment`);
       });
     }

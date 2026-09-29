@@ -4,7 +4,6 @@ import path from 'node:path';
 const root = path.resolve(import.meta.dirname, '..');
 const labsRoot = path.join(root, 'polished', 'labs');
 const labs = [
-    { name: 'material-lab', beats: 10, questions: 4 },
     { name: 'hierarchy', beats: 9, questions: 3 },
     { name: 'keyframes', beats: 9, questions: 3 },
     { name: 'particles', beats: 9, questions: 3 },
@@ -62,33 +61,23 @@ for (const lab of labs) {
     checkImports(path.join(labDir, 'js'));
 }
 
-const materialConfig = read(path.join(labsRoot, 'material-lab', 'js', 'config.js'));
-const materialHtml = read(path.join(labsRoot, 'material-lab', 'index.html'));
-const materialBeats = read(path.join(labsRoot, 'material-lab', 'js', 'beats.js'));
-const materialMatch = read(path.join(labsRoot, 'material-lab', 'js', 'match.js'));
-for (const restoredBeat of ['RGB:', 'LIGHT:', 'EMISSIVE:']) {
-    assert(materialConfig.includes(restoredBeat), `material: missing restored ${restoredBeat.slice(0, -1).toLowerCase()} step`);
-}
-assert(!materialConfig.includes('TEXTURE:') && !materialConfig.includes('NORMAL:'), 'material: texture and normal-map expansion should stay removed');
-assert(materialConfig.indexOf('LIGHT:') < materialConfig.indexOf('CHALLENGE:'), 'material: lighting should be taught before application');
-for (const id of ['in-r', 'in-g', 'in-b', 'room-seg']) {
-    assert(materialHtml.includes(`id="${id}"`), `material: missing restored #${id} control`);
-}
-for (const group of ['rgb', 'light', 'emissive', 'room']) {
-    assert(materialHtml.includes(`data-group="${group}"`), `material: missing restored ${group} control`);
-}
-assert(!materialHtml.includes('id="in-color"'), 'material: native colour picker belongs to the removed expansion');
-for (const group of ['texture', 'normal']) {
-    assert(!materialHtml.includes(`data-group="${group}"`), `material: removed ${group} control has returned`);
-}
-assert(materialBeats.includes('Every surface reflects'), 'material: metalness lesson must state that non-metals also reflect');
-assert(materialBeats.includes("[BEAT.CHALLENGE]: ['rgb', 'roughness', 'metalness', 'examples', 'check']"), 'material: challenge controls differ from the restored lesson');
-const obsoleteMaterialTerm = ['rec', 'ipe'].join('');
-assert(!new RegExp(`\\b${obsoleteMaterialTerm}s?\\b`, 'i').test(materialConfig + materialHtml + materialBeats + materialMatch), 'material: old example terminology remains');
-assert(materialMatch.includes('makeRandomTarget(state.matchTarget)'), 'material: challenge reference is not generated randomly');
-assert(!materialMatch.includes('const s2l'), 'material: challenge colour must not be converted from sRGB twice');
-
-const keyframeHtml = read(path.join(labsRoot, 'keyframes', 'index.html'));
+ // Material Lab is migrated into Creation Studio; validate the live route and
+ // lesson modules rather than requiring the redirect stub to contain old UI.
+ const materialRoute = read(path.join(labsRoot, 'material-lab', 'index.html'));
+ assert(materialRoute.includes('url=../../creator/?lesson=material-lab'), 'material: old route does not redirect to the Creator lesson');
+ assert(materialRoute.includes('location.replace(new URL'), 'material: JavaScript redirect is missing');
+ assert(materialRoute.includes('href="../../creator/?lesson=material-lab"'), 'material: fallback link is missing');
+ assert(fs.existsSync(path.join(root, 'polished', 'creator', 'index.html')), 'material: Creation Studio route is missing');
+ const materialLesson = read(path.join(root, 'polished', 'creator', 'js', 'lessons', 'material.js'));
+ const materialChallenge = read(path.join(root, 'polished', 'creator', 'js', 'lessons', 'materialChallenge.js'));
+ const materialTest = read(path.join(root, 'polished', 'creator', 'tests', 'material-lesson.test.mjs'));
+ assert(materialLesson.includes("'roughness', 'metalness', 'emission', 'glow'"), 'material: ordered surface/lights-off/emission teaching is missing');
+ assert(materialLesson.includes('Check match'), 'material: learner-submitted matching feedback is missing');
+ assert(materialLesson.includes('does not illuminate nearby objects') && materialLesson.includes('while the floor stays dark'), 'material: emission boundary is not taught');
+ assert(materialChallenge.includes('assessMaterial'), 'material: perceptual match assessment is missing');
+ assert(materialTest.includes('required journey uses selected shared material'), 'material: active lesson regression test is missing');
+ assert(materialTest.includes('perceptual feedback corrects roughness direction'), 'material: feedback regression test is missing');
+ const keyframeHtml = read(path.join(labsRoot, 'keyframes', 'index.html'));
 for (const goal of ['start', 'apex', 'land', 'played']) {
     assert(keyframeHtml.includes(`data-goal="${goal}"`), `keyframes: missing ${goal} challenge goal`);
 }
@@ -96,26 +85,24 @@ for (const goal of ['start', 'apex', 'land', 'played']) {
 const particleHtml = read(path.join(labsRoot, 'particles', 'index.html'));
 assert(particleHtml.includes('data-cond="shape"'), 'particles: challenge must require an intentional emitter shape');
 
-const hubHtml = read(path.join(root, 'index.html'));
-function hubTier(startClass, endClass) {
-    const start = hubHtml.indexOf(`section-heading ${startClass}`);
-    const end = endClass
-        ? hubHtml.indexOf(`section-heading ${endClass}`, start + 1)
-        : hubHtml.indexOf('<div class="section-heading">', start + 1);
-    assert(start >= 0 && end > start, `hub: missing ${startClass} status tier`);
-    return hubHtml.slice(start, end);
+const rootHtml = read(path.join(root, 'index.html'));
+assert(rootHtml.includes('url=polished/'), 'hub: root landing page does not redirect to the polished hub');
+const hubHtml = read(path.join(root, 'polished', 'index.html'));
+function hubTier(status) {
+    const start = hubHtml.indexOf(`data-status="${status}"`);
+    const end = hubHtml.indexOf('<section class="lab-section"', start + 1);
+    assert(start >= 0, `hub: missing ${status} status tier`);
+    return hubHtml.slice(start, end > start ? end : undefined);
 }
-const readyHub = hubTier('tier-done', 'tier-review');
-const reviewHub = hubTier('tier-review', 'tier-wip');
-const wipHub = hubTier('tier-wip', '');
+const readyHub = hubTier('ready');
+const reviewHub = hubTier('review');
+const wipHub = hubTier('wip');
 assert(readyHub.includes('labs/navigate-and-transform/'), 'hub: Navigate + Transform is not Ready');
 assert(reviewHub.includes('labs/material-lab/'), 'hub: Material Lab is not Needs review');
 for (const lab of ['hierarchy', 'keyframes', 'particles']) {
     assert(wipHub.includes(`labs/${lab}/`), `hub: ${lab} is not Work in progress`);
 }
-const polishedHub = read(path.join(root, 'polished', 'index.html'));
-assert(polishedHub.includes('window.location.replace(\'../\')'), 'hub: secondary polished landing page does not return to the main landing page');
-for (const lab of ['navigate-and-transform', 'material-lab', 'hierarchy', 'keyframes', 'particles']) {
+for (const lab of ['navigate-and-transform', 'hierarchy', 'keyframes', 'particles']) {
     const labHtml = read(path.join(labsRoot, lab, 'index.html'));
     assert(labHtml.includes('href="../../../" class="home-btn"'), `${lab}: Back does not return to the main landing page`);
     assert(labHtml.includes('id="btn-finish" href="../../../"'), `${lab}: Finish does not return to the main landing page`);

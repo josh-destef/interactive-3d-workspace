@@ -11,7 +11,7 @@ const SCALE_RING_COLOR = 0x5f6672;
 const HIGHLIGHT_COLOR = 0xffff00;
 const V3 = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 
-export function createTransformGizmos({ scene, axisColors, negativeAxes = false } = {}) {
+export function createTransformGizmos({ scene, axisColors, negativeAxes = false, screenSize = null, viewportHeight = () => 600 } = {}) {
     if (!scene) throw new Error('createTransformGizmos requires a scene');
     const colors = [axisColors.x, axisColors.y, axisColors.z];
     const layer = new THREE.Group();
@@ -141,12 +141,27 @@ export function createTransformGizmos({ scene, axisColors, negativeAxes = false 
         if (bounds.isEmpty()) return null;
         bounds.getCenter(centre); bounds.getSize(boundsSize);
         object.getWorldScale(objectScale); object.getWorldQuaternion(objectQuat);
-        const controlRadius = Math.max(Math.max(boundsSize.x, boundsSize.y, boundsSize.z) * .5, .25);
+        let controlRadius = Math.max(Math.max(boundsSize.x, boundsSize.y, boundsSize.z) * .5, .25);
+        if (screenSize != null) {
+            // UI handles keep a stable screen size, independent of object scale.
+            const depth = Math.max(.01, -centre.clone().applyMatrix4(camera.matrixWorldInverse).z);
+            const visibleHeight = camera.isOrthographicCamera
+                ? (camera.top - camera.bottom) / camera.zoom
+                : 2 * depth * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) / camera.zoom;
+            const height = Math.max(1, viewportHeight());
+            // Leave room for the model when the lesson reserves most of a short screen.
+            const pixels = Math.min(screenSize, height * .2);
+            controlRadius = visibleHeight * pixels / height;
+        }
         const baseRadius = controlRadius / Math.max(objectScale.x, objectScale.y, objectScale.z, .0001);
         updateMove(centre, controlRadius);
         updateUniformScale(centre, camera, controlRadius);
-        updateScaleAxes(centre, objectQuat, baseRadius, objectScale);
+        updateScaleAxes(centre, objectQuat, screenSize == null ? baseRadius : controlRadius / 1.15, screenSize == null ? objectScale : { x: 1, y: 1, z: 1 });
         updateRotate(centre, controlRadius);
+        if (screenSize != null) {
+            scaleHandle.scale.setScalar(controlRadius);
+            allScaleAxis.forEach(handle => handle.scale.setScalar(controlRadius));
+        }
         return { centre, controlRadius, baseRadius };
     }
 

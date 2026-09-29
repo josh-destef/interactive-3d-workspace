@@ -211,3 +211,16 @@ h1 { font-size: 23px; line-height: 1.35; font-weight: 500; letter-spacing: -.7px
 .inspector-object-menu-content { position: absolute; z-index: 4; top: calc(100% + 6px); right: 0; width: 100%; padding: 12px; background: #fff; border: 1px solid #dce2ec; border-radius: 10px; box-shadow: 0 8px 26px #23314c20; }
 #creator-app { overflow: clip; }
 #editor-dock, .inspector-panel { overflow: clip; }
+/* Scrubbable number fields: drag across the value like Blender, click to type. */
+.field.is-scrubbable { position: relative; }
+.field.is-scrubbable .numeric-input { cursor: ew-resize; text-align: center; padding-left: 16px; padding-right: 16px; touch-action: pan-y; user-select: none; -moz-appearance: textfield; }
+.field.is-scrubbable .numeric-input::-webkit-inner-spin-button, .field.is-scrubbable .numeric-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.field.is-scrubbable .numeric-input:focus { cursor: text; user-select: text; }
+.field.is-scrubbable::before, .field.is-scrubbable::after { position: absolute; bottom: 0; height: 35px; display: grid; place-items: center; width: 14px; color: #9aa3b5; font-size: 13px; line-height: 1; pointer-events: none; }
+.field.is-scrubbable::before { content: '\2039'; left: 3px; }
+.field.is-scrubbable::after { content: '\203A'; right: 3px; }
+.field.is-scrubbable:has(.numeric-input:focus)::before, .field.is-scrubbable:has(.numeric-input:focus)::after, .field.is-scrubbable:has(.numeric-input:disabled)::before, .field.is-scrubbable:has(.numeric-input:disabled)::after { visibility: hidden; }
+.field.is-scrubbing .numeric-input, .field.is-scrubbable .numeric-input:hover:not(:disabled):not(:focus) { background: #f3f5f9; }
+.transform-axis-fields .field.is-current .numeric-input { border-color: #f3aa5e; background-color: #fff8ef; box-shadow: 0 0 0 3px #f3aa5e33; }
+.transform-axis-fields .field.is-locked { opacity: .5; }
+.transform-axis-fields .numeric-input:disabled { cursor: not-allowed; }

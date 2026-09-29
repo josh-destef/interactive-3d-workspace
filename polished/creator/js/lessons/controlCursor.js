@@ -10,7 +10,7 @@ export function createControlCursor() {
     point(selector, value, pressed = false, button = 'left') {
       const input = document.querySelector(selector);
       if (!input?.getClientRects().length) { pointer.hidden = true; return; }
-      const point = input.type === 'color'
+      const point = input.type !== 'range'
         ? (() => { const rect = input.getBoundingClientRect(); return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }; })()
         : sliderPoint(input, value);
       pointer.style.left = `${point.x}px`; pointer.style.top = `${point.y}px`;

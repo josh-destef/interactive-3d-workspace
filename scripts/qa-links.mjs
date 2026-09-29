@@ -101,6 +101,13 @@ for (const file of walk(root)) {
     for (const match of body.matchAll(pattern)) {
       const ref = match[1].trim();
       if (isExternal(ref)) continue;
+      // Test-only screenshot destinations and mkdir targets are filesystem
+      // outputs from browser.test.mjs, not URLs loaded by the published site.
+      // Keep checking test imports and all real page/module references.
+      const testOutput = rel.includes('/tests/')
+        && (ref.startsWith('polished/creator/qa/')
+          || (ref === '../qa/' && /(?:browser\.test|capture-showcase)\.mjs$/.test(rel)));
+      if (testOutput) continue;
       // Bare module specifiers ("three", "three/addons/...") come from the import map.
       if (kind === 'module' && !ref.startsWith('.')) continue;
       // A name with no slash is ambiguous (often a download filename, not a path).

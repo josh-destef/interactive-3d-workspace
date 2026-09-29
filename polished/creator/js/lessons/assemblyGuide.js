@@ -9,7 +9,14 @@ function disposeMaterials(root) {
   });
 }
 
-/** Orange wireframe destination and labelled crosshair for the current part. */
+/**
+ * Orange wireframe destination and labelled crosshair for the current part.
+ * `match` lists transform fields ('rotation', 'scale') the outline copies from
+ * the live part, so a step that only asks for Position shows where the part
+ * goes as it is now, not a finished shape the learner has not reached yet.
+ * `floor: false` hides the ground crosshair; `marker: false` hides the
+ * pulsing ring and "place here" label, leaving only the outline.
+ */
 export function createAssemblyGuide(creator) {
   const { stage } = creator.viewport;
   const wrap = document.getElementById('canvas-wrap');
@@ -38,6 +45,7 @@ export function createAssemblyGuide(creator) {
 
   let ghost = null;
   let current = null;
+  let match = [];
   let raf = 0;
   const world = new THREE.Vector3();
 
@@ -48,9 +56,13 @@ export function createAssemblyGuide(creator) {
     ghost = null;
   }
 
-  function show(part) {
+  function show(part, { match: fields = [], floor = true, marker = true } = {}) {
     clearGhost();
     current = part;
+    match = fields;
+    // Targets are local to the part's parent group; keep the guide in that space.
+    const parentId = creator.project?.get(part.id)?.parentId;
+    layer.position.fromArray(creator.project?.get(parentId)?.components.transform.position || [0, 0, 0]);
     const object = creator.viewport.getObject(part.id);
     if (object) {
       ghost = object.clone(true);
@@ -68,18 +80,27 @@ export function createAssemblyGuide(creator) {
         node.castShadow = false; node.receiveShadow = false; node.renderOrder = 10;
       });
       layer.add(ghost);
+      followLivePart();
     }
     ring.position.fromArray(part.targetTransform.position);
-    cross.position.set(part.targetTransform.position[0], .018, part.targetTransform.position[2]);
-    ring.visible = true;
-    cross.visible = true;
+    cross.position.set(part.targetTransform.position[0], .018 - layer.position.y, part.targetTransform.position[2]);
+    ring.visible = marker;
+    cross.visible = floor;
     layer.visible = true;
     label.textContent = `PLACE ${part.name.toUpperCase()} HERE`;
-    label.hidden = false;
+    label.hidden = !marker;
+  }
+
+  function followLivePart() {
+    const transform = ghost && current && creator.project?.get(current.id)?.components.transform;
+    if (!transform) return;
+    if (match.includes('rotation')) ghost.rotation.set(...transform.rotation, 'XYZ');
+    if (match.includes('scale')) ghost.scale.fromArray(transform.scale);
   }
 
   function hide() {
     current = null;
+    match = [];
     clearGhost();
     layer.visible = false;
     label.hidden = true;
@@ -88,9 +109,10 @@ export function createAssemblyGuide(creator) {
   function frame(time) {
     raf = requestAnimationFrame(frame);
     if (!current || layer.visible === false) return;
+    followLivePart();
     ring.scale.setScalar(1 + Math.sin(time * .004) * .08);
     ring.quaternion.copy(stage.camera.quaternion);
-    world.fromArray(current.targetTransform.position).project(stage.camera);
+    world.fromArray(current.targetTransform.position).add(layer.position).project(stage.camera);
     const bounds = wrap.getBoundingClientRect();
     label.style.left = `${(world.x * .5 + .5) * bounds.width}px`;
     label.style.top = `${(-world.y * .5 + .5) * bounds.height}px`;

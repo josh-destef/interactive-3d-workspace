@@ -61,7 +61,6 @@ export function createGuidance({ mount = document.body } = {}) {
       <p class="lesson-guidance-step"></p>
       <div class="lesson-guidance-copy"><h2></h2><p></p></div>
       <div class="lesson-guidance-controls" hidden></div>
-      <p class="lesson-feedback" role="status" hidden></p>
       <div class="lesson-guidance-actions">
         <button type="button" class="lesson-guidance-secondary" hidden></button>
         <button type="button" class="lesson-guidance-action" hidden></button>
@@ -72,6 +71,7 @@ export function createGuidance({ mount = document.body } = {}) {
   mount.append(root);
 
   const card = root.querySelector('.lesson-guidance-card');
+  card.tabIndex = -1;
   const shade = root.querySelector('.lesson-guidance-shade');
   const shadePath = root.querySelector('.lesson-guidance-shade-path');
   const targetRing = root.querySelector('.lesson-guidance-target');
@@ -81,17 +81,19 @@ export function createGuidance({ mount = document.body } = {}) {
   const actionButton = root.querySelector('.lesson-guidance-action');
   const secondaryButton = root.querySelector('.lesson-guidance-secondary');
   const controls = root.querySelector('.lesson-guidance-controls');
-  const feedback = root.querySelector('.lesson-feedback');
   const gotIt = root.querySelector('.lesson-guidance-got-it');
   const continueButton = root.querySelector('.lesson-guidance-continue');
   let state = null;
   let complete = false;
   let acknowledged = false;
-  let calloutGoalCompleted = false;
+  let reading = false;
+  const inertElements = new Map();
   let frame = 0;
   let observedTarget = null;
   let welcomeDialog = null;
   let welcomeTimer = null;
+  let actionFlash = null;
+  let flashTimer = null;
   const resizeObserver = new ResizeObserver(() => requestPosition());
   resizeObserver.observe(document.documentElement);
 
@@ -125,7 +127,63 @@ export function createGuidance({ mount = document.body } = {}) {
     continueButton.disabled = !complete;
     // Keep one clear action visible: Okay before the goal is met, then Continue.
     continueButton.hidden = !complete || !gotIt.hidden;
+    // Optional: the action (e.g. a demo) is replaced by Continue, never shown beside it.
+    if (state?.hideActionWhenComplete) actionButton.hidden = !state.actionLabel || complete;
   }
+
+  function setReading(next) {
+    if (reading === next) return;
+    reading = next;
+    root.classList.toggle('is-reading', reading);
+    if (reading) {
+      // Preserve existing inert state, including a narrow-screen dock's modal state.
+      for (let branch = root; branch.parentElement; branch = branch.parentElement) {
+        for (const sibling of branch.parentElement.children) {
+          if (sibling === branch || inertElements.has(sibling)) continue;
+          inertElements.set(sibling, sibling.hasAttribute('inert'));
+          sibling.setAttribute('inert', '');
+        }
+        if (branch.parentElement === document.body) break;
+      }
+      card.setAttribute('role', 'dialog');
+      card.setAttribute('aria-modal', 'true');
+      card.setAttribute('aria-label', 'Read this step, then choose Okay');
+      controls.setAttribute('inert', '');
+      actionButton.hidden = secondaryButton.hidden = continueButton.hidden = true;
+      gotIt.focus({ preventScroll: true });
+    } else {
+      for (const [element, wasInert] of inertElements) if (!wasInert) element.removeAttribute('inert');
+      inertElements.clear();
+      card.setAttribute('role', 'region');
+      card.removeAttribute('aria-modal');
+      card.removeAttribute('aria-label');
+      controls.removeAttribute('inert');
+      actionButton.hidden = !state?.actionLabel;
+      secondaryButton.hidden = !state?.secondaryLabel;
+    }
+  }
+
+  // Inert handles focus and pointer input; stop editor keyboard shortcuts too.
+  function guardReading(event) {
+    if (!reading) return;
+    if (event.type === 'keydown') {
+      if (event.target === gotIt && ['Enter', ' '].includes(event.key)) {
+        event.stopPropagation();
+        return;
+      }
+      event.preventDefault(); event.stopImmediatePropagation();
+      if (event.key === 'Tab') gotIt.focus();
+      const scrollAmount = { ArrowDown: 40, ArrowUp: -40, PageDown: card.clientHeight * .8, PageUp: -card.clientHeight * .8, Home: -card.scrollHeight, End: card.scrollHeight }[event.key];
+      if (scrollAmount != null) card.scrollTop += scrollAmount;
+    } else if (card.contains(event.target) && ['wheel', 'pointerdown'].includes(event.type)) {
+      // Reading can scroll; the surrounding editor still receives no gesture.
+      if (event.target !== gotIt) event.stopPropagation();
+    } else if (event.target !== gotIt) {
+      event.preventDefault(); event.stopImmediatePropagation();
+    }
+  }
+  const guardedEvents = ['keydown', 'pointerdown', 'click', 'dblclick', 'wheel'];
+  guardedEvents.forEach(type => addEventListener(type, guardReading, { capture: true, passive: false }));
 
   function choosePosition(box, desired) {
     const width = card.offsetWidth;
@@ -156,11 +214,10 @@ export function createGuidance({ mount = document.body } = {}) {
     }
     const targetRect = visibleRect(target);
     const showSpotlight = Boolean(state.spotlight && !acknowledged && targetRect);
-    if (state.callout && !acknowledged) {
-      gotIt.hidden = calloutGoalCompleted || !showSpotlight;
-      secondaryButton.hidden = showSpotlight || !state.secondaryLabel;
-      syncProgressActions();
-    }
+    // A missing or rebuilt target must never change acknowledgment/progression.
+    gotIt.hidden = !state.spotlight || acknowledged;
+    setReading(!gotIt.hidden);
+    syncProgressActions();
     root.classList.toggle('is-spotlighting', showSpotlight);
     const anchored = Boolean(showSpotlight && (!state.fixedHome || (state.callout && state.anchorCallout !== false)) && innerWidth > 900);
     root.classList.toggle('is-anchored', anchored);
@@ -190,12 +247,16 @@ export function createGuidance({ mount = document.body } = {}) {
   }
 
   function show(next) {
+    setReading(false);
     state = { placement: 'auto', spotlight: false, continueLabel: 'Continue', canContinue: false, ...next };
     complete = Boolean(state.canContinue);
     acknowledged = false;
-    calloutGoalCompleted = false;
     root.hidden = false;
     root.classList.toggle('has-fixed-home', Boolean(state.fixedHome));
+    root.classList.toggle('is-celebrating', Boolean(state.celebrate));
+    actionButton.classList.toggle('is-secondary', state.actionTone === 'secondary');
+    clearTimeout(flashTimer); actionFlash = null;
+    stepLabel.hidden = !state.step && state.step !== 0;
     stepLabel.textContent = typeof state.step === 'string' ? state.step : state.total ? `STEP ${state.step} OF ${state.total}` : `STEP ${state.step}`;
     renderTerms(title, state.title, state.terms, state.references);
     renderTerms(body, state.body, state.terms, state.references);
@@ -210,20 +271,14 @@ export function createGuidance({ mount = document.body } = {}) {
     secondaryButton.disabled = false;
     status(state.status || '');
     gotIt.hidden = !state.spotlight || acknowledged;
+    setReading(!gotIt.hidden);
     syncProgressActions();
     document.getElementById('creator-app')?.classList.add('lesson-mode');
     requestPosition();
   }
 
   function setComplete(next) {
-    const wasComplete = complete;
     complete = Boolean(next);
-    if (complete && !wasComplete && state?.callout && !acknowledged) {
-      calloutGoalCompleted = true;
-      gotIt.hidden = true;
-      secondaryButton.hidden = true;
-    }
-    if (!complete) calloutGoalCompleted = false;
     syncProgressActions();
     requestPosition();
   }
@@ -240,22 +295,33 @@ export function createGuidance({ mount = document.body } = {}) {
     } finally {
       if (state === current) {
         actionButton.disabled = false;
-        actionButton.textContent = current.actionLabel;
+        // A brief confirmation on the button itself keeps the instruction unchanged.
+        const flash = actionFlash;
+        actionFlash = null;
+        actionButton.textContent = flash || current.actionLabel;
+        if (flash) flashTimer = setTimeout(() => { if (state === current) actionButton.textContent = current.actionLabel; }, 1800);
         requestPosition();
       }
     }
   });
   secondaryButton.addEventListener('click', () => state?.onSecondary?.());
   function status(text) {
-    feedback.textContent = text || '';
-    feedback.hidden = !text;
+    // Explanations belong in the main instruction, not an extra notification box.
+    renderTerms(body, text || state?.body, state?.terms, state?.references);
     requestPosition();
   }
   function acknowledge() {
+    const moveFocus = document.activeElement === gotIt;
     acknowledged = true; gotIt.hidden = true;
+    setReading(false);
     secondaryButton.hidden = !state?.secondaryLabel;
-    feedback.hidden = !feedback.textContent;
     syncProgressActions();
+    if (moveFocus) {
+      const target = resolveTarget(state?.target);
+      const focusable = 'button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex="0"]';
+      const destination = complete ? continueButton : target?.matches(focusable) ? target : target?.querySelector(focusable);
+      (destination || card).focus({ preventScroll: true });
+    }
     requestPosition();
   }
   gotIt.addEventListener('click', acknowledge);
@@ -273,15 +339,19 @@ export function createGuidance({ mount = document.body } = {}) {
       requestPosition();
     },
     status,
+    /** Show `text` on the action button once the running action finishes. */
+    flashAction(text) { actionFlash = text; },
     acknowledge,
     showTarget() {
       if (!state?.spotlight) return;
       acknowledged = false; gotIt.hidden = false;
-      if (state.callout) { secondaryButton.hidden = true; feedback.hidden = true; }
+      setReading(true);
+      if (state.callout) { secondaryButton.hidden = true; status(''); }
       syncProgressActions();
       requestPosition();
     },
     welcome({ title: heading, body: description, terms = [], references = [], eyebrow = 'MATERIAL LAB', startLabel = 'Start exploring', autoStart = 0, onStart }) {
+      setReading(false);
       if (welcomeTimer) clearTimeout(welcomeTimer);
       welcomeDialog?.remove();
       welcomeDialog = document.createElement('dialog');
@@ -301,7 +371,10 @@ export function createGuidance({ mount = document.body } = {}) {
       if (autoStart > 0) welcomeTimer = setTimeout(start, autoStart);
     },
     destroy() {
+      setReading(false);
+      guardedEvents.forEach(type => removeEventListener(type, guardReading, true));
       if (welcomeTimer) clearTimeout(welcomeTimer);
+      clearTimeout(flashTimer);
       welcomeDialog?.remove();
       cancelAnimationFrame(frame);
       resizeObserver.disconnect();

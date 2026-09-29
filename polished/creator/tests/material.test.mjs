@@ -73,3 +73,20 @@ test('Inspector reveals a section or Appearance field without rebuilding or movi
   assert.equal(scrolls.length, count);
  } finally { dom.window.Element.prototype.scrollIntoView = original; dock.dispose(); }
 });
+
+
+test('palette-only matching hides and disables custom colors while keeping swatches editable', () => {
+ const project = createProject(); const entity = project.addPrimitive('cube');
+ const root = document.querySelector('#dock'); const dock = createDock({ project, root });
+ dock.setCapabilities({ appearance: { colorPicker: false } });
+ const picker = root.querySelector('.color-input');
+ assert.equal(picker.hidden, true); assert.equal(picker.disabled, true);
+ const before = project.get(entity.id).components.material.color;
+ picker.value = '#123456'; picker.dispatchEvent(new dom.window.Event('input'));
+ assert.equal(project.get(entity.id).components.material.color, before);
+ const swatch = root.querySelector('.appearance-swatch'); swatch.click();
+ assert.equal(project.get(entity.id).components.material.color, swatch.dataset.color);
+ dock.setCapabilities({ appearance: { colorPicker: true } });
+ assert.equal(root.querySelector('.color-input').hidden, false);
+ dock.dispose();
+});

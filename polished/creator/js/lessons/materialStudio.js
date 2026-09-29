@@ -47,7 +47,7 @@ export function createMaterialStudio(creator) {
     const label = document.createElement('span');
     label.className = 'material-model-label';
     label.dataset.model = name;
-    label.textContent = index === 0 ? 'Reference' : 'Your material';
+    label.textContent = index === 0 ? 'Reference' : 'Your Gizmobot';
     label.hidden = true;
     Object.assign(label.style, { position: 'absolute', transform: 'translate(-50%, -100%)', pointerEvents: 'none' });
     labelRoot.append(label);
@@ -83,7 +83,7 @@ export function createMaterialStudio(creator) {
       const card = document.querySelector('.lesson-guidance-card')?.getBoundingClientRect();
       const overlap = card ? Math.max(0, rect.top + rect.height - card.top) : 280;
       const shiftRight = matching ? 0 : orb.visible ? Math.min(80, rect.width * .08) : Math.min(110, rect.width * .105);
-      const shiftUp = matching ? Math.min(120, overlap * .4) : orb.visible ? Math.min(16, rect.height * .025) : Math.min(70, rect.height * .095);
+      const shiftUp = matching ? Math.min(150, overlap * .5) : orb.visible ? Math.min(16, rect.height * .025) : Math.min(70, rect.height * .095);
       camera.setViewOffset(rect.width, rect.height, -shiftRight, shiftUp, rect.width, rect.height);
     }
     updateLabels();
@@ -123,7 +123,7 @@ export function createMaterialStudio(creator) {
     if (changed) resetView();
   }
 
-  function resetView() {
+  function resetView(instant = false) {
     // Fit the complete light orbit, including the forgiving hit sphere. Narrow
     // viewports need more distance because their horizontal field of view is small.
     const rect = canvas.getBoundingClientRect();
@@ -131,9 +131,9 @@ export function createMaterialStudio(creator) {
     const horizontalHalfFov = Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * aspect);
     const lightDistance = Math.max(10, 3.8 / Math.tan(horizontalHalfFov) * 1.25);
     viewport.stage.flyTo({
-      pos: new THREE.Vector3(...(matching ? [0, 3, 10.2] : orb.visible ? [0, 4.6, lightDistance] : [2.5, 2.6, 6.1])),
+      pos: new THREE.Vector3(...(matching ? [0, 2.6, 8.4] : orb.visible ? [0, 4.6, lightDistance] : [2.5, 2.6, 6.1])),
       look: new THREE.Vector3(0, 1.35, 0),
-    });
+    }, instant);
     updateFraming();
   }
   function showReference(material) {
@@ -229,6 +229,6 @@ export function createMaterialStudio(creator) {
   key.color.set(0xffffff);
   setLightAngle(angle);
   setRoomLights(true);
-  resetView();
+  resetView(true);
   return { setLightAngle, getLightAngle: () => angle, setRoomLights, setLightVisible, showReference, hideReference, resetView, capture, dispose };
 }

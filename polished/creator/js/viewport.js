@@ -77,7 +77,7 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
 
     const materialProfile = modelProfile === 'materials';
     const assemblyProfile = modelProfile === 'assembly';
-    const home = materialProfile ? { pos: V3(0, 2.6, 6.8), look: V3(0, 1.1, 0) }
+    const home = materialProfile ? { pos: V3(2.5, 2.6, 6.1), look: V3(0, 1.35, 0) }
         : assemblyProfile ? { pos: V3(4.6, 3.3, -7.8), look: V3(.6, .65, .35) } : HOME;
     const stage = createStage({ canvasId, wrapId, rig: materialProfile ? 'studio' : 'viewport', ground: !materialProfile, capture: materialProfile, position: home.pos.toArray(), target: home.look.toArray() });
     const inheritedResize = stage.resize;
@@ -105,7 +105,7 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
         stage.orbitCtrl.update();
         stage.orbitCtrl.enableDamping = damping;
     };
-    const gizmos = createTransformGizmos({ scene: stage.scene, axisColors: AXIS_COLORS });
+    const gizmos = createTransformGizmos({ scene: stage.scene, axisColors: AXIS_COLORS, screenSize: 76, viewportHeight: () => wrap.clientHeight });
     const objects = new Map();
     const signatures = new Map();
     const raycaster = new THREE.Raycaster();
@@ -131,6 +131,8 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
     let transformEditor = (id, patch) => project.updateTransform(id, patch);
     let view = 'perspective';
     let displayMode = 'solid';
+    let cameraLocked = false;
+    let cameraTween = null;
 
     const isObjectMode = () => (tools.getEditingMode?.() ?? 'object') === 'object';
     const canInteract = () => interactionEnabled && isObjectMode();
@@ -628,6 +630,7 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
     }
 
     function resetView() {
+        if (cameraLocked) { onStatus('The camera is locked for this step'); return; }
         setView('perspective');
         onStatus('View reset');
     }
@@ -643,6 +646,7 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
         stage.orbitCtrl.enableRotate = Boolean(camera.isPerspectiveCamera);
         stage.orbitCtrl.minDistance = .2;
         stage.orbitCtrl.maxDistance = 1000;
+        stage.orbitCtrl.enabled = !cameraLocked;
         stage.orbitCtrl.target.copy(oldControls.target);
         stage.orbitCtrl.update();
     }
@@ -687,7 +691,74 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
     stage.resize = resizeViewport;
     window.addEventListener('resize', resizeViewport);
 
+    // Lessons can hold the camera on a chosen view (for example, to show how a
+    // single viewpoint hides depth) and then glide to the next one.
+    function setCameraLocked(locked) {
+        cameraLocked = Boolean(locked);
+        stage.orbitCtrl.enabled = !cameraLocked;
+    }
+
+    // `orthographic` gives a flat view: anything offset straight toward or away
+    // from the camera looks exactly the same, with no perspective size change.
+    function moveCamera(destination = 'home', { duration = .9, orthographic = false } = {}) {
+        if (view !== 'perspective') setView('perspective');
+        const toPos = destination === 'home' ? home.pos.clone() : V3(...destination.position);
+        const toTarget = destination === 'home' ? home.look.clone() : V3(...destination.target);
+        const halfHeightAt = distance => distance * Math.tan(THREE.MathUtils.degToRad(44 / 2));
+        if (orthographic && !stage.camera.isOrthographicCamera) {
+            swapCamera(new THREE.OrthographicCamera(-1, 1, 1, -1, .01, 10000));
+            setOrthoHalfHeight(halfHeightAt(stage.camera.position.distanceTo(stage.orbitCtrl.target)));
+        } else if (!orthographic && stage.camera.isOrthographicCamera) {
+            swapCamera(new THREE.PerspectiveCamera(44, 1, .01, 10000));
+        }
+        cameraTween?.resolve();
+        const instant = duration <= 0 || matchMedia('(prefers-reduced-motion: reduce)').matches;
+        return new Promise(resolve => {
+            cameraTween = {
+                fromTarget: stage.orbitCtrl.target.clone(), toTarget,
+                fromOffset: stage.camera.position.clone().sub(stage.orbitCtrl.target), toOffset: toPos.clone().sub(toTarget),
+                fromHalf: orthographic ? (stage.camera.top - stage.camera.bottom) / 2 : null,
+                toHalf: orthographic ? halfHeightAt(toPos.distanceTo(toTarget)) : null,
+                start: performance.now(), duration: instant ? 0 : duration * 1000, resolve,
+            };
+            stepCameraTween(performance.now());
+        });
+    }
+
+    function swapCamera(camera) {
+        camera.position.copy(stage.camera.position);
+        camera.up.set(0, 1, 0);
+        installCamera(camera);
+        resizeViewport();
+        syncSelection();
+    }
+
+    function setOrthoHalfHeight(halfHeight) {
+        const aspect = Math.max(wrap.clientWidth / Math.max(wrap.clientHeight, 1), .01);
+        Object.assign(stage.camera, { top: halfHeight, bottom: -halfHeight, left: -halfHeight * aspect, right: halfHeight * aspect });
+        stage.camera.updateProjectionMatrix();
+    }
+
+    function stepCameraTween(now) {
+        const tween = cameraTween;
+        if (!tween) return;
+        const t = tween.duration ? Math.min((now - tween.start) / tween.duration, 1) : 1;
+        const eased = t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        // Swing around the target instead of cutting straight through the model.
+        const fromDir = tween.fromOffset.clone().normalize(), toDir = tween.toOffset.clone().normalize();
+        const turn = new THREE.Quaternion().setFromUnitVectors(fromDir, toDir);
+        const direction = fromDir.applyQuaternion(new THREE.Quaternion().slerp(turn, eased));
+        const distance = THREE.MathUtils.lerp(tween.fromOffset.length(), tween.toOffset.length(), eased);
+        const target = tween.fromTarget.clone().lerp(tween.toTarget, eased);
+        if (tween.toHalf != null && stage.camera.isOrthographicCamera) setOrthoHalfHeight(THREE.MathUtils.lerp(tween.fromHalf, tween.toHalf, eased));
+        stage.flyTo({ pos: target.clone().addScaledVector(direction, distance), look: target });
+        if (t < 1) return;
+        cameraTween = null;
+        tween.resolve();
+    }
+
     function focusSelected() {
+        if (cameraLocked) return;
         if (!activeObject) { onStatus('Select an object to focus it'); return; }
         const box = new THREE.Box3().setFromObject(activeObject);
         if (box.isEmpty()) return;
@@ -725,6 +796,7 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
         if (disposed) return;
         raf = requestAnimationFrame(frame);
         stage.tickCam(Math.min(stage.clock.getDelta(), .05));
+        stepCameraTween(performance.now());
         if (activeObject) {
             gizmos.updateForObject(activeObject, stage.camera);
             updateOutlineMatrix();
@@ -737,6 +809,7 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
         if (disposed) return;
         disposed = true;
         finishDrag(true);
+        cameraTween?.resolve(); cameraTween = null;
         cancelAnimationFrame(raf);
         unsubscribeProject?.(); unsubscribeTools?.();
         resizeObserver.disconnect();
@@ -769,6 +842,9 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
         getSelectionOutline: () => selectionOutlineEnabled,
         setView,
         getView: () => view,
+        setCameraLocked,
+        getCameraLocked: () => cameraLocked,
+        moveCamera,
         setGridVisible(visible) {
             stage.scene.traverse(node => { if (node.isGridHelper || node.type === 'GridHelper') node.visible = Boolean(visible); });
         },

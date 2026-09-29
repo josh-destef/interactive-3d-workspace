@@ -5,6 +5,18 @@ const D = Math.PI / 180;
 // must use this scale; scaling only the meshes would leave gaps at the joints.
 export const ASSEMBLY_MODEL_SCALE = Object.freeze([0.9786857962608337 / 1.1829975843429565, 1, 1]);
 
+// The Hand's joint in Gizmobot's local space. The parts' parent group is
+// offset (ASSEMBLY_ROOT_POSITION) so this reads as round numbers in the
+// Inspector while the robot stays exactly where the model puts it, feet on the
+// ground. Every other part keeps its authored joint relative to the Hand.
+export const HAND_TARGET = Object.freeze([-1, 1.6, .2]);
+const RAW_HAND_JOINT = [-1.24, 1.574, .148].map((value, axis) => value * ASSEMBLY_MODEL_SCALE[axis]);
+export const ASSEMBLY_ROOT_POSITION = Object.freeze(RAW_HAND_JOINT.map((value, axis) => value - HAND_TARGET[axis]));
+
+// The Hand starts outward, high, and in front of its wrist, in whole tenths so
+// its starting values stay round.
+export const HAND_START_OFFSET = Object.freeze([-.6, .4, -.6]);
+
 /**
  * The assembly asset keeps every mesh around a useful joint pivot. Creation Studio owns
  * the pivot transform while the cloned asset node supplies the render geometry.
@@ -25,7 +37,8 @@ export const ASSEMBLY_PARTS = [
   { id: 'part-left-foot', node: 'LeftFoot', name: 'Left foot', target: [.26, .29, .13], note: 'Connect the foot at the ankle.' },
   { id: 'part-right-foot', node: 'RightFoot', name: 'Right foot', target: [-.26, .29, .13], note: 'Make the final ankle connection.' },
 ].map((sourcePart, order) => {
-  const part = { ...sourcePart, target: sourcePart.target.map((value, axis) => value * ASSEMBLY_MODEL_SCALE[axis]) };
+  const part = { ...sourcePart, target: sourcePart.id === 'part-right-hand' ? [...HAND_TARGET]
+    : sourcePart.target.map((value, axis) => value * ASSEMBLY_MODEL_SCALE[axis] - ASSEMBLY_ROOT_POSITION[axis]) };
   const targetTransform = Object.freeze({
     position: Object.freeze([...part.target]),
     rotation: Object.freeze([0, 0, 0]),
@@ -35,13 +48,14 @@ export const ASSEMBLY_PARTS = [
     // Keep the face visible and the repair reachable with 0.25-unit moves and
     // 15-degree rotations. The slight tilt makes the disconnected state clear.
     // Place it in the open side of the viewport, clear of the instruction card.
-    position: Object.freeze([1.5, .1, part.target[2]]),
+    position: Object.freeze(part.target.map((value, axis) => value + [1.5, -1.75, 0][axis])),
     rotation: Object.freeze([0, 0, 30 * D]),
     scale: targetTransform.scale,
   }) : part.id === 'part-right-hand' ? Object.freeze({
-    // The second repair teaches precise numeric editing: the hand begins away
-    // from its wrist, turned, and visibly oversized.
-    position: Object.freeze([-1.6, .25, part.target[2]]),
+    // The second repair teaches precise numeric editing: the hand begins
+    // oversized, turned, and away from its wrist. Its offset is chosen so the
+    // lesson's locked camera views each hide the axes not yet fixed.
+    position: Object.freeze(part.target.map((value, axis) => Number((value + HAND_START_OFFSET[axis]).toFixed(6)))),
     rotation: Object.freeze([0, 0, -30 * D]),
     scale: Object.freeze([1.6, 1.6, 1.6]),
   }) : targetTransform;
@@ -65,7 +79,7 @@ export function createAssemblyProjectData() {
       {
         id: 'creation', name: 'Gizmobot parts', type: 'group', parentId: null,
         visible: true, locked: true,
-        components: { transform: { position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1] } },
+        components: { transform: { position: [...ASSEMBLY_ROOT_POSITION], rotation: [0, 0, 0], scale: [1, 1, 1] } },
       },
       ...ASSEMBLY_PARTS.map(part => ({
         id: part.id, name: part.name, type: 'assemblyPart', parentId: 'creation',

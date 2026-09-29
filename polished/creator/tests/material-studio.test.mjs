@@ -52,6 +52,7 @@ const student = cloneMaterialModel(original, record);
 const host = new THREE.Group(); host.add(student); scene.add(host);
 const outline = new THREE.Group(); outline.name = 'CreatorSelectionOutline'; scene.add(outline);
 let photoWasClean = false, selectionRefreshes = 0, unsubscribed = false;
+const flights = [];
 const renderer = { domElement: canvas, render() { photoWasClean = !outline.visible && !scene.getObjectByName('Scene light').visible; } };
 const originalReset = () => {};
 const viewport = {
@@ -61,11 +62,13 @@ const viewport = {
   getObject: () => host,
   cloneModel: material => cloneMaterialModel(original, material),
   refreshSelection() { selectionRefreshes++; },
-  stage: { scene, renderer, camera, orbitCtrl, lights: { key }, flyTo({ pos, look }) {
+  stage: { scene, renderer, camera, orbitCtrl, lights: { key }, flyTo({ pos, look }, instant = false) {
+    flights.push(instant);
     camera.position.copy(pos); camera.lookAt(look); camera.updateMatrixWorld(); orbitCtrl.dispatchEvent({ type: 'change' });
   } },
 };
 const studio = createMaterialStudio({ viewport, project: { subscribe: () => () => { unsubscribed = true; } } });
+assert.equal(flights[0], true, 'the initial lesson camera is applied before the first visible frame');
 assert.ok(camera.view.offsetX < 0 && camera.view.offsetY > 0, 'desktop hero framing clears the lower-left card');
 assert.ok(camera.position.length() < 7.2, 'hero framing brings material details closer');
 window.innerWidth = 600;
@@ -95,7 +98,7 @@ assert.equal(student.position.x, 1.72);
 assert.equal(scene.getObjectByName('Reference Gizmobot').position.x, -1.72);
 assert.deepEqual(materialState(), before, 'reference creation preserves learner material');
 const labels = [...document.querySelectorAll('.material-model-label')];
-assert.deepEqual(labels.map(label => label.textContent), ['Reference', 'Your material']);
+assert.deepEqual(labels.map(label => label.textContent), ['Reference', 'Your Gizmobot']);
 assert.ok(labels.every(label => !label.hidden && Number.isFinite(parseFloat(label.style.left))), 'visible labels are projected into the viewport');
 studio.hideReference();
 assert.equal(student.position.x, 0);
