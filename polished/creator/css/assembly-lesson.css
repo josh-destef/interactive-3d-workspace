@@ -1,13 +1,5 @@
-body.assembly-lesson .product-name::after {
-  content: 'Build Gizmobot';
-  margin-left: 8px;
-  padding: 5px 8px;
-  border-radius: 6px;
-  background: #edf5ea;
-  color: #3f6846;
-  font-size: 10px;
-  font-weight: 500;
-}
+/* Like Material Lab, the editor's status line is noise during the lesson. */
+body.assembly-lesson .statusbar { display: none; }
 
 body.assembly-lesson .scene-panel { max-height: 48%; flex-basis: 48%; }
 body.assembly-lesson #editor-dock:has(.inspector-panel[hidden]) .scene-panel { max-height: none; flex: 1 1 auto; }
@@ -31,8 +23,20 @@ body.assembly-lesson .scene-row[data-current-target="true"] {
   pointer-events: none;
 }
 
-body.assembly-lesson .lesson-guidance-card { width: min(430px, calc(100vw - 48px)); }
-body.assembly-lesson .lesson-guidance-step { color: #6b6c78; }
+/* Card density and the quiet "Show me where" link match Material Lab. */
+body.assembly-lesson .lesson-guidance-card,
+body.assembly-lesson .lesson-guidance:not(.is-spotlighting) .lesson-guidance-card { width: min(420px, calc(100vw - 48px)); padding: 22px 24px; }
+body.assembly-lesson .lesson-guidance-copy h2 { font-size: 23px; }
+body.assembly-lesson .lesson-guidance-copy > p { line-height: 1.5; }
+body.assembly-lesson .lesson-guidance-actions button { font-size: 13px; padding: 8px 12px; }
+body.assembly-lesson .lesson-guidance-secondary { margin-right: auto; padding-inline: 6px; border-color: transparent; background: transparent; color: #45485a; text-decoration: underline; text-underline-offset: 3px; }
+body.assembly-lesson .lesson-guidance-secondary:hover:not(:disabled) { background: #f4f4f1; border-color: transparent; }
+@media (min-width: 651px) {
+  /* One steady card size from step to step; actions sit at the bottom. */
+  body.assembly-lesson .lesson-guidance.has-fixed-home .lesson-guidance-card { min-height: 230px; display: flex; flex-direction: column; }
+  body.assembly-lesson .lesson-guidance-copy { flex-shrink: 0; }
+  body.assembly-lesson .lesson-guidance.has-fixed-home .lesson-guidance-actions { margin-top: auto; padding-top: 12px; }
+}
 body.assembly-lesson .viewport-utilities { margin-left: auto; }
 body.assembly-lesson .tool-divider { display: none; }
 
@@ -41,8 +45,8 @@ body.assembly-lesson .tool-divider { display: none; }
 }
 
 @media (max-width: 650px) {
-  body.assembly-lesson .product-name::after { display: none; }
-  body.assembly-lesson .lesson-guidance-card { width: min(430px, calc(100vw - 36px)); }
+  body.assembly-lesson .lesson-guidance-card,
+  body.assembly-lesson .lesson-guidance:not(.is-spotlighting) .lesson-guidance-card { width: min(420px, calc(100vw - 36px)); padding: 17px 18px 15px; }
 }
 
 body.assembly-lesson .lesson-guidance-actions { flex-wrap: wrap; }

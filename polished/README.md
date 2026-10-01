@@ -95,6 +95,10 @@ node ../scripts/qa-polished-curriculum.mjs
 
 ## Adding a module
 
+New lessons are built inside Creation Studio. Follow
+[`creator/LESSONS.md`](creator/LESSONS.md), the lesson authoring guide. The
+steps below are for a standalone kit lab only.
+
 1. Copy `kit/template/` to `labs/<module-name>/` and work through the order in
    [`kit/README.md`](kit/README.md) — copy first, beat map and words next, then
    the subject and the controls. It arrives with the Read/Watch/Do rhythm,

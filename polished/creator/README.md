@@ -74,6 +74,10 @@ OrbitControls instance, allowing focus and navigation beyond the lab bounds.
 
 ## Lesson API
 
+To design or build a guided lesson, start with [LESSONS.md](LESSONS.md), the
+authoring guide: teaching rules, screen rules, wiring checklist, guidance and
+capability reference, and the review checklist. The notes below are the raw API.
+
 The standalone route exposes `window.creator` for integration and testing:
 
 ```js
@@ -112,8 +116,10 @@ end-of-lesson quiz.
 `js/lessons/guidance.js` and `css/lesson.css` provide the reusable instruction
 surface: green step labels and newly introduced interface terms, a white card, orange target highlights, anchored
 pointers, and optional dimming with a cutout around a live control. General
-instructions use a larger panel flush with the left edge at the bottom of the viewport. **Got it** returns the card there and
-releases the spotlight for practice; **Continue** appears when the practice gate
+instructions use a larger panel at the bottom-left of the viewport. **Okay** returns the card there and
+releases the spotlight for practice. While a callout is open, only Okay is actionable;
+the instruction can still scroll. Keyboard focus returns to the taught control or
+Continue on acknowledgment. **Continue** appears when the practice gate
 passes. On phones the instruction and Inspector have separate reserved areas.
 
 Lesson copy marks new vocabulary with `terms: ['Viewport', 'Outliner']` metadata
@@ -206,14 +212,31 @@ Project save/load is provided by the studio extension below.
 
 `js/lessons/assembly.js` begins with twelve parts assembled and Gizmobot's
 frowning Head plus an oversized Hand disconnected nearby. It introduces the
-Viewport and Outliner through that visible problem, briefly revisits Move,
-Rotate, and Scale from Navigate & Transform, then introduces Snap with its
-default Regular increments. Snap settings and Nearest surface are held back for
+Viewport and Outliner through that visible problem. Move, Rotate, and Scale
+from Navigate & Transform are each revisited on the step that first uses them
+(Move for the Head, then Rotate, then Scale for the Hand) and stay on the tool
+rail afterwards, except while the camera is locked for Hand Position. The Head
+repair is three short cards: Turn on Snap (Continue), Choose Move (advances
+on its own via `autoAdvance`), then Move the Head into place. Move stays hidden
+until Snap is on. A snapped drag that lands within 0.15 (just over half a step)
+settles the Head exactly on the neck. Only steps that introduce a new control
+(2, 4, 5, 7, 8, 10) use an Okay callout. Snap settings and Nearest surface are held back for
 Model an Accessory, where they have a visible modelling purpose.
-The Head is repaired with Viewport Move and Rotate while its Inspector fields are
-unavailable; the Hand is repaired exclusively through exact Position, Rotation,
-and Scale values in the Transform Inspector while Viewport transform tools are
-unavailable. The original smile returns when the Head reaches its target. The
+The Head has separate Viewport Move and Rotate stages; while it is moved, the
+orange outline copies the Head's current tilt so it shows where the Head goes
+as it is. The Hand is resized, then straightened (one numeric field group and
+its matching viewport tool at a time), and finally positioned one axis at a
+time (Z, Y, X) from a locked, orthographic camera. Each value can be typed or
+dragged left and right like a Blender field, with no range limit. The orange
+outline is hidden while the Hand is placed, since it would reveal the true
+spot, and returns on the final check around the connected Hand. Each locked view looks straight along the axes still wrong, and a flat
+view shows no depth or size change, so the Hand looks exactly placed until the
+next view reveals the remaining gap (`handAxisView`, `HAND_START_OFFSET`). The
+Hand casts no shadow while the camera is locked, since its shadow would reveal
+depth. The parts group is offset (`ASSEMBLY_ROOT_POSITION`) so the Hand's
+target reads as round values (-1, 1.6, 0.2) without moving the robot. Close
+entries settle on the exact joint. The original smile
+returns when the Head reaches its target. The
 original generated assembly GLB remains unchanged; the temporary frown is a
 Viewport overlay.
 
@@ -243,20 +266,20 @@ bands accept a recognisably close finish without requiring exact slider values.
 Reduced-motion comparisons use static, slower holds.
 
 Material Lab opens with a keyboard-accessible lesson overview. Each new control
-gets a callout using the shared guidance card and a plain orange outline, without
-a marker dot or dimming the model. On desktop the card points to the control;
-Got it returns it to the lower-left home. Show me where reopens the callout and
+gets a callout using the shared guidance card and an orange outline. Everything
+outside the highlighted control and instruction is dimmed until Okay. On desktop the card points to the control;
+Okay returns it to the lower-left home. Show me where reopens the callout and
 reveals the control. Phone callouts stay in the reserved lower instruction area.
 Optional comparison demos reuse the kit's Navigate/Transform pointer on the live
-sliders, restore the learner's material, and never complete practice.
+swatches and sliders, restore the learner's material, and never complete practice.
 
-The journey includes one learner-paced demonstration in which the light circles
-Gizmobot and then returns to its fixed neutral position. Light position and
-temperature are not learner controls; the copy points toward a future lighting
-lesson. Room lighting on/off remains only as an emission preview. Three
-explanation checks cover roughness, metalness, and emission before free play
-restores the learner's pre-challenge material and room-lighting choice. Editing
-a checked match requires checking it again. RGB remains optional.
+Lighting stays fixed while learning color and finish. Room lighting on/off is
+introduced as a visual comparison; the emission explanation appears only after
+the learner switches the lights off. Check match and New reference sit in the
+instruction card. After the first check, the percentage above the inspector
+updates live with each edit. The reference challenge uses palette swatches only;
+room lighting stays in the instruction card. Finishing returns directly to free
+play with the learner's saved material and lighting, without a quiz. RGB remains optional.
 
 On phones the open Material dock stacks below a live preview, and its contents
 scroll as one surface. Shared Creation Studio styles supply the surfaces, typography and

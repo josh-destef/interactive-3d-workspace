@@ -212,6 +212,12 @@ setCapabilities(lessonId === 'material-lab' ? {
   appearance: { baseColor: false, roughness: false, metalness: false, emissive: false },
   scene: { excludeIds: ['creation'] },
   actions: { duplicate: false, delete: false, visibility: false, rename: false, group: false, ungroup: false, reparent: false },
+} : lessonId === 'build-gizmobot' ? {
+  // Lock down before the lesson loads so the playground tools never flash in.
+  tools: { move: false, rotate: false, scale: false, add: false },
+  panels: { inspector: false, bottomEditor: false },
+  actions: { duplicate: false, delete: false, visibility: false, rename: false, group: false, ungroup: false, reparent: false },
+  features: { studio: false, snap: false, snapSettings: false, view: false },
 } : {});
 if (narrow.matches) setDock('closed'); else { dock.setState('pinned'); updateDockChrome(); }
 Promise.resolve(viewport.ready).then(() => {

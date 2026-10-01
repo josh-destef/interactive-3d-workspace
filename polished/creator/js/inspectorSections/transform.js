@@ -17,11 +17,12 @@ export const transformSection = {
     ];
     groups.forEach(([title, key, displayFactor, suffix]) => {
       if (capabilities.transformFields?.[key] === false) return;
-      // Lessons may open one axis at a time (`axes`, with `currentAxis`
-      // highlighted) and let values be dragged like a Blender field (`scrub`).
+      // Every value drags left and right like a Blender field; a lesson may
+      // opt a group out with `scrub: { key: false }`. Lessons may also open
+      // one axis at a time (`axes`, with `currentAxis` highlighted).
       const editableAxes = capabilities.transformFields?.axes?.[key];
       const currentAxis = capabilities.transformFields?.currentAxis?.[key];
-      const scrub = capabilities.transformFields?.scrub?.[key];
+      const scrub = capabilities.transformFields?.scrub?.[key] !== false;
       const group = el('fieldset', 'transform-group transform-row');
       group.append(el('legend', 'field-group-label', title));
       const axes = el('div', 'axis-fields transform-axis-fields');

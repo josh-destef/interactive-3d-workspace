@@ -5,9 +5,11 @@ Studio. The original `../robot-assembly/` lab is preserved unchanged.
 
 The lesson begins with Gizmobot's frowning Head and oversized Hand disconnected
 nearby. It introduces the Viewport and named Outliner through that visible repair
-problem, briefly revisits Move, Rotate, and Scale from Navigate & Transform, and
-introduces Snap with its default Regular increments before reconnecting the Head
-with Viewport Move and Rotate. Snap settings and Nearest surface are reserved for
+problem, then revisits Move, Rotate, and Scale from Navigate & Transform one at a
+time, each on the step that first uses it. Short cards turn on Snap (its
+default Regular increments, then Continue) and choose Move, before the learner
+drags the Head exactly into place. Rotate then
+straightens it. Snap settings and Nearest surface are reserved for
 the later Model an Accessory lesson, where they solve a visible placement problem.
 The learner then restores the Hand using exact Position, Rotation, and Scale values in the
 Inspector. Reconnecting the Head restores Gizmobot's smile. Open this folder

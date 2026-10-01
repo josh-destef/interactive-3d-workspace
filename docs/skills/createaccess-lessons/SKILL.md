@@ -1,9 +1,16 @@
 ---
 name: createaccess-lessons
-description: Design or revise guided lessons in the existing CreateAccess 3D labs, using the repository's lesson kit, shell placement rules, and prompt-led teaching pattern. Applies only to this repository's polished labs and kit.
+description: Design or revise guided lessons in the CreateAccess 3D labs. For Creation Studio lessons (the default for new work) follow polished/creator/LESSONS.md; the kit shell rules below apply only to the older standalone kit labs. Applies only to this repository's polished labs.
 ---
 
 # CreateAccess 3D lessons
+
+> **Creation Studio lessons:** read `polished/creator/LESSONS.md` first and
+> follow it. It is the current standard for Material Lab, Build Gizmobot, Model
+> an Accessory and every new lesson. The placement matrix, workbench shell and
+> kit file references below describe the older standalone kit labs (Navigate &
+> Transform, Hierarchy, Keyframes, Particles) and do not apply inside Creation
+> Studio. The teaching principles still hold everywhere.
 
 Use this skill when changing a guided lesson or its instructional interface in
 the `polished/` CreateAccess 3D labs. Work from the repository checkout: locate

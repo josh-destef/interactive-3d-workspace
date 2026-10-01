@@ -32,7 +32,7 @@
 .lesson-term { color: #36953b; font-weight: 600; }
 .lesson-reference { color: #1a1a2e; font-weight: 600; }
 .lesson-guidance-copy h2 { margin: 0; font-size: 24px; line-height: 1.2; letter-spacing: -.6px; font-weight: 500; }
-.lesson-guidance-copy > p { margin: 12px 0 0; color: #626273; font-size: 14px; line-height: 1.65; }
+.lesson-guidance-copy > p { margin: 12px 0 0; color: #626273; font-size: 14px; line-height: 1.65; white-space: pre-line; }
 .lesson-guidance-controls[hidden] { display: none; }
 /* While a step points at its target, the card holds only the instruction and Okay. */
 .lesson-guidance.is-reading .lesson-guidance-controls { display: none; }

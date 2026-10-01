@@ -58,6 +58,19 @@ test('numeric fields keep a nonzero minimum visible and Escape cancels invalid e
   assert.equal(field.input.hasAttribute('aria-invalid'), false);
 });
 
+test('Position, Rotation and Scale all use the same drag-left-and-right field', async () => {
+  const { transformSection } = await import('../js/inspectorSections/transform.js');
+  const project = createProject();
+  const entity = project.addPrimitive('cube');
+  const section = transformSection.render({ project, entity: project.get(entity.id) });
+  const fields = [...section.element.querySelectorAll('[data-transform-axis]')];
+  assert.equal(fields.length, 9);
+  for (const field of fields) assert.equal(field.classList.contains('is-scrubbable'), true, `${field.dataset.transformAxis} drags like the others`);
+  const optedOut = transformSection.render({ project, entity: project.get(entity.id), capabilities: { transformFields: { scrub: { scale: false } } } });
+  assert.equal(optedOut.element.querySelector('[data-transform-axis="scale-x"]').classList.contains('is-scrubbable'), false, 'a lesson can still opt a group out');
+  section.dispose(); optedOut.dispose();
+});
+
 test('Transform can open one Position axis at a time and drag values like a Blender field', async () => {
   const { transformSection } = await import('../js/inspectorSections/transform.js');
   const project = createProject();
