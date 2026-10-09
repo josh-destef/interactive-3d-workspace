@@ -112,7 +112,7 @@ const semanticClone = cloneMaterialModel(semanticSource, { color: '#44aa66', rou
 const comparisonClone = cloneMaterialModel(semanticSource, { color: '#ffffff' });
 assert.equal(semanticClone.scale.x, .72, 'material model preserves teaching scale');
 assert.equal(semanticClone.children[0].material.roughness, .1);
-assert.equal(semanticClone.children[0].material.emissiveIntensity, .8);
+assert.equal(semanticClone.children[0].material.emissiveIntensity, 1, 'Emission 0–1 renders with the shared gain');
 assert.equal(semanticClone.children[1].material.emissiveIntensity, 1.6, 'face remains independently lit');
 assert.equal(semanticClone.children[1].material.map, faceSource.map, 'face texture is preserved');
 assert.equal(semanticClone.children[2].material.map, decalSource.map, 'decal texture is preserved');
@@ -160,7 +160,7 @@ assert.deepEqual(viewport.getObject(meshShape.id).geometry.index.array.length, 6
 assert.deepEqual(viewport.getObject(meshShape.id).geometry.userData.faceIndices, [0, 0], 'render triangles retain their source face');
 project.updateMaterial(cube.id, { color: '#4488cc', emissiveIntensity: .75 });
 assert.equal(viewport.getObject(cube.id).material.emissive.getHexString(), '4488cc', 'primitive glow follows Base color');
-assert.equal(viewport.getObject(cube.id).material.emissiveIntensity, .75, 'shared Appearance emission renders on primitives');
+assert.equal(viewport.getObject(cube.id).material.emissiveIntensity, .9375, 'shared Appearance emission renders on primitives');
 viewport.setSelectionOutline(false);
 project.updateMaterial(cube.id, { roughness: .4 });
 assert.equal(viewport.stage.scene.getObjectByName('CreatorSelectionOutline').visible, false, 'selection outline remains disabled across material edits');

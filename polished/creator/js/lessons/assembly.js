@@ -16,7 +16,7 @@ const AXES = ['x', 'y', 'z'];
 // along the axes still wrong, and a flat view shows no depth or size change,
 // so the Hand looks exactly placed until the camera turns: Z, then Y, then X.
 export const HAND_AXIS_ORDER = Object.freeze(['z', 'y', 'x']);
-const HAND_VIEW_DISTANCE = 4.2;
+const HAND_VIEW_DISTANCE = 5.4;
 // Pan inward and down so the Body stays in frame; panning keeps the view
 // direction, which is all that decides what a flat view hides.
 const HAND_VIEW_PAN = Object.freeze([.3, -.2, 0]);
@@ -48,7 +48,7 @@ export const STEPS = Object.freeze([
     terms: ['Viewport'],
     body: 'Look at Gizmobot, its loose Head, and its oversized Hand in this large area. This is the Viewport: your view into the 3D scene, where you select and position objects.' },
   { kind: 'scene', title: 'Find the Head in the Outliner', target: '.scene-panel', spotlight: true,
-    terms: ['Outliner', 'Viewport'],
+    terms: ['Outliner'],
     body: 'Choose Head in the Outliner on the right. Notice how its name selects the same frowning, disconnected piece in the Viewport.' },
   { kind: 'reveal', title: 'Every part is its own object', target: '.scene-panel',
     body: 'Gizmobot looks like one robot, but each part is a separate object with its own name in the Outliner: Head, Body, arms, hands, and feet. That is why you can repair the Head and Hand without disturbing anything else.', continueLabel: 'Repair the Head' },
@@ -64,26 +64,23 @@ export const STEPS = Object.freeze([
   { kind: 'headMove', part: HEAD, title: 'Move the Head into place',
     body: 'Drag the Head’s arrows into the orange guide.', continueLabel: 'Straighten the Head' },
   { kind: 'headRotate', part: HEAD, title: 'Straighten the Head', target: '[data-tool="rotate"]', spotlight: true,
-    terms: ['Rotate', 'Snap'], references: ['Navigate & Transform'],
+    terms: ['Rotate'], references: ['Navigate & Transform'],
     body: 'Choose Rotate, also from Navigate & Transform, and drag its coloured rings to turn the Head upright. Snap turns it in 15° steps. When the Head fits, it reconnects.', continueLabel: 'Repair the Hand' },
   { kind: 'handScale', part: HAND, title: 'Resize the Hand', target: '.inspector-panel', spotlight: true,
-    terms: ['Scale', 'Inspector'], references: ['Navigate & Transform'],
-    body: 'The Hand is too big, so it needs Scale, the last tool from Navigate & Transform. Scale changes size: its handles help you compare size by eye, and Scale numbers in the Inspector help when you need a precise size. Set Scale X 1, Y 1, Z 1 so the Hand matches the orange outline and the other hand.', continueLabel: 'Set its direction' },
+    terms: ['Scale', 'Inspector'],
+    body: 'In the Inspector, set Scale X, Y, and Z to 1 so the Hand matches the orange outline: type each number, or drag across it. The tool handles step aside while you work with exact numbers.', continueLabel: 'Set its direction' },
   { kind: 'handRotation', part: HAND, title: 'Straighten the Hand', target: '.inspector-panel',
-    terms: ['Rotate', 'Inspector', 'Rotation'],
-    body: 'Rotate handles help you turn an object by eye; Rotation numbers help when you need a precise angle. Set Rotation X 0°, Y 0°, Z 0° so the fingers point forward like the outline.', continueLabel: 'Place the Hand' },
+    terms: ['Rotation'],
+    body: 'Set Rotation X, Y, and Z to 0° so the fingers point forward like the outline.', continueLabel: 'Place the Hand' },
   { kind: 'handAxis', axis: 'z', part: HAND, title: 'Place the Hand: Position Z', target: '.inspector-panel', spotlight: true,
-    terms: ['Inspector', 'Position'],
-    body: `The camera is locked to one view for now, so the tool handles step aside: a drag could shift an axis you cannot see. In the Inspector, set Position Z to ${handValues.z}: type it, or drag left or right across the Z value. Watch the Hand meet its wrist.`, continueLabel: 'Turn the camera' },
+    terms: ['Position'],
+    body: `Set Position Z to ${handValues.z}. The camera is locked to one view for now.`, continueLabel: 'Turn the camera' },
   { kind: 'handAxis', axis: 'y', part: HAND, title: 'Place the Hand: Position Y', target: '.inspector-panel',
-    terms: ['Inspector', 'Position'],
-    body: `From the side, the Hand is still too high. The first view looked straight along that gap, and a flat, locked view cannot show depth, so the Hand looked perfectly placed. Set Position Y to ${handValues.y}.`, continueLabel: 'Turn the camera' },
+    body: `Set Position Y to ${handValues.y}. From the side, the Hand is still too high: the last view looked straight along that gap, so it stayed hidden.`, continueLabel: 'Turn the camera' },
   { kind: 'handAxis', axis: 'x', part: HAND, title: 'Place the Hand: Position X', target: '.inspector-panel',
-    terms: ['Inspector', 'Position'],
-    body: `From the front, the Hand is still too far from its wrist. The side view hid this gap the same way. Set Position X to ${handValues.x}.`, continueLabel: 'Check every angle' },
+    body: `Set Position X to ${handValues.x}. From the front, the Hand is still too far from its wrist: the side view hid that gap the same way.`, continueLabel: 'Check every angle' },
   { kind: 'done', title: 'You can build in Creation Studio!',
-    terms: ['Move', 'Rotate', 'Scale', 'Inspector'],
-    body: 'Gizmobot is back online and smiling. You shaped parts by eye with Move, Rotate, and Scale, and set them exactly with Inspector numbers. Orbit around the Hand: it meets its wrist from every side, because one locked view can hide a whole axis. When you are ready, head back to Home for your next lesson.', continueLabel: 'Back to Home' },
+    body: 'Gizmobot is back online and smiling. You placed the Head by eye with Move and Rotate, and set the Hand exactly with Inspector numbers. Orbit around the Hand: it meets its wrist from every side.', continueLabel: 'Back to Home' },
 ]);
 // Like Material Lab and Navigate + Transform, the closing celebration is not a numbered step.
 const NUMBERED_STEPS = STEPS.length - 1;
@@ -103,9 +100,9 @@ function lessonCapabilities(index, targetSelected = true, snapping = false) {
   const handKind = kind === 'handAxis' ? 'position' : kind === 'handRotation' ? 'rotation' : 'scale';
   const handAxis = handRepair && handKind === 'position';
   const inspectorVisible = handRepair;
-  // Position is typed or slid one axis at a time; tool handles would let a
-  // drag change the other axes while the camera hides them.
-  const toolsUsable = targetSelected && kind !== 'handAxis';
+  // The Hand is repaired with Inspector numbers only, so the tool handles
+  // step aside for all of it. They return for the finale.
+  const toolsUsable = targetSelected && !['handScale', 'handRotation', 'handAxis'].includes(kind);
   // The Head only moves once Snap is on, so every drag lands on the 0.25 grid.
   const tool = name => toolsUsable && index >= TOOL_INTRODUCTIONS[name] && !(name === 'move' && ['headMoveTool', 'headMove'].includes(kind) && !snapping);
   return {
@@ -119,7 +116,7 @@ function lessonCapabilities(index, targetSelected = true, snapping = false) {
       scrub: handAxis ? { position: true } : null,
     },
     actions: { duplicate: false, delete: false, visibility: false, rename: false, group: false, ungroup: false, reparent: false },
-    features: { studio: false, snap: index >= SNAP_INTRODUCTION, snapSettings: false, view: kind !== 'handAxis' },
+    features: { studio: false, snap: index >= SNAP_INTRODUCTION, snapSettings: false, view: false },
   };
 }
 
@@ -129,7 +126,7 @@ const finishedCapabilities = {
   inspectorSections: { transform: true, geometry: false, appearance: false, hierarchy: true },
   transformFields: { position: true, rotation: true, scale: true, axes: null, currentAxis: null, scrub: null },
   actions: { duplicate: false, delete: false, visibility: true, rename: true, group: true, ungroup: true, reparent: true },
-  features: { studio: false, snap: true, snapSettings: false, view: true },
+  features: { studio: false, snap: true, snapSettings: false, view: false },
 };
 
 const cloneTransform = transform => ({
@@ -284,10 +281,9 @@ export async function createAssemblyLesson(creationStudio, {
     if (step.kind === 'headSnap') tools.setSnapSettings({ enabled: false, mode: 'increment', moveStep: .25, rotateStep: 15, scaleStep: .1, surfaceDistance: .5 });
     applyCapabilities();
     // While the Hand is placed by eye from locked views, the outline would
-    // show where it truly belongs and give the hidden gap away. It returns
-    // for the final check, wrapping the connected Hand from every angle.
-    if (step.kind === 'done') guide?.show?.(HAND, { floor: false, marker: false });
-    else if (step.part && step.kind !== 'handAxis') {
+    // show where it truly belongs and give the hidden gap away. The finale
+    // shows the connected Hand itself, with no outline over it.
+    if (step.part && step.kind !== 'handAxis') {
       // While a step asks only for Position or size, the outline keeps the
       // part's current tilt so it reads as "put it here as it is".
       guide?.show?.(step.part, {
@@ -383,10 +379,10 @@ export async function createAssemblyLesson(creationStudio, {
   if (guidance.welcome) {
     guidance.welcome({
       eyebrow: 'BUILD GIZMOBOT',
-      title: 'Welcome to Creation Studio',
-      body: 'Creation Studio is where you build and edit 3D scenes. You’ll reconnect Gizmobot’s Head, then restore the Hand’s size, direction, and position one step at a time.',
+      title: 'Get Gizmobot back online',
+      body: 'Gizmobot’s Head has come loose and one Hand is the wrong size. You’ll repair both in Creation Studio, where you build and edit 3D scenes.',
       terms: ['Creation Studio'],
-      startLabel: 'Meet Creation Studio',
+      startLabel: 'Start the repair',
       onStart: () => { if (!finished) showStep(); },
     });
   } else showStep();

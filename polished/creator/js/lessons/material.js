@@ -217,7 +217,7 @@ export async function createMaterialLesson(creator, options = {}) {
     if (key && now[key] !== previous[key]) {
       const range = best[key] || (best[key] = { min: baseline[key] ?? 0, max: baseline[key] ?? 0 });
       range.min = Math.min(range.min, now[key]); range.max = Math.max(range.max, now[key]);
-      if (range.max - range.min >= (step === 'glow' ? .35 : .3)) achieved();
+      if (range.max - range.min >= (step === 'glow' ? .28 : .3)) achieved();
     }
     previous = now;
   }

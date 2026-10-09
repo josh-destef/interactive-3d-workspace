@@ -4,7 +4,7 @@ import { MATERIAL_SWATCHES } from '../materialPalette.js';
 const rangeCopy = {
   roughness: { label: 'Roughness', ends: ['Shiny', 'Dull'], max: 1 },
   metalness: { label: 'Metalness', ends: ['Plastic', 'Metal'], max: 1 },
-  emissiveIntensity: { label: 'Emission', ends: ['None', 'Bright'], max: 1.25 },
+  emissiveIntensity: { label: 'Emission', ends: ['None', 'Bright'], max: 1 },
 };
 
 export const appearanceSection = {

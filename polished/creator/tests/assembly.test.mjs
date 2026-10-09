@@ -61,7 +61,8 @@ function harness() {
       getObject() { return null; },
     },
     dock: { inspector: { revealSection() {} } },
-    setCapabilities(value) { capabilities.push(value); }, setDock() {}, showGuide() {},
+    // Like main.js, capabilities decide which tools can be active.
+    setCapabilities(value) { capabilities.push(value); if (value.tools) tools.setAllowed(value.tools); }, setDock() {}, showGuide() {},
   };
   return { creator, project, tools, guidance, guide, listeners, inputs, previews, expressions, dock, capabilities, camera };
 }
@@ -129,9 +130,9 @@ test('Creation Studio repairs the Head with tools and the oversized Hand with th
   assert.equal(STEPS.length, 13);
   assert.equal(STEPS.some(step => /explode|reassemble/.test(step.kind)), false);
   assert.equal(lesson.state.assembled, 12);
-  assert.equal(h.guidance.welcomeCard.title, 'Welcome to Creation Studio');
-  assert.match(h.guidance.welcomeCard.body, /one step at a time/i);
-  assert.equal(h.guidance.welcomeCard.startLabel, 'Meet Creation Studio');
+  assert.equal(h.guidance.welcomeCard.title, 'Get Gizmobot back online', 'the welcome names the outcome, not the tool');
+  assert.match(h.guidance.welcomeCard.body, /repair both/i);
+  assert.equal(h.guidance.welcomeCard.startLabel, 'Start the repair');
   assert.deepEqual(h.project.get('part-head').components.transform, headPart.challengeTransform);
   assert.deepEqual(h.project.get('part-right-hand').components.transform, handPart.challengeTransform);
   assert.equal(h.expressions.at(-1), 'frown');
@@ -261,12 +262,11 @@ test('Creation Studio repairs the Head with tools and the oversized Hand with th
   assert.equal(STEPS[lesson.state.step].title, 'Resize the Hand');
   assert.equal(h.project.selection.activeId, handPart.id);
   assert.equal(h.camera.locked, false);
-  assert.equal(h.capabilities.at(-1).tools.scale, true, 'Scale appears when it is first used');
-  assert.equal(h.capabilities.at(-1).tools.move, true);
-  assert.equal(h.capabilities.at(-1).tools.rotate, true);
+  assert.deepEqual(h.capabilities.at(-1).tools, { select: true, move: false, rotate: false, scale: false, add: false }, 'the Hand is resized with Inspector numbers, not handles');
+  assert.equal(h.tools.getActive(), 'select');
   assert.deepEqual(h.capabilities.at(-1).transformFields, { position: false, rotation: false, scale: true, axes: null, currentAxis: null, scrub: null });
   assert.deepEqual(h.guide.options.at(-1), { match: ['rotation'] }, 'the outline keeps the Hand’s tilt so only size is compared');
-  assert.match(h.guidance.current.body, /Scale changes size.*handles help.*Scale numbers/i);
+  assert.match(h.guidance.current.body, /^In the Inspector, set Scale X, Y, and Z to 1\b.*handles step aside/, 'the card says why the tools are set aside');
   h.project.updateTransform(hand.id, { scale: [1.2, 1.2, 1.2] });
   assert.equal(h.guidance.complete, false, 'an off-target scale cannot pass the Scale gate');
   h.project.updateTransform(hand.id, { scale: [1, 1, 1.004] });
@@ -275,10 +275,10 @@ test('Creation Studio repairs the Head with tools and the oversized Hand with th
   advance();
   assert.equal(STEPS[lesson.state.step].kind, 'handRotation');
   assert.ok(!h.guidance.current.spotlight, 'the Inspector was introduced on the previous step');
-  assert.deepEqual(h.capabilities.at(-1).tools, { select: true, move: true, rotate: true, scale: true, add: false });
+  assert.deepEqual(h.capabilities.at(-1).tools, { select: true, move: false, rotate: false, scale: false, add: false });
   assert.deepEqual(h.capabilities.at(-1).transformFields, { position: false, rotation: true, scale: false, axes: null, currentAxis: null, scrub: null });
   assert.equal(h.guide.options.at(-1), undefined, 'the outline shows the upright, full-size destination');
-  assert.match(h.guidance.current.body, /Rotate handles help.*Rotation numbers help/i);
+  assert.match(h.guidance.current.body, /^Set Rotation X, Y, and Z to 0°/);
   h.project.updateTransform(hand.id, { rotation: [0, 0, 0.2] });
   assert.equal(h.guidance.complete, false, 'an off-target rotation cannot pass the Rotation gate');
   h.project.updateTransform(hand.id, { rotation: [0, 0, 0] });
@@ -304,7 +304,7 @@ test('Creation Studio repairs the Head with tools and the oversized Hand with th
     assert.equal(h.capabilities.at(-1).tools.scale, false);
     assert.equal(h.capabilities.at(-1).features.view, false, 'view presets cannot unlock the camera');
     assert.equal(Boolean(h.guidance.current.spotlight), order === 0, 'only the first Position step introduces the fields with a callout');
-    if (order === 0) assert.match(h.guidance.current.body, /handles step aside/, 'the first locked view explains why the tools are set aside');
+    if (order === 0) assert.match(h.guidance.current.body, /camera is locked/);
     assert.equal(h.capabilities.at(-1).panels.inspector, true);
     const fields = h.capabilities.at(-1).transformFields;
     assert.equal(fields.position, true); assert.equal(fields.rotation, false); assert.equal(fields.scale, false);
@@ -333,8 +333,7 @@ test('Creation Studio repairs the Head with tools and the oversized Hand with th
   assert.equal(STEPS[lesson.state.step].kind, 'done');
   assert.equal(h.camera.locked, false, 'the camera is free again to check every angle');
   assert.equal(h.camera.moves.at(-1).orthographic, undefined, 'the check returns to a normal perspective view');
-  assert.equal(h.guide.visible, true, 'the outline returns to confirm the fit from every angle');
-  assert.deepEqual(h.guide.options.at(-1), { floor: false, marker: false });
+  assert.equal(h.guide.visible, false, 'the finale shows the connected Hand itself, not an outline over it');
   assert.match(h.guidance.current.body, /every side/i);
   assert.equal(h.guidance.current.step, '', 'the closing celebration is not a numbered step');
   assert.equal(h.guidance.current.total, STEPS.length - 1);
@@ -351,8 +350,13 @@ test('Creation Studio repairs the Head with tools and the oversized Hand with th
   assert.equal(lesson.state.finished, true);
   assert.equal(h.capabilities.at(-1).features.snap, true);
   assert.equal(h.capabilities.at(-1).features.snapSettings, false);
-  assert.deepEqual(h.guide.shown, ['part-head', 'part-head', 'part-head', 'part-head', 'part-right-hand', 'part-right-hand', 'part-right-hand']);
+  assert.deepEqual(h.guide.shown, ['part-head', 'part-head', 'part-head', 'part-head', 'part-right-hand', 'part-right-hand']);
   assert.ok(!STEPS.some(step => /fourteen/i.test(`${step.title} ${step.body}`)));
+  const firstUse = new Set();
+  for (const step of STEPS) {
+    assert.ok(step.body.length <= 230, `${step.title} stays short`);
+    for (const term of step.terms || []) { assert.ok(!firstUse.has(term), `${term} is green on its first step only`); firstUse.add(term); }
+  }
   assert.equal(h.camera.locked, false);
 });
 

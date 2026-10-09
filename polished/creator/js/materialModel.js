@@ -3,6 +3,10 @@ import * as THREE from 'three';
 /** Semantic material roles hide GLTF mesh names from the editor's object model. */
 export const MATERIAL_MODEL_URL = new URL('../../labs/material-lab/assets/gizmobot-material-lab.glb', import.meta.url);
 
+// Projects store Emission as 0–1, like Roughness and Metalness. Full glow is
+// rendered a little hotter so the shell reads clearly in a dark room.
+export const EMISSION_GAIN = 1.25;
+
 export function applyModelMaterial(root, values = {}) {
   root.traverse(node => {
     if (!node.isMesh) return;
@@ -12,7 +16,7 @@ export function applyModelMaterial(root, values = {}) {
       material.roughness = values.roughness ?? .5;
       material.metalness = values.metalness ?? 0;
       material.emissive.set(values.color ?? '#b8b8b4');
-      material.emissiveIntensity = values.emissiveIntensity ?? 0;
+      material.emissiveIntensity = (values.emissiveIntensity ?? 0) * EMISSION_GAIN;
     }
   });
 }

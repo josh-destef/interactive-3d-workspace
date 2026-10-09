@@ -12,12 +12,17 @@ const { MATERIAL_SWATCHES } = await import('../js/materialPalette.js');
 
 test('emission survives history and serialization and rejects invalid values', () => {
  const project = createProject(); const entity = project.addPrimitive('cube');
- project.updateMaterial(entity.id, { emissiveIntensity: 1.25 });
- assert.equal(project.get(entity.id).components.material.emissiveIntensity, 1.25);
+ project.updateMaterial(entity.id, { emissiveIntensity: 1 });
+ assert.equal(project.get(entity.id).components.material.emissiveIntensity, 1);
  project.history.undo(); assert.equal(project.get(entity.id).components.material.emissiveIntensity, undefined);
- project.history.redo(); assert.equal(project.get(entity.id).components.material.emissiveIntensity, 1.25);
- const data = project.serialize(); project.restore(data); assert.equal(project.get(entity.id).components.material.emissiveIntensity, 1.25);
- for (const value of [-1, 1.26, NaN, Infinity, '1']) assert.throws(() => project.updateMaterial(entity.id, { emissiveIntensity: value }));
+ project.history.redo(); assert.equal(project.get(entity.id).components.material.emissiveIntensity, 1);
+ const data = project.serialize(); project.restore(data); assert.equal(project.get(entity.id).components.material.emissiveIntensity, 1);
+ const old = structuredClone(data); old.version = 1; old.entities.find(e => e.id === entity.id).components.material.emissiveIntensity = 1.25;
+ project.restore(old); assert.equal(project.get(entity.id).components.material.emissiveIntensity, 1, 'files saved with the old 0–1.25 range keep their look');
+ old.entities.find(e => e.id === entity.id).components.material.emissiveIntensity = .5;
+ project.restore(old); assert.equal(project.get(entity.id).components.material.emissiveIntensity, .4);
+ assert.equal(project.serialize().version, 2);
+ for (const value of [-1, 1.01, NaN, Infinity, '1']) assert.throws(() => project.updateMaterial(entity.id, { emissiveIntensity: value }));
  data.entities.find(e => e.id === entity.id).components.material.emissiveIntensity = -1;
  assert.throws(() => project.restore(data));
 });

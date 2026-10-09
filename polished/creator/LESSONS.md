@@ -75,8 +75,8 @@ rail on the step that first uses it, with its one-sentence explanation in that
 step's card. After that it stays available.
 
 If a lesson has to hide something it already introduced, the card says why in
-one clause. For example, Build Gizmobot's locked-camera steps say "the tool
-handles step aside: a drag could shift an axis you cannot see".
+one clause. For example, Build Gizmobot's first Hand step says "The tool
+handles step aside while you work with exact numbers."
 
 *Why:* Build Gizmobot used to show Move, Rotate and Scale together in a "meet
 the tools" step, then take them away. Learners read that as the tools
@@ -359,7 +359,9 @@ Other hooks lessons use: `tools.setSnapSettings`, `tools.getActive`,
    - each tool appears on its introduction step and stays after;
    - demos never complete a gate;
    - the finale is unnumbered, celebratory, and calls `onFinish`.
-2. **Real browser playthrough.** Use the `run-lesson` skill: serve the repo,
+2. **Real browser playthrough.** Keep one as a test where you can
+   (`assembly-browser.test.mjs` plays Build Gizmobot to its finale, dragging
+   the Head with real pointer events). Otherwise use the `run-lesson` skill: serve the repo,
    open `/polished/creator/?lesson=<id>`, click Okay on spotlit steps, and drive
    the lesson to the finale. Check the console has no errors.
 3. **Screenshots** go in `.screenshots/` (gitignored). Check 1440×900 and a

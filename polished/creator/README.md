@@ -191,6 +191,7 @@ mocks the GPU/asset transport but uses real Three transforms and real project
 commands. Browser screenshots and machine-readable results are in `qa/`.
 
 ## Original editor boundaries (updated by the studio extension below)
+node polished/creator/tests/assembly-browser.test.mjs
 
 - Model an Accessory and Material Lab run in Creation Studio; other labs retain their existing shells.
 - Edit mesh and object animation are now available in standalone Creation Studio; see the
@@ -214,8 +215,9 @@ Project save/load is provided by the studio extension below.
 frowning Head plus an oversized Hand disconnected nearby. It introduces the
 Viewport and Outliner through that visible problem. Move, Rotate, and Scale
 from Navigate & Transform are each revisited on the step that first uses them
-(Move for the Head, then Rotate, then Scale for the Hand) and stay on the tool
-rail afterwards, except while the camera is locked for Hand Position. The Head
+(Move for the Head, then Rotate) and stay on the tool rail for the Head.
+The rail shows only Select while the Hand is repaired; Scale is met there as
+Inspector numbers, and all three tools return for the finale. The Head
 repair is three short cards: Turn on Snap (Continue), Choose Move (advances
 on its own via `autoAdvance`), then Move the Head into place. Move stays hidden
 until Snap is on. A snapped drag that lands within 0.15 (just over half a step)
@@ -229,7 +231,9 @@ its matching viewport tool at a time), and finally positioned one axis at a
 time (Z, Y, X) from a locked, orthographic camera. Each value can be typed or
 dragged left and right like a Blender field, with no range limit. The orange
 outline is hidden while the Hand is placed, since it would reveal the true
-spot, and returns on the final check around the connected Hand. Each locked view looks straight along the axes still wrong, and a flat
+spot. The finale shows the connected Hand itself, with no outline over it.
+Move, Rotate and Scale handles are hidden for the whole Hand repair, so its
+size, direction and position can only be set with Inspector numbers. Each locked view looks straight along the axes still wrong, and a flat
 view shows no depth or size change, so the Hand looks exactly placed until the
 next view reveals the remaining gap (`handAxisView`, `HAND_START_OFFSET`). The
 Hand casts no shadow while the camera is locked, since its shadow would reveal
@@ -248,7 +252,8 @@ Appearance state to `Shell_Paint` in the existing lesson GLB while preserving th
 face, decals and fixed accents. The fixed neutral light, reference comparisons,
 teaching gates and photo capture live in the lesson scenario, outside Appearance.
 
-Material records accept optional `emissiveIntensity` (0–1.25); glow follows Base
+Material records accept optional `emissiveIntensity` (0–1, rendered ×1.25;
+version 1 files stored 0–1.25 and are rescaled on open); glow follows Base
 Color. Both primitive materials and the semantic shell render this property.
 `setCapabilities({appearance:{baseColor,rgb,roughness,metalness,emissive,
 exploreRgb,readOnly},scene:{excludeIds}})` controls progressive exposure.

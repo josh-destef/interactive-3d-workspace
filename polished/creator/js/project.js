@@ -276,7 +276,7 @@ function validateEntity(entity, ids) {
       !finite(metalness) ||
       metalness < 0 ||
       metalness > 1 ||
-      (emissiveIntensity !== undefined && (!finite(emissiveIntensity) || emissiveIntensity < 0 || emissiveIntensity > 1.25))
+      (emissiveIntensity !== undefined && (!finite(emissiveIntensity) || emissiveIntensity < 0 || emissiveIntensity > 1))
     )
       throw new TypeError("Invalid material");
   }
@@ -655,14 +655,20 @@ export function createProject() {
       return true;
     },
     serialize() {
-      return { version: 1, entities: clone(entities), animationSettings: clone(animationSettings) };
+      return { version: 2, entities: clone(entities), animationSettings: clone(animationSettings) };
     },
     restore(data) {
       if (transaction) throw new Error("Cannot restore during a transaction");
-      if (!data || data.version !== 1 || !Array.isArray(data.entities))
+      if (!data || ![1, 2].includes(data.version) || !Array.isArray(data.entities))
         throw new TypeError("Unsupported project data");
       const proposed = clone(data.entities),
         ids = new Set();
+      // Version 1 stored Emission as 0–1.25; it is 0–1 now, with the same look.
+      if (data.version === 1) for (const entity of proposed) {
+        const material = entity?.components?.material;
+        if (finite(material?.emissiveIntensity) && material.emissiveIntensity > 0)
+          material.emissiveIntensity = Math.min(1, material.emissiveIntensity / 1.25);
+      }
       if (proposed.length > 2000) throw new RangeError('Projects support up to 2,000 objects');
       const nextSettings = { ...DEFAULT_ANIMATION, ...data.animationSettings };
       validateAnimationSettings(nextSettings);

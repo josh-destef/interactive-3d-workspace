@@ -4,7 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createStage, V3 } from '../../kit/js/stage.js';
 import { createTransformGizmos } from '../../kit/js/transformGizmos.js';
 import { nearestSurfaceOffset } from './snapping.js';
-import { MATERIAL_MODEL_URL, cloneMaterialModel, applyModelMaterial } from './materialModel.js';
+import { MATERIAL_MODEL_URL, EMISSION_GAIN, cloneMaterialModel, applyModelMaterial } from './materialModel.js';
 import { triangulateMesh } from './mesh.js';
 import { ASSEMBLY_MODEL_SCALE } from './assemblyData.js';
 
@@ -42,7 +42,7 @@ function materialFor(entity) {
     const m = entity.components.material || {};
     return new THREE.MeshStandardMaterial({
         color: m.color ?? '#ff9022', roughness: m.roughness ?? .55,
-        emissive: m.color ?? '#ff9022', emissiveIntensity: m.emissiveIntensity ?? 0,
+        emissive: m.color ?? '#ff9022', emissiveIntensity: (m.emissiveIntensity ?? 0) * EMISSION_GAIN,
         metalness: m.metalness ?? .05, side: entity.type === 'plane' ? THREE.DoubleSide : THREE.FrontSide,
         flatShading: Boolean(entity.components.mesh),
     });
