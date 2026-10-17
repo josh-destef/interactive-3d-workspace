@@ -44,11 +44,14 @@ async function throughSurfaces(h, beforeChallenge = () => {}) {
   h.next();
   assert.match(h.guidance.current.body, /face stayed visible.*Emission/i, 'emission is named after the learner sees it');
   assert.equal(h.studio.roomOn, false, 'the room stays dark while the learner tries emission');
+  assert.equal(h.guidance.current.continueLabel, 'Turn on the lights', 'leaving the dark room names what happens next');
   h.change({ emissiveIntensity: .8 }); h.next();
   assert.equal(h.studio.roomOn, true, 'normal lighting returns for the authored design');
   assert.equal(h.project.get('gizmobot').components.material.emissiveIntensity, 0, 'the dark-room emission does not wash out the design');
   assert.doesNotMatch(h.guidance.current.body, /lighting/i, 'this lab no longer teaches lighting');
   assert.equal(h.guidance.current.actionLabel, '', 'saving a picture waits for the finale');
+  assert.equal(h.capabilities().appearance.lightsToggle, 'on', 'free design offers a lights switch beside Emission');
+  assert.equal(h.capabilities().appearance.effectsOpen, true, 'Emission and the lights switch are visible without searching');
   assert.equal(h.guidance.message, undefined, 'the instruction text is never swapped for status messages');
   beforeChallenge(); h.next();
 }
@@ -71,6 +74,8 @@ test('required journey uses selected shared material, demos cannot pass practice
   assert.deepEqual(h.project.serialize(), before); assert.equal(h.lesson.state.complete, false);
   await throughSurfaces(h); assert.equal(h.lesson.state.step, 'challenge'); assert.equal(h.capabilities().appearance.rgb, false);
   assert.equal(h.capabilities().appearance.colorPicker, false);
+  assert.equal(h.guidance.current.spotlight, false, 'Check match is available while the matching instruction is read');
+  assert.match(h.guidance.current.body, /“Check match” button/, 'on-screen button labels are quoted');
   match(h); assert.equal(h.lesson.state.complete, true);
   h.lesson.newTarget(); assert.equal(h.lesson.state.complete, false);
   match(h); h.next(); assert.equal(h.lesson.state.step, 'done');
@@ -81,8 +86,52 @@ test('required journey uses selected shared material, demos cannot pass practice
   assert.equal(h.guidance.current.canContinue, true);
   assert.equal(h.guidance.current.continueLabel, 'Back to Home');
   assert.equal(h.guidance.current.actionLabel, 'Save picture', 'the finale invites learners to keep and share a picture');
+  assert.equal(h.guidance.current.secondaryLabel, 'Try another match', 'the finale offers another match');
+  h.change({ color: '#c0453a' });
+  const design = structuredClone(h.project.get('gizmobot').components.material);
+  h.guidance.current.onSecondary(); assert.equal(h.lesson.state.step, 'challenge');
+  match(h); h.next(); assert.equal(h.lesson.state.step, 'done');
+  assert.deepEqual(h.project.get('gizmobot').components.material, design, 'a second match returns the latest design');
   h.guidance.current.onContinue(); assert.equal(finished, true, 'the finale leads back to the course hub');
   h.lesson.dispose();
+});
+test('instructions use beginner language and let the highlighted control be used directly', async () => {
+  const h = await harness(); h.lesson.next();
+  const copy = [];
+  const record = () => copy.push(`${h.guidance.current.title} ${h.guidance.current.body}`);
+  record(); assert.equal(h.guidance.current.targetInteractive, true, 'the first object can be chosen without Okay');
+  h.project.selection.set('gizmobot'); h.next(); record();
+  assert.equal(h.guidance.current.targetInteractive, true, 'a swatch can be chosen without Okay');
+  assert.doesNotMatch(h.guidance.current.body, /Watch comparison/, 'the instruction does not name a button that is replaced by Continue');
+  h.change({ color: '#3a6fa8' }); h.next(); record();
+  await throughSurfaces(h, record); record();
+  assert.ok(copy.every(text => !/shell/i.test(text)), 'no step relies on the word shell');
+  h.lesson.dispose();
+});
+test('free design lights switch only works while designing and resets for the match', async () => {
+  const { JSDOM } = await import(pathToFileURL(path.join(os.tmpdir(), 'fundamentals-3d-qa/node_modules/jsdom/lib/api.js')));
+  const dom = new JSDOM('<aside id="editor-dock"></aside>');
+  dom.window.HTMLElement.prototype.scrollIntoView = () => {};
+  globalThis.document = dom.window.document;
+  let h;
+  try {
+    h = await harness({ controls: true }); h.project.selection.set('gizmobot'); h.next();
+    const lights = on => document.getElementById('editor-dock').dispatchEvent(new dom.window.CustomEvent('appearancelights', { bubbles: true, detail: { on } }));
+    lights(false); assert.equal(h.studio.roomOn, true, 'the switch is not part of the guided steps');
+    h.change({ color: '#3a6fa8' }); h.next();
+    await throughSurfaces(h, () => {
+      lights(false); assert.equal(h.studio.roomOn, false, 'designing can switch the room lights off');
+      assert.equal(h.lesson.state.roomOn, false);
+    });
+    assert.equal(h.studio.roomOn, true, 'the match always starts in normal light');
+    assert.equal(h.guidance.current.secondaryLabel, 'Try another match');
+    assert.equal(h.guidance.current.secondaryWhenComplete, true, 'another match is offered beside Continue after a pass');
+    match(h); assert.equal(h.lesson.state.complete, true);
+    h.guidance.current.onSecondary(); assert.equal(h.lesson.state.complete, false, 'the new reference starts unmatched');
+    assert.equal(h.lesson.state.step, 'challenge');
+  } finally {
+    h?.lesson.dispose(); dom.window.close(); delete globalThis.document;
+  }
 });
 test('Explore RGB opens a brief popup beside the button and keeps the learner on the color step', async () => {
   const { JSDOM } = await import(pathToFileURL(path.join(os.tmpdir(), 'fundamentals-3d-qa/node_modules/jsdom/lib/api.js')));
@@ -99,6 +148,7 @@ test('Explore RGB opens a brief popup beside the button and keeps the learner on
     const tip = document.querySelector('.material-rgb-tip');
     assert.ok(tip, 'a popup explains mixing a color');
     assert.match(tip.textContent, /red, green, and blue/);
+    assert.equal(tip.querySelectorAll('button').length, 1, 'the popup has one clear action; Escape or clicking away closes it');
     tip.querySelector('[data-rgb-open]').click();
     assert.equal(document.querySelector('.material-rgb-tip'), null, 'opening the picker closes the popup');
     h.change({ color: '#8b5cf6' }); assert.equal(h.lesson.state.complete, true, 'a picked color completes the color step');
@@ -161,7 +211,7 @@ test('changed matches update live after the first check and free play restores t
   await throughSurfaces(h, () => {
     h.change({ color: '#c0453a', roughness: .72, metalness: .15, emissiveIntensity: .9 });
     h.lesson.setRoomLights(false);
-    assert.equal(h.studio.roomOn, true, 'the lighting toggle is limited to the emission step');
+    assert.equal(h.studio.roomOn, true, 'the step lights action is limited to the emission step');
     authored = structuredClone(h.project.get('gizmobot').components.material);
   });
   match(h); assert.equal(h.lesson.state.complete, true);

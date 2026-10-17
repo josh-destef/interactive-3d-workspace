@@ -11,7 +11,7 @@ export const appearanceSection = {
   id: 'appearance', title: 'Appearance', defaultExpanded: true,
   supports: entity => Boolean(entity.components?.material),
   render({ project, entity, capabilities = {} }) {
-    const config = { baseColor: true, colorPicker: true, rgb: false, roughness: true, metalness: true, emissive: true, exploreRgb: false, ...capabilities.appearance };
+    const config = { baseColor: true, colorPicker: true, rgb: false, roughness: true, metalness: true, emissive: true, exploreRgb: false, effectsOpen: false, lightsToggle: false, ...capabilities.appearance };
     const readOnly = () => Boolean(config.readOnly || project.get(entity.id)?.locked);
     const edit = patch => { if (!readOnly()) project.updateMaterial(entity.id, patch); };
     const root = el('div', 'appearance-fields');
@@ -42,11 +42,23 @@ export const appearanceSection = {
     let effectsContent;
     if (config.emissive) {
       const effects = el('section', 'appearance-effects'); effects.dataset.appearance = 'emissive';
-      const heading = el('button', 'appearance-effects-toggle'); heading.type = 'button'; heading.setAttribute('aria-expanded', 'false');
+      const heading = el('button', 'appearance-effects-toggle'); heading.type = 'button'; heading.setAttribute('aria-expanded', String(Boolean(config.effectsOpen)));
       const title = el('span', 'appearance-effects-title'); title.append(el('strong', '', 'Effects'), el('small', '', 'Emission')); heading.append(title);
-      effectsContent = el('div', 'appearance-effects-content'); effectsContent.hidden = true;
+      effectsContent = el('div', 'appearance-effects-content'); effectsContent.hidden = !config.effectsOpen;
       heading.addEventListener('click', () => { const open = effectsContent.hidden; effectsContent.hidden = !open; heading.setAttribute('aria-expanded', String(open)); });
       effects.append(heading, effectsContent); root.append(effects); addRange('emissiveIntensity', effectsContent);
+      // Emission is easiest to judge in the dark, so a host can offer a room-lights switch beside it.
+      if (config.lightsToggle) {
+        let lightsOn = config.lightsToggle !== 'off';
+        const lights = el('button', 'button button-secondary appearance-lights-toggle'); lights.type = 'button';
+        const label = () => { lights.textContent = lightsOn ? 'Turn off the lights' : 'Turn on the lights'; };
+        label();
+        lights.addEventListener('click', () => {
+          lightsOn = !lightsOn; label();
+          root.dispatchEvent(new CustomEvent('appearancelights', { bubbles: true, detail: { entityId: entity.id, on: lightsOn } }));
+        });
+        effectsContent.append(lights);
+      }
     }
     function update(next) {
       if (document.activeElement !== color) color.value = next.components.material.color;

@@ -4,21 +4,21 @@ import { makeMaterialTarget, assessMaterial } from './materialChallenge.js';
 // Each step's copy is set once and stays put: the takeaway lives in the
 // instruction itself, and feedback appears beside the control that produced it.
 const COPY = {
-  intro: ['Choose the shell', 'Click Gizmobot Shell in the object list on the right. The shell is the surface you will change.'],
-  color: ['Start with the shell color', 'Choose a Base Color swatch on the right. Notice that only the shell changes color. Watch comparison shows an example.'],
-  roughness: ['Compare shiny and dull', 'Move Roughness between Shiny and Dull. Notice the bright reflection change from sharp to soft.'],
-  metalness: ['Compare plastic and metal', 'Move Metalness between Plastic and Metal. Notice the metal shell turn darker and more mirror-like. Move Roughness toward Shiny if the change is hard to see.'],
-  emission: ['Turn off the room lights', 'Choose Turn off the lights. Notice which parts of Gizmobot you can still see.'],
-  glow: ['Let the shell show its own color', 'The face stayed visible because it uses Emission: it shows its own color without room light. Move Emission from None toward Bright and watch the shell appear in the dark.'],
-  photo: ['Create your own look', 'Use the color and finish controls to design a look you like. Your design comes back after the match.'],
-  challenge: ['Rebuild the reference look', 'Match your shell to the Reference using the Base Color swatches and finish sliders. Choose Check match below; your score then updates as you adjust.'],
-  done: ['You can design materials!', 'Base Color, Roughness, Metalness, and Emission work together to make a material, and your design is back. Change anything you like, then choose Save picture to keep a picture of your Gizmobot to share.'],
+  intro: ['Select Gizmobot', 'Click Gizmobot in the object list on the right. Selecting it opens its Appearance settings, where you will change how its body looks.'],
+  color: ['Choose a color', 'Choose a Base Color swatch on the right. Notice that Gizmobot’s body changes color while its face and colored details keep theirs.'],
+  roughness: ['Compare shiny and dull', 'Move Roughness between Shiny and Dull. Roughness sets the surface finish: notice the bright reflection change from sharp to soft. The change is easiest to see on a darker color.'],
+  metalness: ['Compare plastic and metal', 'Move Metalness between Plastic and Metal. Notice that metal turns darker and more mirror-like. Metalness and Roughness work together to set the finish: metal looks most like a mirror when Roughness is near Shiny.'],
+  emission: ['Turn off the room lights', 'Choose “Turn off the lights”. Notice which parts of Gizmobot you can still see.'],
+  glow: ['Make Gizmobot glow', 'The face stayed visible because it uses Emission: the face glows with its own color, even without room light. Move Emission from None toward Bright to make Gizmobot glow too. Dark colors barely glow, so try a brighter Base Color if Gizmobot stays dark.'],
+  photo: ['Create your own look', 'Use Base Color, Roughness, Metalness, and Emission to design a look you like. Next you will match a reference look, and then your design will come back so you can save a picture.'],
+  challenge: ['Match the reference', 'Make your Gizmobot look like the Reference using the Base Color swatches and the finish sliders, Roughness and Metalness. Choose the “Check match” button to see your score, which then updates as you adjust.'],
+  done: ['You can design materials!', 'Base Color, Roughness, Metalness, and Emission work together to make a material, and your design is back. Change anything you like, then choose “Save picture” to keep a picture of your Gizmobot to share.'],
 };
 // Green marks vocabulary the first time it matters, not every control name.
 const TERMS = {
-  intro: ['Gizmobot Shell'],
+  intro: ['Appearance'],
   color: ['Base Color'],
-  roughness: ['Roughness'],
+  roughness: ['Roughness', 'finish'],
   metalness: ['Metalness'],
   glow: ['Emission'],
 };
@@ -31,8 +31,9 @@ const TARGETS = {
   color: '[data-appearance="baseColor"]',
   roughness: '[data-appearance="roughness"]', metalness: '[data-appearance="metalness"]',
   glow: '.appearance-effects-content [data-appearance="emissive"]',
-  challenge: '.inspector-section[data-section="appearance"]',
 };
+// Free design keeps a room-lights switch beside Emission.
+const FREE_STEPS = ['photo', 'done'];
 const clone = value => structuredClone(value);
 const STATIC_LIGHT_ANGLE = 38;
 
@@ -69,7 +70,7 @@ export async function createMaterialLesson(creator, options = {}) {
   }
   const sceneControls = dock ? document.createElement('section') : null;
   let matchFeedback = null;
-  studio = options.studio || (await import('./materialStudio.js')).createMaterialStudio(creator);
+  studio =options.studio || (await import('./materialStudio.js')).createMaterialStudio(creator);
 
   function capabilities() {
     const level = Math.max(0, ORDER.indexOf(step));
@@ -86,6 +87,8 @@ export async function createMaterialLesson(creator, options = {}) {
         roughness: level >= 2 || final || challenge,
         metalness: level >= 3 || final || challenge,
         emissive: ['glow', 'photo', 'done'].includes(step), exploreRgb: step === 'color', readOnly: busy,
+        effectsOpen: ['glow', 'photo', 'done'].includes(step),
+        lightsToggle: FREE_STEPS.includes(step) ? (roomOn ? 'on' : 'off') : false,
       },
     });
     creator.dock?.inspector?.setExpanded('appearance', true);
@@ -135,6 +138,15 @@ export async function createMaterialLesson(creator, options = {}) {
     roomOn = on; studio.setRoomLights(on);
     if (step === 'emission' && !on) achieved();
   }
+  function freeLights(event) {
+    if (!FREE_STEPS.includes(step) || busy || disposed) return;
+    roomOn = Boolean(event.detail?.on); studio.setRoomLights(roomOn);
+  }
+  function rematch() {
+    if (busy || disposed || step !== 'done') return;
+    authored = material();
+    enter('challenge');
+  }
 
   function show() {
     const [title, body] = COPY[step];
@@ -148,11 +160,16 @@ export async function createMaterialLesson(creator, options = {}) {
     guidance.show({
       step: finished ? '' : ORDER.indexOf(step) + 1,
       total: NUMBERED_STEPS, title, body, terms: TERMS[step], fixedHome: true, target: TARGETS[step], spotlight: Boolean(TARGETS[step]), callout: true, dim: true, placement: 'left',
+      // The highlighted control works straight away; Okay is only needed to read first.
+      targetInteractive: true,
       celebrate: finished,
-      canContinue: complete, continueLabel: finished ? 'Back to Home' : step === 'photo' ? 'Start the match' : step === 'challenge' ? 'Return to my design' : 'Continue',
+      canContinue: complete,
+      continueLabel: finished ? 'Back to Home' : step === 'glow' ? 'Turn on the lights' : step === 'photo' ? 'Start the match' : step === 'challenge' ? 'Return to my design' : 'Continue',
       onContinue: finished ? () => options.onFinish ? options.onFinish() : location.assign(new URL(HOME_URL, location.href)) : next,
-      secondaryLabel: TARGETS[step] ? 'Show me where' : '',
-      onSecondary: () => { revealControl(); guidance.showTarget?.(); },
+      secondaryLabel: TARGETS[step] ? 'Show me where' : finished || matching ? 'Try another match' : '',
+      // After a match, another reference sits beside returning to the design.
+      secondaryWhenComplete: matching,
+      onSecondary: finished ? rematch : matching ? () => { if (!busy && !disposed) newTarget(); } : () => { revealControl(); guidance.showTarget?.(); },
       actionLabel: watch ? 'Watch comparison' : lights ? 'Turn off the lights' : matching ? 'Check match' : photo ? 'Save picture' : '',
       // Only the step's required action is primary; demos and saves are optional.
       actionTone: lights || matching ? 'primary' : 'secondary',
@@ -184,7 +201,7 @@ export async function createMaterialLesson(creator, options = {}) {
       update({ emissiveIntensity: 0 }); newTarget();
     }
     // The emission demo happens in a dark room; starting the design with that
-    // glow would silently wash the shell out once the lights return.
+    // glow would silently wash Gizmobot out once the lights return.
     if (step === 'photo') update({ emissiveIntensity: 0 });
     if (step === 'done' && authored) update(authored);
     // Assessment starts from a fixed finish. Undo remains available for the
@@ -309,9 +326,8 @@ export async function createMaterialLesson(creator, options = {}) {
     rgbTip.setAttribute('aria-label', 'Mix your own color');
     rgbTip.innerHTML = `
       <h3>Mix your own color</h3>
-      <p>Screens make every color by mixing red, green, and blue light (RGB). Open the color picker to mix any color you like for the shell.</p>
-      <div class="material-rgb-tip-actions"><button type="button" data-rgb-close>Close</button><button type="button" class="is-primary" data-rgb-open>Open color picker</button></div>`;
-    rgbTip.querySelector('[data-rgb-close]').addEventListener('click', () => { closeRgbTip(); anchor?.focus(); });
+      <p>All of the colors on your screen are made by mixing some combination of red, green, and blue light (RGB). Choose “Open color picker” and mix any color you like for Gizmobot.</p>
+      <div class="material-rgb-tip-actions"><button type="button" class="is-primary" data-rgb-open>Open color picker</button></div>`;
     rgbTip.querySelector('[data-rgb-open]').addEventListener('click', () => {
       const input = document.querySelector('.color-input');
       closeRgbTip();
@@ -329,20 +345,21 @@ export async function createMaterialLesson(creator, options = {}) {
     rgbTip.querySelector('[data-rgb-open]').focus();
   }
   dock?.addEventListener('appearanceexplorergb', exploreRgb);
+  dock?.addEventListener('appearancelights', freeLights);
   project.selection.clear();
   if (guidance.welcome) {
     capabilities();
     guidance.welcome({
       title: 'Create your own Gizmobot look',
-      body: 'Change the shell’s color, try shiny and dull finishes, then make it show up in the dark. You can watch an example as each control arrives.\n\nDesign your own look, then try matching a reference.',
-      terms: ['Gizmobot'],
+      body: 'A material describes how the surface of a 3D object looks. In this lab you will change Gizmobot’s material one setting at a time: its color, how shiny it is, whether it looks like plastic or metal, and whether it glows in the dark. Then you will design your own look and try matching a reference.\n\nOn some steps, the “Watch comparison” button shows you an example first.',
+      terms: ['Gizmobot', 'material'],
       onStart: () => { enter('intro'); document.querySelector('.lesson-guidance-got-it')?.focus(); },
     });
   } else enter('intro');
   return {
-    next, demo, check, newTarget, setRoomLights: room,
+    next, demo, check, newTarget, rematch, setRoomLights: room,
     exploreRgb,
-    get state() { return { step, complete, busy, target: target && clone(target) }; },
-    dispose() { disposed = true; generation++; closeRgbTip(); unsubscribe(); cursor?.dispose(); dock?.removeEventListener('appearanceexplorergb', exploreRgb); sceneControls?.remove(); if (helpButton) helpButton.hidden = oldHelpHidden; studio.dispose(); guidance.destroy(); },
+    get state() { return { step, complete, busy, roomOn, target: target && clone(target) }; },
+    dispose() { disposed = true; generation++; closeRgbTip(); unsubscribe(); cursor?.dispose(); dock?.removeEventListener('appearanceexplorergb', exploreRgb); dock?.removeEventListener('appearancelights', freeLights); sceneControls?.remove(); if (helpButton) helpButton.hidden = oldHelpHidden; studio.dispose(); guidance.destroy(); },
   };
 }

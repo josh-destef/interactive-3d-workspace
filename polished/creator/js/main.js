@@ -21,11 +21,11 @@ if (lessonId === 'build-gizmobot') {
 }
 if (lessonId === 'material-lab') {
   const seed = project.serialize();
-  const shell = seed.entities.find(entity => entity.id === 'gizmobot');
-  shell.name = 'Gizmobot Shell';
-  shell.components.transform.position = [0, 0, 0];
-  shell.components.transform.rotation = [0, 0, 0];
-  shell.components.material = { color: '#f2f0eb', roughness: .5, metalness: 0, emissiveIntensity: 0 };
+  const gizmobot = seed.entities.find(entity => entity.id === 'gizmobot');
+  gizmobot.name = 'Gizmobot';
+  gizmobot.components.transform.position = [0, 0, 0];
+  gizmobot.components.transform.rotation = [0, 0, 0];
+  gizmobot.components.material = { color: '#f2f0eb', roughness: .5, metalness: 0, emissiveIntensity: 0 };
   const creation = seed.entities.find(entity => entity.id === 'creation');
   creation.visible = false;
   creation.locked = true;
@@ -222,7 +222,7 @@ setCapabilities(lessonId === 'material-lab' ? {
 if (narrow.matches) setDock('closed'); else { dock.setState('pinned'); updateDockChrome(); }
 Promise.resolve(viewport.ready).then(() => {
   if (lessonId !== 'material-lab') $('loading').hidden = true;
-  onStatus(lessonId === 'material-lab' ? 'Select Gizmobot Shell to explore its Appearance.'
+  onStatus(lessonId === 'material-lab' ? 'Select Gizmobot to explore its Appearance.'
     : lessonId === 'build-gizmobot' ? 'Creation Studio - Build Gizmobot'
     : 'Ready to create · Add a shape to get started');
 }).catch(error => {

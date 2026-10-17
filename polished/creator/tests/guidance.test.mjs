@@ -175,6 +175,46 @@ assert.equal(layer.querySelector('.lesson-guidance-controls').hidden, true, 'les
 assert.equal(layer.querySelector('.lesson-guidance-secondary').hidden, true, 'an absent optional action cannot remain focusable');
 fixedTarget.remove();
 
+// An interactive target can be used straight from the reading card; the rest
+// of the editor stays unavailable until Okay or that first use.
+const rail = document.getElementById('tool-rail');
+const directTarget = document.createElement('button');
+directTarget.id = 'direct-target';
+const neighbour = document.createElement('button');
+rail.append(directTarget, neighbour);
+shown(directTarget, rect(30, 80, 50, 40));
+let directClicks = 0;
+directTarget.addEventListener('click', () => directClicks++);
+guidance.show({ step: 2, total: 8, title: 'Swatches', body: 'Choose a swatch.', target: '#direct-target', spotlight: true, fixedHome: true, callout: true, targetInteractive: true });
+flush();
+assert.equal(okayButton.hidden, false, 'the reading card still offers Okay');
+assert.equal(layer.classList.contains('is-target-interactive'), true);
+assert.equal(document.getElementById('creator-app').hasAttribute('inert'), false, 'the branch holding the target stays usable');
+assert.equal(neighbour.hasAttribute('inert'), true, 'controls beside the target stay unavailable');
+assert.equal(addMenu.hasAttribute('inert'), true, 'other editor areas stay unavailable');
+const blockedNeighbour = new dom.window.MouseEvent('pointerdown', { bubbles: true, cancelable: true });
+neighbour.dispatchEvent(blockedNeighbour);
+assert.equal(blockedNeighbour.defaultPrevented, true, 'pressing elsewhere does not dismiss the card');
+directTarget.dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true, cancelable: true }));
+directTarget.click();
+flush();
+assert.equal(directClicks, 1, 'the highlighted control works on the first press');
+assert.equal(okayButton.hidden, true, 'using the control acknowledges the step');
+assert.equal(neighbour.hasAttribute('inert'), false, 'the editor is restored after that first use');
+directTarget.remove(); neighbour.remove();
+
+// A follow-up choice can wait beside Continue until the goal is met.
+const secondaryButton = layer.querySelector('.lesson-guidance-secondary');
+guidance.show({ step: 8, total: 8, title: 'Match', body: 'Choose “Check match”.', fixedHome: true, secondaryLabel: 'Try another match', secondaryWhenComplete: true, onSecondary: () => {} });
+flush();
+assert.equal(secondaryButton.hidden, true, 'the follow-up waits for the goal');
+assert.equal(secondaryButton.classList.contains('is-button'), true, 'the follow-up is styled as a button beside Continue');
+guidance.setComplete(true); flush();
+assert.equal(secondaryButton.hidden, false, 'the follow-up appears with Continue');
+assert.equal(continueButton.hidden, false);
+guidance.setComplete(false); flush();
+assert.equal(secondaryButton.hidden, true, 'the follow-up leaves with Continue');
+
 guidance.destroy();
 assert.equal(document.querySelector('.lesson-guidance'), null, 'destroy removes the mounted layer');
 assert.equal(document.getElementById('creator-app').classList.contains('lesson-mode'), false, 'destroy releases the lesson layout hook');

@@ -129,6 +129,8 @@ export function createGuidance({ mount = document.body } = {}) {
     continueButton.hidden = !complete || !gotIt.hidden;
     // Optional: the action (e.g. a demo) is replaced by Continue, never shown beside it.
     if (state?.hideActionWhenComplete) actionButton.hidden = !state.actionLabel || complete;
+    // A follow-up choice (e.g. another attempt) sits beside Continue once the goal is met.
+    if (state?.secondaryWhenComplete && !reading) secondaryButton.hidden = !state.secondaryLabel || !complete;
   }
 
   function setReading(next) {
@@ -137,23 +139,35 @@ export function createGuidance({ mount = document.body } = {}) {
     root.classList.toggle('is-reading', reading);
     if (reading) {
       // Preserve existing inert state, including a narrow-screen dock's modal state.
+      const makeInert = element => {
+        if (inertElements.has(element)) return;
+        inertElements.set(element, element.hasAttribute('inert'));
+        element.setAttribute('inert', '');
+      };
+      // An interactive target stays usable: only the branches around it go inert.
+      const keep = interactiveTarget();
       for (let branch = root; branch.parentElement; branch = branch.parentElement) {
         for (const sibling of branch.parentElement.children) {
-          if (sibling === branch || inertElements.has(sibling)) continue;
-          inertElements.set(sibling, sibling.hasAttribute('inert'));
-          sibling.setAttribute('inert', '');
+          if (sibling === branch) continue;
+          if (keep && sibling.contains(keep)) {
+            for (let node = keep; node !== sibling; node = node.parentElement) {
+              for (const cousin of node.parentElement.children) if (cousin !== node) makeInert(cousin);
+            }
+          } else makeInert(sibling);
         }
         if (branch.parentElement === document.body) break;
       }
+      root.classList.toggle('is-target-interactive', Boolean(keep));
       card.setAttribute('role', 'dialog');
       card.setAttribute('aria-modal', 'true');
-      card.setAttribute('aria-label', 'Read this step, then choose Okay');
+      card.setAttribute('aria-label', keep ? 'Read this step, then choose Okay or use the highlighted control' : 'Read this step, then choose Okay');
       controls.setAttribute('inert', '');
       actionButton.hidden = secondaryButton.hidden = continueButton.hidden = true;
       gotIt.focus({ preventScroll: true });
     } else {
       for (const [element, wasInert] of inertElements) if (!wasInert) element.removeAttribute('inert');
       inertElements.clear();
+      root.classList.remove('is-target-interactive');
       card.setAttribute('role', 'region');
       card.removeAttribute('aria-modal');
       card.removeAttribute('aria-label');
@@ -163,9 +177,22 @@ export function createGuidance({ mount = document.body } = {}) {
     }
   }
 
+  // A step may let the learner use its highlighted control straight away
+  // instead of choosing Okay first.
+  function interactiveTarget() {
+    if (!state?.targetInteractive) return null;
+    const target = resolveTarget(state.target);
+    return visible(target) && !root.contains(target) ? target : null;
+  }
+
   // Inert handles focus and pointer input; stop editor keyboard shortcuts too.
   function guardReading(event) {
     if (!reading) return;
+    const keep = event.type !== 'keydown' && interactiveTarget();
+    if (keep?.contains(event.target)) {
+      if (event.type === 'pointerdown') acknowledge();
+      return;
+    }
     if (event.type === 'keydown') {
       if (event.target === gotIt && ['Enter', ' '].includes(event.key)) {
         event.stopPropagation();
@@ -269,6 +296,7 @@ export function createGuidance({ mount = document.body } = {}) {
     secondaryButton.textContent = state.secondaryLabel || '';
     secondaryButton.hidden = !state.secondaryLabel || Boolean(state.callout && state.spotlight);
     secondaryButton.disabled = false;
+    secondaryButton.classList.toggle('is-button', Boolean(state.secondaryWhenComplete));
     status(state.status || '');
     gotIt.hidden = !state.spotlight || acknowledged;
     setReading(!gotIt.hidden);

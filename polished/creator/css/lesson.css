@@ -2,6 +2,8 @@
 .lesson-guidance { position: fixed; z-index: 70; inset: 0; pointer-events: none; }
 .lesson-guidance[hidden] { display: none; }
 .lesson-guidance.is-reading { pointer-events: auto; }
+/* The highlighted control can be used directly; the dimmed areas around it stay inert. */
+.lesson-guidance.is-reading.is-target-interactive { pointer-events: none; }
 .lesson-guidance.is-reading .lesson-guidance-actions > :not(.lesson-guidance-got-it) { display: none; }
 .lesson-guidance-shade { position: fixed; inset: 0; width: 100vw; height: 100vh; opacity: 0; transition: opacity 180ms ease; }
 .lesson-guidance-shade-path { fill: rgb(24 29 38 / .48); }

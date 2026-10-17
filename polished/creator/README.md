@@ -247,16 +247,19 @@ Viewport overlay.
 ## Material Lab integration
 
 `?lesson=material-lab` composes the material lesson over this same editor. The
-project exposes one semantic **Gizmobot Shell**; a material model profile maps its
-Appearance state to `Shell_Paint` in the existing lesson GLB while preserving the
+project exposes one semantic **Gizmobot** object; a material model profile maps its
+Appearance state to `Shell_Paint` (the body surface) in the existing lesson GLB while preserving the
 face, decals and fixed accents. The fixed neutral light, reference comparisons,
 teaching gates and photo capture live in the lesson scenario, outside Appearance.
 
 Material records accept optional `emissiveIntensity` (0–1, rendered ×1.25;
 version 1 files stored 0–1.25 and are rescaled on open); glow follows Base
-Color. Both primitive materials and the semantic shell render this property.
+Color. Both primitive materials and the semantic Gizmobot body render this property.
 `setCapabilities({appearance:{baseColor,rgb,roughness,metalness,emissive,
-exploreRgb,readOnly},scene:{excludeIds}})` controls progressive exposure.
+exploreRgb,effectsOpen,lightsToggle,readOnly},scene:{excludeIds}})` controls
+progressive exposure. `lightsToggle: 'on' | 'off'` adds a room-lights switch
+beside Emission that dispatches a bubbling `appearancelights` event
+(`detail.on`); the lesson owns the actual lighting.
 The Inspector offers `setExpanded(section, bool)` and `revealSection(section,
 field)` so lessons can introduce a control without managing its DOM.
 

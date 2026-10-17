@@ -2,7 +2,7 @@
 .material-lesson .scene-panel { flex: 0 0 auto; min-height: 90px; max-height: 130px; }
 .material-lesson .inspector-panel { flex: 1; }
 .material-lesson .tool-divider { display: none; }
-/* Only the shell is editable and it is chosen from the Outliner, so the tool
+/* Only Gizmobot is editable and it is chosen from the Outliner, so the tool
    rail and the editor's status line are noise in this lesson. */
 .material-lesson .tool-rail, .material-lesson .statusbar { display: none; }
 /* One card width whether it points at a control or rests in its home. Height
@@ -19,6 +19,9 @@
 .material-lesson .lesson-guidance-actions button { font-size: 13px; padding: 8px 12px; }
 .material-lesson .lesson-guidance-secondary { margin-right: auto; padding-inline: 6px; border-color: transparent; background: transparent; color: #45485a; text-decoration: underline; text-underline-offset: 3px; }
 .material-lesson .lesson-guidance-secondary:hover:not(:disabled) { background: #f4f4f1; border-color: transparent; }
+/* A follow-up choice shown as an outlined button beside Continue, not a link. */
+.material-lesson .lesson-guidance-secondary.is-button { margin-right: 0; padding-inline: 12px; border-color: #f4b56c; background: #fff; color: #1a1a2e; text-decoration: none; }
+.material-lesson .lesson-guidance-secondary.is-button:hover:not(:disabled) { background: #fff0df; border-color: #eb7d11; }
 .material-lesson .material-lesson-controls { padding: 14px 16px; border-top: 1px solid var(--line); flex-shrink: 0; background: #fafaf8; }
 .material-lesson .material-lesson-controls h2 { margin: 0 0 10px; font-size: 13px; }
 .material-lesson .material-lesson-controls button { font-size: 13px; min-height: 34px; padding: 6px 10px; margin: 2px; }
@@ -92,6 +95,7 @@
 .material-lesson .lesson-guidance-controls .material-match-panel { margin-top: 10px; }
 .material-lesson .lesson-guidance-controls .material-match-summary { margin: 0; padding: 9px 12px; border-radius: 9px; background: #f6f6f3; }
 .material-lesson .lesson-guidance-controls .material-match-summary.is-pass { background: #f0f8ef; }
+
 
 @media (max-width: 900px), (max-height: 560px) {
   /* The card already shows the score; keep the dock free for editing. */

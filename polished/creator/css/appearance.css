@@ -25,6 +25,7 @@
 .appearance-effects-content { display: grid; gap: 10px; padding: 3px 12px 13px; border-top: 1px solid #eef0f2; }
 .appearance-value { color: var(--text-muted, #666); font-variant-numeric: tabular-nums; }
 .appearance-explore-rgb { justify-self: start; font-size: 12px; }
+.appearance-lights-toggle { justify-self: start; font-size: 12px; }
 .appearance-fields input:disabled, .appearance-fields button:disabled { cursor: default; opacity: .65; }
 .appearance-swatches { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 6px; padding: 3px 0; }
 .appearance-swatch { width: 100%; height: auto; min-height: 0; aspect-ratio: 1; }

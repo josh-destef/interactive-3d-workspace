@@ -129,6 +129,11 @@ pre-line` in `lesson.css`) if a step truly needs a short list.
 turns a prior-lesson name navy. List a term on the step that introduces it,
 not on every later step that mentions it. Green should mean "this is new".
 
+Put the exact label of an on-screen button in curly quotes, so learners know
+to look for that text: Choose “Check match”, the “Watch comparison” button.
+Names of panels, fields and sliders (Outliner, Base Color, Roughness) stay
+unquoted.
+
 ### 2.7 Use the Okay callout only for new controls
 
 A step with `spotlight: true` dims the screen, points the card at its
@@ -321,6 +326,8 @@ Tests pass `onFinish` so they never navigate.
 | `celebrate` | Finale styling: orange title and glow. |
 | `canContinue`, `continueLabel`, `onContinue` | The progression button. |
 | `secondaryLabel`, `onSecondary` | Usually "Show me where". |
+| `secondaryWhenComplete` | Show the secondary choice as an outlined button beside Continue, only once the goal is met (Material Lab's “Try another match”). |
+| `targetInteractive` | During a spotlight, the highlighted control works straight away; using it counts as Okay. The rest of the screen stays unavailable. |
 | `actionLabel`, `onAction`, `actionTone`, `actionBusyLabel`, `hideActionWhenComplete` | An optional in-card action, such as Watch comparison, Turn off the lights or Save picture. |
 
 ---

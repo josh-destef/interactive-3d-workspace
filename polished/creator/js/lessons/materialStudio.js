@@ -158,12 +158,15 @@ export function createMaterialStudio(creator) {
     resetView();
   }
   function hideReference() {
+    const wasMatching = matching;
     if (reference) reference.visible = false;
     restoreComparisonPose();
     viewport.refreshSelection();
     matching = false;
     viewport.setSelectionOutline(roomLights);
-    resetView();
+    // Only leaving the side-by-side comparison needs a new view; otherwise the
+    // learner keeps the angle they orbited to between steps.
+    if (wasMatching) resetView();
   }
   function restoreComparisonPose() {
     const student = model();

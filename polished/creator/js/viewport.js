@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createStage, V3 } from '../../kit/js/stage.js';
 import { createTransformGizmos } from '../../kit/js/transformGizmos.js';
 import { nearestSurfaceOffset } from './snapping.js';
@@ -54,6 +55,55 @@ function disposeTree(root) {
         if (Array.isArray(node.material)) node.material.forEach(m => m.dispose?.());
         else node.material?.dispose?.();
     });
+}
+
+// The selection rim is each mesh pushed out along smoothed normals, so every
+// part gets an even edge. Width is a fraction of camera distance, which keeps
+// the rim about the same thickness on screen at any zoom.
+const OUTLINE_WIDTH = .0045;
+const outlineGeometries = new WeakMap();
+function outlineGeometry(source) {
+    let geometry = outlineGeometries.get(source);
+    if (geometry) return geometry;
+    // Hard edges split vertices; welding them first keeps corners closed.
+    const position = source.getAttribute('position');
+    const array = new Float32Array(position.count * 3);
+    for (let i = 0; i < position.count; i++) array.set([position.getX(i), position.getY(i), position.getZ(i)], i * 3);
+    const positions = new THREE.BufferGeometry();
+    positions.setAttribute('position', new THREE.BufferAttribute(array, 3));
+    if (source.index) positions.setIndex(source.index.clone());
+    source.groups.forEach(group => positions.addGroup(group.start, group.count, group.materialIndex));
+    geometry = mergeVertices(positions);
+    positions.dispose();
+    geometry.computeVertexNormals();
+    outlineGeometries.set(source, geometry);
+    source.addEventListener('dispose', () => geometry.dispose());
+    return geometry;
+}
+// The selected object first marks its own pixels in the stencil buffer; the
+// rim then draws only outside them, so it traces the outer silhouette rather
+// than every seam between parts.
+const OUTLINE_STENCIL = 1;
+function outlineMaskMaterial() {
+    // Fully transparent rather than colorWrite: false: some browsers skip draws
+    // that write neither color nor depth, which would drop the stencil too.
+    return new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, depthTest: false,
+        stencilWrite: true, stencilRef: OUTLINE_STENCIL, stencilFunc: THREE.AlwaysStencilFunc, stencilZPass: THREE.ReplaceStencilOp });
+}
+function outlineMaterial(wireframe) {
+    const material = new THREE.MeshBasicMaterial({ color: 0xff9022, side: THREE.BackSide, wireframe,
+        depthTest: true, depthWrite: false, transparent: true, opacity: .9,
+        stencilWrite: true, stencilRef: OUTLINE_STENCIL, stencilFunc: THREE.NotEqualStencilFunc,
+        stencilFail: THREE.KeepStencilOp, stencilZFail: THREE.KeepStencilOp, stencilZPass: THREE.KeepStencilOp });
+    material.onBeforeCompile = shader => {
+        shader.uniforms.outlineWidth = { value: OUTLINE_WIDTH };
+        shader.vertexShader = `uniform float outlineWidth;\n${shader.vertexShader.replace('#include <project_vertex>', `
+            vec4 mvPosition = modelViewMatrix * vec4( transformed, 1.0 );
+            mvPosition.xyz += normalize( normalMatrix * normal ) * outlineWidth * ( isOrthographic ? 4.0 : -mvPosition.z );
+            gl_Position = projectionMatrix * mvPosition;`)}`;
+    };
+    material.customProgramCacheKey = () => 'creator-selection-outline';
+    return material;
 }
 
 function disposeOutline(root) {
@@ -383,20 +433,30 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
         disposeOutline(outline);
         if (usable && selectionOutlineEnabled) {
             activeObject.updateWorldMatrix(true, false);
+            const mask = activeObject.clone(true);
             const shell = activeObject.clone(true);
-            shell.matrix.copy(activeObject.matrixWorld);
-            shell.matrix.decompose(shell.position, shell.quaternion, shell.scale);
-            shell.scale.multiplyScalar(1.025);
-            shell.traverse(node => {
+            for (const copy of [mask, shell]) {
+                copy.matrix.copy(activeObject.matrixWorld);
+                copy.matrix.decompose(copy.position, copy.quaternion, copy.scale);
+            }
+            mask.traverse(node => {
                 if (!node.isMesh) return;
-                node.material = new THREE.MeshBasicMaterial({ color: 0xff9022, side: THREE.BackSide, wireframe: displayMode === 'wireframe',
-                    depthTest: true, depthWrite: false, transparent: true, opacity: .9 });
+                node.material = outlineMaskMaterial();
                 node.castShadow = false;
                 node.receiveShadow = false;
-                node.renderOrder = -1;
+                node.renderOrder = 1;
                 node.frustumCulled = false;
             });
-            outline.add(shell);
+            shell.traverse(node => {
+                if (!node.isMesh) return;
+                if (!node.isSkinnedMesh && node.geometry?.getAttribute('position')) node.geometry = outlineGeometry(node.geometry);
+                node.material = outlineMaterial(displayMode === 'wireframe');
+                node.castShadow = false;
+                node.receiveShadow = false;
+                node.renderOrder = 2;
+                node.frustumCulled = false;
+            });
+            outline.add(mask, shell);
         }
         const tool = tools.getActive();
         gizmos.showFor(tool, Boolean(usable && !activeEntity.locked));
@@ -404,12 +464,12 @@ export function createViewport({ project, tools, canvasId = 'cv', wrapId = 'canv
     }
 
     function updateOutlineMatrix() {
-        const shell = outline.children[0];
-        if (!shell || !activeObject) return;
+        if (!outline.children.length || !activeObject) return;
         activeObject.updateWorldMatrix(true, false);
-        activeObject.matrixWorld.decompose(shell.position, shell.quaternion, shell.scale);
-        shell.scale.multiplyScalar(1.025);
-        shell.updateMatrixWorld(true);
+        for (const copy of outline.children) {
+            activeObject.matrixWorld.decompose(copy.position, copy.quaternion, copy.scale);
+            copy.updateMatrixWorld(true);
+        }
     }
 
     function applyDisplayedTransforms() {
